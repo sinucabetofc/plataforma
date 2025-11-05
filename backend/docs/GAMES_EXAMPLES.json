@@ -1,0 +1,417 @@
+{
+  "description": "Exemplos práticos da API de Games",
+  "version": "1.0.0",
+  "base_url": "http://localhost:5000/api/games",
+  
+  "create_game": {
+    "endpoint": "POST /api/games",
+    "requires_auth": true,
+    "request": {
+      "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "player_a": "João Silva",
+        "player_b": "Pedro Santos",
+        "modality": "Sinuca Livre",
+        "advantages": "Nenhuma",
+        "series": 3,
+        "bet_limit": 500.00
+      }
+    },
+    "response": {
+      "status": 201,
+      "body": {
+        "success": true,
+        "message": "Jogo criado com sucesso",
+        "data": {
+          "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+          "player_a": "João Silva",
+          "player_b": "Pedro Santos",
+          "modality": "Sinuca Livre",
+          "advantages": "Nenhuma",
+          "series": 3,
+          "status": "open",
+          "bet_limit": 500.00,
+          "total_bet_player_a": 0.00,
+          "total_bet_player_b": 0.00,
+          "created_at": "2025-11-04T18:30:00.000Z",
+          "updated_at": "2025-11-04T18:30:00.000Z"
+        }
+      }
+    }
+  },
+
+  "list_all_games": {
+    "endpoint": "GET /api/games",
+    "requires_auth": false,
+    "request": {
+      "query_params": {}
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "message": "Jogos listados com sucesso",
+        "data": {
+          "games": [
+            {
+              "id": "game-1-uuid",
+              "player_a": "João Silva",
+              "player_b": "Pedro Santos",
+              "modality": "Sinuca Livre",
+              "advantages": "Nenhuma",
+              "series": 3,
+              "status": "open",
+              "result": null,
+              "bet_limit": 500.00,
+              "total_bet_player_a": 150.00,
+              "total_bet_player_b": 200.00,
+              "started_at": null,
+              "finished_at": null,
+              "created_at": "2025-11-04T18:30:00.000Z",
+              "updated_at": "2025-11-04T18:35:00.000Z"
+            },
+            {
+              "id": "game-2-uuid",
+              "player_a": "Maria Oliveira",
+              "player_b": "Ana Costa",
+              "modality": "Sinuca Brasileira",
+              "advantages": "Jogador A tem 2 bolas de vantagem",
+              "series": 5,
+              "status": "in_progress",
+              "result": null,
+              "bet_limit": null,
+              "total_bet_player_a": 350.00,
+              "total_bet_player_b": 280.00,
+              "started_at": "2025-11-04T19:00:00.000Z",
+              "finished_at": null,
+              "created_at": "2025-11-04T18:00:00.000Z",
+              "updated_at": "2025-11-04T19:00:00.000Z"
+            }
+          ],
+          "pagination": {
+            "total": 2,
+            "limit": 20,
+            "offset": 0,
+            "has_more": false
+          }
+        }
+      }
+    }
+  },
+
+  "list_open_games": {
+    "endpoint": "GET /api/games?status=open",
+    "requires_auth": false,
+    "request": {
+      "query_params": {
+        "status": "open"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "message": "Jogos listados com sucesso",
+        "data": {
+          "games": [
+            {
+              "id": "game-1-uuid",
+              "player_a": "João Silva",
+              "player_b": "Pedro Santos",
+              "modality": "Sinuca Livre",
+              "status": "open",
+              "series": 3,
+              "bet_limit": 500.00,
+              "total_bet_player_a": 150.00,
+              "total_bet_player_b": 200.00
+            }
+          ],
+          "pagination": {
+            "total": 1,
+            "limit": 20,
+            "offset": 0,
+            "has_more": false
+          }
+        }
+      }
+    }
+  },
+
+  "get_game_by_id": {
+    "endpoint": "GET /api/games/:id",
+    "requires_auth": false,
+    "request": {
+      "params": {
+        "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "message": "Jogo encontrado",
+        "data": {
+          "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+          "player_a": "João Silva",
+          "player_b": "Pedro Santos",
+          "modality": "Sinuca Livre",
+          "advantages": "Nenhuma",
+          "series": 3,
+          "status": "open",
+          "result": null,
+          "bet_limit": 500.00,
+          "total_bet_player_a": 350.00,
+          "total_bet_player_b": 450.00,
+          "started_at": null,
+          "finished_at": null,
+          "created_at": "2025-11-04T18:30:00.000Z",
+          "updated_at": "2025-11-04T18:45:00.000Z"
+        }
+      }
+    }
+  },
+
+  "start_game": {
+    "endpoint": "PATCH /api/games/:id/status",
+    "requires_auth": true,
+    "description": "Iniciar jogo (mudar status para in_progress)",
+    "request": {
+      "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+        "Content-Type": "application/json"
+      },
+      "params": {
+        "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+      },
+      "body": {
+        "status": "in_progress"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "message": "Status do jogo atualizado com sucesso",
+        "data": {
+          "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+          "player_a": "João Silva",
+          "player_b": "Pedro Santos",
+          "status": "in_progress",
+          "started_at": "2025-11-04T19:00:00.000Z",
+          "result": null
+        }
+      }
+    }
+  },
+
+  "finish_game": {
+    "endpoint": "PATCH /api/games/:id/status",
+    "requires_auth": true,
+    "description": "Finalizar jogo com resultado",
+    "request": {
+      "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+        "Content-Type": "application/json"
+      },
+      "params": {
+        "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+      },
+      "body": {
+        "status": "finished",
+        "result": "player_a"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "message": "Status do jogo atualizado com sucesso",
+        "data": {
+          "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+          "player_a": "João Silva",
+          "player_b": "Pedro Santos",
+          "status": "finished",
+          "result": "player_a",
+          "started_at": "2025-11-04T19:00:00.000Z",
+          "finished_at": "2025-11-04T20:30:00.000Z"
+        }
+      }
+    }
+  },
+
+  "cancel_game": {
+    "endpoint": "PATCH /api/games/:id/status",
+    "requires_auth": true,
+    "description": "Cancelar jogo",
+    "request": {
+      "body": {
+        "status": "cancelled"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "message": "Status do jogo atualizado com sucesso",
+        "data": {
+          "status": "cancelled",
+          "result": null
+        }
+      }
+    }
+  },
+
+  "validation_errors": {
+    "same_players": {
+      "description": "Jogadores A e B iguais",
+      "request": {
+        "body": {
+          "player_a": "João Silva",
+          "player_b": "João Silva",
+          "modality": "Sinuca Livre",
+          "series": 3
+        }
+      },
+      "response": {
+        "status": 400,
+        "body": {
+          "success": false,
+          "message": "Erro de validação",
+          "errors": [
+            {
+              "field": "player_b",
+              "message": "Os jogadores A e B devem ser diferentes"
+            }
+          ]
+        }
+      }
+    },
+    "invalid_series": {
+      "description": "Número de séries inválido",
+      "request": {
+        "body": {
+          "player_a": "João Silva",
+          "player_b": "Pedro Santos",
+          "modality": "Sinuca Livre",
+          "series": 0
+        }
+      },
+      "response": {
+        "status": 400,
+        "body": {
+          "success": false,
+          "message": "Erro de validação",
+          "errors": [
+            {
+              "field": "series",
+              "message": "O número mínimo de séries é 1"
+            }
+          ]
+        }
+      }
+    },
+    "missing_result_on_finish": {
+      "description": "Tentativa de finalizar jogo sem informar resultado",
+      "request": {
+        "body": {
+          "status": "finished"
+        }
+      },
+      "response": {
+        "status": 400,
+        "body": {
+          "success": false,
+          "message": "Erro de validação",
+          "errors": [
+            {
+              "field": "result",
+              "message": "O resultado é obrigatório quando o status é \"finished\" e deve ser null caso contrário"
+            }
+          ]
+        }
+      }
+    }
+  },
+
+  "common_use_cases": {
+    "display_open_games_for_betting": {
+      "description": "Mostrar jogos disponíveis para apostas",
+      "endpoint": "GET /api/games?status=open",
+      "frontend_usage": "Use para listar jogos na tela de apostas"
+    },
+    "create_new_game": {
+      "description": "Admin cria novo jogo",
+      "endpoint": "POST /api/games",
+      "frontend_usage": "Formulário de criação de jogo (admin)"
+    },
+    "start_game_stop_bets": {
+      "description": "Iniciar jogo e parar apostas",
+      "endpoint": "PATCH /api/games/:id/status",
+      "body": { "status": "in_progress" },
+      "frontend_usage": "Botão 'Iniciar Jogo' (admin)"
+    },
+    "finish_game_with_winner": {
+      "description": "Finalizar jogo e declarar vencedor",
+      "endpoint": "PATCH /api/games/:id/status",
+      "body": { "status": "finished", "result": "player_a" },
+      "frontend_usage": "Botão 'Finalizar Jogo' com seleção de vencedor (admin)"
+    },
+    "view_game_details": {
+      "description": "Ver detalhes completos do jogo",
+      "endpoint": "GET /api/games/:id",
+      "frontend_usage": "Página de detalhes do jogo"
+    }
+  },
+
+  "pagination_example": {
+    "description": "Exemplo de paginação",
+    "page_1": {
+      "endpoint": "GET /api/games?limit=10&offset=0",
+      "description": "Primeiros 10 jogos"
+    },
+    "page_2": {
+      "endpoint": "GET /api/games?limit=10&offset=10",
+      "description": "Jogos 11-20"
+    },
+    "page_3": {
+      "endpoint": "GET /api/games?limit=10&offset=20",
+      "description": "Jogos 21-30"
+    }
+  },
+
+  "modalities_examples": [
+    "Sinuca Livre",
+    "Sinuca Brasileira",
+    "Pool 8 (8-Ball)",
+    "Pool 9 (9-Ball)",
+    "Snooker",
+    "Carambola",
+    "Sinuca Mata-Mata"
+  ],
+
+  "game_lifecycle": {
+    "1_create": {
+      "action": "POST /api/games",
+      "status": "open",
+      "description": "Jogo criado, aceitando apostas"
+    },
+    "2_start": {
+      "action": "PATCH /api/games/:id/status",
+      "body": { "status": "in_progress" },
+      "status": "in_progress",
+      "description": "Jogo iniciado, não aceita mais apostas"
+    },
+    "3_finish": {
+      "action": "PATCH /api/games/:id/status",
+      "body": { "status": "finished", "result": "player_a" },
+      "status": "finished",
+      "description": "Jogo finalizado com vencedor"
+    }
+  }
+}
+
+
+

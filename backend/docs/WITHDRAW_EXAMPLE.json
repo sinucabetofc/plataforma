@@ -1,0 +1,174 @@
+{
+  "description": "Exemplo de resposta bem-sucedida do endpoint POST /api/wallet/withdraw",
+  "endpoint": "POST /api/wallet/withdraw",
+  "request": {
+    "headers": {
+      "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "amount": 100.00,
+      "pix_key": "usuario@email.com",
+      "description": "Saque de prêmio"
+    }
+  },
+  "response": {
+    "status": 201,
+    "body": {
+      "success": true,
+      "message": "Solicitação de saque criada com sucesso",
+      "data": {
+        "transaction_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "status": "pending",
+        "amount_requested": 100.00,
+        "fee": 8.00,
+        "total_debited": 108.00,
+        "net_to_receive": 100.00,
+        "new_balance": 392.00,
+        "pix_key": "usuario@email.com",
+        "created_at": "2025-11-04T16:30:00.000Z",
+        "message": "Solicitação de saque criada com sucesso. Aguardando confirmação do administrador.",
+        "note": "O valor líquido será transferido para sua chave PIX após aprovação do admin."
+      }
+    }
+  },
+  "database_transactions": {
+    "withdraw_transaction": {
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "user_id": "user-uuid-12345",
+      "type": "withdraw",
+      "amount": 100.00,
+      "fee": 8.00,
+      "net_amount": 100.00,
+      "status": "pending",
+      "description": "Saque de prêmio",
+      "metadata": {
+        "pix_key": "usuario@email.com",
+        "total_debited": 108.00,
+        "awaiting_admin_confirmation": true,
+        "requested_at": "2025-11-04T16:30:00.000Z"
+      },
+      "created_at": "2025-11-04T16:30:00.000Z",
+      "processed_at": null
+    },
+    "fee_transaction": {
+      "id": "fee-uuid-67890",
+      "user_id": "user-uuid-12345",
+      "type": "fee",
+      "amount": 8.00,
+      "fee": 0.00,
+      "net_amount": -8.00,
+      "status": "completed",
+      "description": "Taxa de saque (8%)",
+      "metadata": {
+        "related_transaction_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "fee_percentage": 8,
+        "base_amount": 100.00
+      },
+      "created_at": "2025-11-04T16:30:00.000Z",
+      "processed_at": "2025-11-04T16:30:00.000Z"
+    }
+  },
+  "wallet_update": {
+    "before": {
+      "balance": 500.00,
+      "blocked_balance": 0.00,
+      "available_balance": 500.00,
+      "total_withdrawn": 0.00
+    },
+    "after": {
+      "balance": 392.00,
+      "blocked_balance": 0.00,
+      "available_balance": 392.00,
+      "total_withdrawn": 100.00
+    },
+    "calculation": {
+      "initial_balance": 500.00,
+      "amount_requested": 100.00,
+      "fee_8_percent": 8.00,
+      "total_debited": 108.00,
+      "new_balance": 392.00,
+      "formula": "500.00 - (100.00 + 8.00) = 392.00"
+    }
+  },
+  "error_examples": {
+    "insufficient_balance": {
+      "status": 400,
+      "body": {
+        "success": false,
+        "message": "Saldo insuficiente para realizar o saque",
+        "details": {
+          "available": 50.00,
+          "required": 108.00,
+          "amount": 100.00,
+          "fee": 8.00
+        }
+      }
+    },
+    "validation_error": {
+      "status": 400,
+      "body": {
+        "success": false,
+        "message": "Erro de validação",
+        "errors": [
+          {
+            "field": "amount",
+            "message": "O valor mínimo de saque é R$ 20,00"
+          }
+        ]
+      }
+    },
+    "missing_pix_key": {
+      "status": 400,
+      "body": {
+        "success": false,
+        "message": "Erro de validação",
+        "errors": [
+          {
+            "field": "pix_key",
+            "message": "Chave PIX é obrigatória para saque"
+          }
+        ]
+      }
+    },
+    "unauthorized": {
+      "status": 401,
+      "body": {
+        "success": false,
+        "message": "Token de autenticação não fornecido"
+      }
+    },
+    "rate_limit": {
+      "status": 429,
+      "body": {
+        "success": false,
+        "message": "Você atingiu o limite de saques por hora. Tente novamente mais tarde."
+      }
+    }
+  },
+  "flow_explanation": {
+    "step_1": "Usuário autenticado envia requisição com amount e pix_key",
+    "step_2": "Sistema valida os dados (Zod schema)",
+    "step_3": "Verifica se usuário e carteira existem",
+    "step_4": "Calcula taxa de 8% sobre o valor solicitado",
+    "step_5": "Verifica se há saldo disponível (balance - blocked_balance)",
+    "step_6": "Debita o valor total (amount + fee) da carteira",
+    "step_7": "Cria transação de saque com status pending",
+    "step_8": "Cria transação de taxa com status completed",
+    "step_9": "Retorna resposta com todos os detalhes",
+    "step_10": "Admin recebe notificação (a implementar)",
+    "step_11": "Admin aprova/rejeita (a implementar)"
+  },
+  "notes": {
+    "fee_calculation": "Taxa = amount * 0.08 (8%)",
+    "total_debited": "Total debitado = amount + fee",
+    "net_to_receive": "Valor líquido a receber = amount (sem taxa)",
+    "immediate_debit": "O saldo é debitado imediatamente, mesmo com status pending",
+    "admin_approval": "O admin deve aprovar para que a transferência PIX seja realizada",
+    "two_transactions": "Duas transações são criadas: withdraw (pending) e fee (completed)",
+    "rollback": "Em caso de erro, o saldo é estornado automaticamente"
+  }
+}
+
+
+
