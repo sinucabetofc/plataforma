@@ -79,13 +79,23 @@ function conflictResponse(res, message = 'Recurso já existe') {
   return errorResponse(res, 409, message);
 }
 
+/**
+ * Resposta de acesso proibido (forbidden)
+ * @param {Object} res - Objeto response do Express
+ * @param {string} message - Mensagem customizada (opcional)
+ */
+function forbiddenResponse(res, message = 'Acesso proibido') {
+  return errorResponse(res, 403, message);
+}
+
 module.exports = {
   successResponse,
   errorResponse,
   validationErrorResponse,
   notFoundResponse,
   unauthorizedResponse,
-  conflictResponse
+  conflictResponse,
+  forbiddenResponse
 };
 
 
