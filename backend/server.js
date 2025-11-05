@@ -52,7 +52,9 @@ const corsOptions = {
       'http://localhost:3001',
       'http://127.0.0.1:3000',
       'http://127.0.0.1:3001',
-    ];
+      'https://plataforma-hazel.vercel.app', // Frontend na Vercel
+      process.env.FRONTEND_URL, // URL configurável via env
+    ].filter(Boolean); // Remove valores undefined/null
     
     if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
       callback(null, true);
