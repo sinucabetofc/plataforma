@@ -20,41 +20,8 @@ class AuthService {
     try {
       console.log('📝 [REGISTER] Iniciando registro para:', email);
 
-      // 1. Verificar se CPF já existe (verificação essencial)
-      try {
-        const { data: existingCPF, error: cpfCheckError } = await supabase
-          .from('users')
-          .select('id')
-          .eq('cpf', cpf)
-          .limit(1);
-
-        if (cpfCheckError) {
-          console.error('❌ [REGISTER] Erro ao verificar CPF:', cpfCheckError);
-          throw {
-            code: 'DATABASE_ERROR',
-            message: 'Erro ao verificar CPF no banco de dados',
-            details: cpfCheckError
-          };
-        }
-
-        if (existingCPF && existingCPF.length > 0) {
-          console.log('⚠️ [REGISTER] CPF já cadastrado:', cpf);
-          throw {
-            code: 'CONFLICT',
-            message: 'CPF já cadastrado'
-          };
-        }
-      } catch (error) {
-        // Se for um erro conhecido, propaga
-        if (error.code === 'CONFLICT' || error.code === 'DATABASE_ERROR') {
-          throw error;
-        }
-        // Se for erro desconhecido, loga e continua (deixa o Supabase Auth validar email)
-        console.warn('⚠️ [REGISTER] Erro ao verificar duplicatas, continuando...', error);
-      }
-
-      // 2. Criar usuário no Supabase Auth (usando Admin API)
-      // Backend usa service_role_key, então precisa ser admin.createUser
+      // 1. Criar usuário DIRETO no Supabase Auth (sem verificações prévias)
+      // O Supabase Auth vai validar email duplicado automaticamente
       console.log('🔐 [REGISTER] Criando usuário no Supabase Auth...');
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email,
