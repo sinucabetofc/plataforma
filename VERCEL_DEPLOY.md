@@ -109,3 +109,5 @@ Verifique:
 3. Verifique CORS no backend
 4. Confirme que `NEXT_PUBLIC_API_URL` está correto
 
+
+

@@ -264,7 +264,7 @@ class SeriesService {
         };
       }
 
-      // Atualizar status das apostas para 'aceita'
+      // Atualizar status das apostas pendentes para 'aceita'
       const { error: betsError } = await supabase
         .from('bets')
         .update({ status: 'aceita' })
@@ -275,12 +275,13 @@ class SeriesService {
         console.error('Erro ao atualizar apostas:', betsError);
       }
 
-      // Atualizar série
+      // Atualizar série - MANTÉM betting_enabled = true para apostas ao vivo
       const { error: updateError } = await supabase
         .from('series')
         .update({
           status: 'em_andamento'
-          // Trigger vai setar started_at e betting_locked_at
+          // Trigger vai setar started_at mas NÃO trava apostas
+          // betting_enabled permanece true para permitir apostas ao vivo
         })
         .eq('id', serieId);
 
@@ -588,7 +589,260 @@ class SeriesService {
       };
     }
   }
+
+  /**
+   * Cria uma nova série para uma partida
+   * @param {string} matchId - ID da partida
+   * @returns {Promise<Object>} Dados da série criada
+   */
+  async createSerie(matchId) {
+    try {
+      // Verificar se partida existe
+      const { data: match, error: matchError } = await supabase
+        .from('matches')
+        .select('id, status')
+        .eq('id', matchId)
+        .single();
+
+      if (matchError || !match) {
+        throw {
+          code: 'NOT_FOUND',
+          message: 'Partida não encontrada'
+        };
+      }
+
+      // Não permitir adicionar série se partida já foi finalizada
+      if (match.status === 'finalizada' || match.status === 'cancelada') {
+        throw {
+          code: 'INVALID_STATUS',
+          message: 'Não é possível adicionar série em partida finalizada ou cancelada'
+        };
+      }
+
+      // Buscar número da última série
+      const { data: lastSerie } = await supabase
+        .from('series')
+        .select('serie_number')
+        .eq('match_id', matchId)
+        .order('serie_number', { ascending: false })
+        .limit(1)
+        .single();
+
+      const nextSerieNumber = lastSerie ? lastSerie.serie_number + 1 : 1;
+
+      // Criar nova série
+      const { data: newSerie, error: createError } = await supabase
+        .from('series')
+        .insert({
+          match_id: matchId,
+          serie_number: nextSerieNumber,
+          status: 'pendente',
+          betting_enabled: false,
+          player1_score: 0,
+          player2_score: 0
+        })
+        .select('*')
+        .single();
+
+      if (createError) {
+        console.error('Erro ao criar série:', createError);
+        throw {
+          code: 'DATABASE_ERROR',
+          message: 'Erro ao criar série',
+          details: createError.message
+        };
+      }
+
+      return {
+        id: newSerie.id,
+        match_id: newSerie.match_id,
+        serie_number: newSerie.serie_number,
+        status: newSerie.status,
+        betting_enabled: newSerie.betting_enabled,
+        betting_locked_at: newSerie.betting_locked_at,
+        started_at: newSerie.started_at,
+        ended_at: newSerie.ended_at,
+        player1_score: newSerie.player1_score,
+        player2_score: newSerie.player2_score,
+        winner_player_id: newSerie.winner_player_id,
+        created_at: newSerie.created_at,
+        updated_at: newSerie.updated_at
+      };
+    } catch (error) {
+      if (error.code) {
+        throw error;
+      }
+
+      console.error('Erro ao criar série:', error);
+      throw {
+        code: 'INTERNAL_ERROR',
+        message: 'Erro ao criar série',
+        details: error.message
+      };
+    }
+  }
+
+  /**
+   * Deleta uma série
+   * @param {string} serieId - ID da série
+   * @returns {Promise<void>}
+   */
+  async deleteSerie(serieId) {
+    try {
+      // Verificar se série existe
+      const serie = await this.getSerieById(serieId);
+
+      // Não permitir deletar série com apostas
+      const { data: bets, error: betsError } = await supabase
+        .from('bets')
+        .select('id')
+        .eq('serie_id', serieId)
+        .limit(1);
+
+      if (betsError) {
+        throw {
+          code: 'DATABASE_ERROR',
+          message: 'Erro ao verificar apostas',
+          details: betsError.message
+        };
+      }
+
+      if (bets && bets.length > 0) {
+        throw {
+          code: 'HAS_BETS',
+          message: 'Não é possível deletar série com apostas. Cancele a série para reembolsar.'
+        };
+      }
+
+      // Não permitir deletar série finalizada
+      if (serie.status === 'encerrada') {
+        throw {
+          code: 'INVALID_STATUS',
+          message: 'Não é possível deletar série já encerrada'
+        };
+      }
+
+      // Deletar série
+      const { error: deleteError } = await supabase
+        .from('series')
+        .delete()
+        .eq('id', serieId);
+
+      if (deleteError) {
+        throw {
+          code: 'DATABASE_ERROR',
+          message: 'Erro ao deletar série',
+          details: deleteError.message
+        };
+      }
+
+      return { success: true };
+    } catch (error) {
+      if (error.code) {
+        throw error;
+      }
+
+      console.error('Erro ao deletar série:', error);
+      throw {
+        code: 'INTERNAL_ERROR',
+        message: 'Erro ao deletar série',
+        details: error.message
+      };
+    }
+  }
+
+  /**
+   * Atualiza informações de uma série (número, etc)
+   * @param {string} serieId - ID da série
+   * @param {Object} updateData - Dados para atualizar
+   * @returns {Promise<Object>} Série atualizada
+   */
+  async updateSerie(serieId, updateData) {
+    try {
+      // Verificar se série existe
+      await this.getSerieById(serieId);
+
+      // Não permitir editar série finalizada ou em andamento
+      const { data: currentSerie } = await supabase
+        .from('series')
+        .select('status')
+        .eq('id', serieId)
+        .single();
+
+      if (currentSerie.status === 'em_andamento') {
+        throw {
+          code: 'INVALID_STATUS',
+          message: 'Não é possível editar série em andamento'
+        };
+      }
+
+      if (currentSerie.status === 'encerrada') {
+        throw {
+          code: 'INVALID_STATUS',
+          message: 'Não é possível editar série já encerrada'
+        };
+      }
+
+      // Atualizar apenas campos permitidos
+      const allowedFields = ['serie_number'];
+      const dataToUpdate = {};
+      
+      Object.keys(updateData).forEach(key => {
+        if (allowedFields.includes(key)) {
+          dataToUpdate[key] = updateData[key];
+        }
+      });
+
+      if (Object.keys(dataToUpdate).length === 0) {
+        throw {
+          code: 'VALIDATION_ERROR',
+          message: 'Nenhum campo válido para atualizar'
+        };
+      }
+
+      // Atualizar série
+      const { data: updatedSerie, error: updateError } = await supabase
+        .from('series')
+        .update(dataToUpdate)
+        .eq('id', serieId)
+        .select('*')
+        .single();
+
+      if (updateError) {
+        throw {
+          code: 'DATABASE_ERROR',
+          message: 'Erro ao atualizar série',
+          details: updateError.message
+        };
+      }
+
+      return {
+        id: updatedSerie.id,
+        match_id: updatedSerie.match_id,
+        serie_number: updatedSerie.serie_number,
+        status: updatedSerie.status,
+        betting_enabled: updatedSerie.betting_enabled,
+        player1_score: updatedSerie.player1_score,
+        player2_score: updatedSerie.player2_score,
+        winner_player_id: updatedSerie.winner_player_id,
+        updated_at: updatedSerie.updated_at
+      };
+    } catch (error) {
+      if (error.code) {
+        throw error;
+      }
+
+      console.error('Erro ao atualizar série:', error);
+      throw {
+        code: 'INTERNAL_ERROR',
+        message: 'Erro ao atualizar série',
+        details: error.message
+      };
+    }
+  }
 }
 
 module.exports = new SeriesService();
+
+
 

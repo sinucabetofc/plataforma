@@ -246,3 +246,5 @@ O problema identificado (RLS de transactions) é facilmente corrigível e não i
 **Data**: 05/11/2025  
 **Versão**: 1.0
 
+
+

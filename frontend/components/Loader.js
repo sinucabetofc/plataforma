@@ -2,6 +2,10 @@
  * Componente Loader - Feedback de carregamento
  */
 
+'use client';
+
+import { useState, useEffect } from 'react';
+
 export default function Loader({ size = 'medium', text = 'Carregando...' }) {
   const sizeClasses = {
     small: 'w-6 h-6 border-2',
@@ -27,6 +31,16 @@ export default function Loader({ size = 'medium', text = 'Carregando...' }) {
  * Loader em tela cheia (overlay)
  */
 export function FullPageLoader({ text = 'Carregando...' }) {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return null;
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-cinza-escuro bg-opacity-95 backdrop-blur-sm">
       <div className="rounded-xl border-2 border-verde-neon bg-[#1a1a1a] p-8 shadow-verde-strong">

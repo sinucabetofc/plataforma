@@ -378,3 +378,5 @@ Confirmar → Cria transaction tipo "ajuste_manual_admin"
 
 
 
+
+

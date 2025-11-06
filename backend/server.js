@@ -27,6 +27,15 @@ const matchesRoutes = require('./routes/matches.routes');
 const seriesRoutes = require('./routes/series.routes');
 const betsRoutes = require('./routes/bets.routes');
 
+// Rotas admin
+const adminRoutes = require('./routes/admin.routes');
+
+// Rotas de upload
+const uploadRoutes = require('./routes/upload.routes');
+
+// Rota de teste (DEBUG)
+// const testRoleRoutes = require('./routes/test-role.routes'); // COMENTADO - arquivo vazio
+
 // Importar middlewares
 const errorHandler = require('./middlewares/error-handler.middleware');
 
@@ -50,8 +59,10 @@ const corsOptions = {
     const allowedOrigins = [
       'http://localhost:3000',
       'http://localhost:3001',
+      'http://localhost:3002', // Admin panel
       'http://127.0.0.1:3000',
       'http://127.0.0.1:3001',
+      'http://127.0.0.1:3002', // Admin panel
       'https://plataforma-hazel.vercel.app', // Frontend na Vercel
       process.env.FRONTEND_URL, // URL configurável via env
     ].filter(Boolean); // Remove valores undefined/null
@@ -134,6 +145,15 @@ app.use('/api/players', playersRoutes);
 app.use('/api/matches', matchesRoutes);
 app.use('/api/series', seriesRoutes);
 app.use('/api/bets', betsRoutes); // Nova estrutura de apostas
+
+// Rotas admin (requerem autenticação + role='admin')
+app.use('/api/admin', adminRoutes);
+
+// Rotas de upload (requerem autenticação)
+app.use('/api/upload', uploadRoutes);
+
+// Rota de teste (DEBUG - REMOVER EM PRODUÇÃO)
+// app.use('/api/test', testRoleRoutes); // COMENTADO - arquivo vazio
 
 // ============================================================
 // Rota 404

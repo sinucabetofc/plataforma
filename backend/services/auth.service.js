@@ -100,7 +100,7 @@ class AuthService {
           is_active: true,
           created_at: new Date().toISOString()
         })
-        .select('id, name, email, phone, cpf, pix_key, pix_type, email_verified, created_at')
+        .select('id, name, email, phone, cpf, pix_key, pix_type, email_verified, role, is_active, created_at')
         .single();
 
       if (insertError || !newUser) {
@@ -158,6 +158,8 @@ class AuthService {
           pix_key: user.pix_key,
           pix_type: user.pix_type,
           email_verified: user.email_verified,
+          role: user.role,
+          is_active: user.is_active,
           created_at: user.created_at
         },
         session: authData.session,
@@ -216,11 +218,17 @@ class AuthService {
       }
 
       // 2. Buscar dados completos do usuário em public.users
+      console.log('🔍 [LOGIN - NOVA VERSÃO] Buscando usuário ID:', authData.user.id);
+      
       const { data: user, error: userError } = await supabase
         .from('users')
-        .select('id, name, email, phone, cpf, pix_key, pix_type, is_active, email_verified, created_at')
+        .select('*')
         .eq('id', authData.user.id)
         .single();
+
+      console.log('🔍 [LOGIN - NOVA VERSÃO] Dados completos do banco:', JSON.stringify(user, null, 2));
+      console.log('🔑 [LOGIN - NOVA VERSÃO] ROLE:', user?.role);
+      console.log('✅ [LOGIN - NOVA VERSÃO] IS_ACTIVE:', user?.is_active);
 
       if (userError || !user) {
         throw {
@@ -245,18 +253,27 @@ class AuthService {
         .single();
 
       // 5. Retornar dados do usuário e sessão
+      console.log('📤 [LOGIN SERVICE] user.role ANTES de retornar:', user.role);
+      console.log('📤 [LOGIN SERVICE] user.is_active ANTES de retornar:', user.is_active);
+      
+      const userResponse = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        cpf: user.cpf,
+        pix_key: user.pix_key,
+        pix_type: user.pix_type,
+        email_verified: user.email_verified,
+        role: user.role,
+        is_active: user.is_active,
+        created_at: user.created_at
+      };
+      
+      console.log('📤 [LOGIN SERVICE] userResponse.role:', userResponse.role);
+      
       return {
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          phone: user.phone,
-          cpf: user.cpf,
-          pix_key: user.pix_key,
-          pix_type: user.pix_type,
-          email_verified: user.email_verified,
-          created_at: user.created_at
-        },
+        user: userResponse,
         session: authData.session,
         token: authData.session.access_token,
         wallet: wallet || {
@@ -293,7 +310,7 @@ class AuthService {
 
       const { data: user, error } = await supabase
         .from('users')
-        .select('id, name, email, phone, cpf, pix_key, pix_type, email_verified, created_at')
+        .select('id, name, email, phone, cpf, pix_key, pix_type, email_verified, role, is_active, created_at')
         .eq('id', userId)
         .single();
 
@@ -343,7 +360,7 @@ class AuthService {
         .from('users')
         .update(filteredData)
         .eq('id', userId)
-        .select('id, name, email, phone, cpf, pix_key, pix_type, email_verified, created_at')
+        .select('id, name, email, phone, cpf, pix_key, pix_type, email_verified, role, is_active, created_at')
         .single();
 
       if (error) {
@@ -475,4 +492,6 @@ class AuthService {
 }
 
 module.exports = new AuthService();
+
+
 

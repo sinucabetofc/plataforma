@@ -1,70 +1,73 @@
 /**
  * ============================================================
- * Admin Middleware - Middleware de Autorização Admin
+ * Admin Middleware - Middleware de Administração
  * ============================================================
  * Verifica se o usuário autenticado possui role='admin'
  */
 
 const { supabase } = require('../config/supabase.config');
-const { unauthorizedResponse, forbiddenResponse, errorResponse } = require('../utils/response.util');
 
 /**
- * Middleware para verificar se o usuário é admin
- * IMPORTANTE: Este middleware deve ser usado APÓS authenticateToken
- * pois depende de req.user já estar preenchido
+ * Verifica se o usuário é administrador
  */
 const isAdmin = async (req, res, next) => {
   try {
-    // 1. Verificar se req.user existe (deve ter sido setado pelo authenticateToken)
+    // Verificar se req.user já foi definido pelo middleware authenticateToken
     if (!req.user || !req.user.id) {
-      return unauthorizedResponse(res, 'Usuário não autenticado');
+      return res.status(401).json({
+        success: false,
+        message: 'Usuário não autenticado'
+      });
     }
 
-    const userId = req.user.id;
-
-    console.log('🔐 [ADMIN MIDDLEWARE] Verificando role do usuário:', userId);
-
-    // 2. Buscar role do usuário na tabela users
-    const { data: userData, error: userError } = await supabase
+    // Buscar role do usuário no banco
+    const { data: userProfile, error: profileError } = await supabase
       .from('users')
-      .select('role, name, email')
-      .eq('id', userId)
+      .select('role, is_active')
+      .eq('id', req.user.id)
       .single();
 
-    if (userError || !userData) {
-      console.error('❌ [ADMIN MIDDLEWARE] Erro ao buscar usuário:', userError);
-      return errorResponse(res, 500, 'Erro ao verificar permissões do usuário');
-    }
-
-    console.log('👤 [ADMIN MIDDLEWARE] Usuário encontrado:', {
-      email: userData.email,
-      role: userData.role
-    });
-
-    // 3. Verificar se o usuário tem role='admin'
-    if (userData.role !== 'admin') {
-      console.warn('⚠️ [ADMIN MIDDLEWARE] Acesso negado - usuário não é admin:', {
-        email: userData.email,
-        role: userData.role
+    if (profileError || !userProfile) {
+      console.error('❌ [ADMIN MIDDLEWARE] Erro ao buscar perfil:', profileError);
+      return res.status(401).json({
+        success: false,
+        message: 'Dados do usuário não encontrados'
       });
-      return forbiddenResponse(res, 'Acesso negado. Apenas administradores podem acessar este recurso.');
     }
 
-    console.log('✅ [ADMIN MIDDLEWARE] Acesso autorizado - admin confirmado');
+    // Verificar se é admin
+    if (userProfile.role !== 'admin') {
+      console.log(`⚠️ [ADMIN MIDDLEWARE] Acesso negado para usuário ${req.user.id} (role: ${userProfile.role})`);
+      return res.status(403).json({
+        success: false,
+        message: 'Acesso negado. Você não tem permissão de administrador.'
+      });
+    }
 
-    // 4. Adicionar informações extras ao req.user
-    req.user.role = userData.role;
-    req.user.name = userData.name;
+    // Verificar se está ativo
+    if (!userProfile.is_active) {
+      return res.status(403).json({
+        success: false,
+        message: 'Sua conta está inativa. Entre em contato com o suporte.'
+      });
+    }
 
-    // 5. Continuar para o próximo middleware/controller
+    // Adicionar role ao req.user
+    req.user.role = userProfile.role;
+    req.user.is_active = userProfile.is_active;
+
+    console.log(`✅ [ADMIN MIDDLEWARE] Admin ${req.user.id} autorizado`);
     next();
   } catch (error) {
     console.error('❌ [ADMIN MIDDLEWARE] Erro inesperado:', error);
-    return errorResponse(res, 500, 'Erro ao validar permissões de administrador');
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao validar permissões de administrador'
+    });
   }
 };
 
-module.exports = {
-  isAdmin
-};
+module.exports = { isAdmin };
+
+
 

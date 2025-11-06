@@ -66,6 +66,14 @@ router.get('/:id', listSeriesLimiter, seriesController.getSerie);
 // ============================================================
 
 /**
+ * POST /api/series/create
+ * Cria uma nova série para uma partida
+ * Body: { match_id }
+ * Apenas admins e parceiros
+ */
+router.post('/create', authenticateToken, updateSerieLimiter, seriesController.createSerie);
+
+/**
  * POST /api/series/:id/release
  * Libera uma série para apostas
  * Apenas admins e parceiros (donos da partida)
@@ -106,9 +114,25 @@ router.post('/:id/cancel', authenticateToken, updateSerieLimiter, seriesControll
  */
 router.patch('/:id/score', authenticateToken, updateSerieLimiter, seriesController.updateScore);
 
+/**
+ * PATCH /api/series/:id
+ * Atualiza informações de uma série
+ * Body: { serie_number? }
+ * Apenas admins e parceiros (donos da partida)
+ */
+router.patch('/:id', authenticateToken, updateSerieLimiter, seriesController.updateSerie);
+
+/**
+ * DELETE /api/series/:id
+ * Deleta uma série (apenas se não tiver apostas)
+ * Apenas admins e parceiros (donos da partida)
+ */
+router.delete('/:id', authenticateToken, updateSerieLimiter, seriesController.deleteSerie);
+
 // ============================================================
 // Exportar Router
 // ============================================================
 
 module.exports = router;
+
 

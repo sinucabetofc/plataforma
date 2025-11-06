@@ -478,3 +478,5 @@ O Sistema de Apostas V2 foi **implementado com sucesso** conforme as especifica√
 **Vers√£o:** 2.0.0
 
 
+
+

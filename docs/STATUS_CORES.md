@@ -138,3 +138,5 @@ const getStatusBadge = (status) => {
 - ✅ Cancelado → Vermelho
 - ✅ Casada → Azul (mantido para diferenciar)
 
+
+

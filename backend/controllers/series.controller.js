@@ -14,6 +14,43 @@ const {
 
 class SeriesController {
   /**
+   * POST /api/series/create
+   * Cria uma nova série
+   */
+  async createSerie(req, res) {
+    try {
+      const { match_id } = req.body;
+
+      if (!match_id) {
+        return validationErrorResponse(res, [{
+          field: 'match_id',
+          message: 'ID da partida é obrigatório'
+        }]);
+      }
+
+      const serie = await seriesService.createSerie(match_id);
+
+      return successResponse(res, 201, 'Série criada com sucesso', serie);
+    } catch (error) {
+      console.error('Erro no controller createSerie:', error);
+
+      if (error.code === 'NOT_FOUND') {
+        return notFoundResponse(res, error.message);
+      }
+
+      if (error.code === 'INVALID_STATUS') {
+        return errorResponse(res, 400, error.message);
+      }
+
+      if (error.code === 'DATABASE_ERROR') {
+        return errorResponse(res, 500, error.message, { details: error.details });
+      }
+
+      return errorResponse(res, 500, 'Erro ao criar série');
+    }
+  }
+
+  /**
    * GET /api/series/match/:matchId
    * Busca séries de uma partida
    */
@@ -253,6 +290,75 @@ class SeriesController {
   }
 
   /**
+   * PATCH /api/series/:id
+   * Atualiza informações de uma série
+   */
+  async updateSerie(req, res) {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+
+      const serie = await seriesService.updateSerie(id, updateData);
+
+      return successResponse(res, 200, 'Série atualizada com sucesso', serie);
+    } catch (error) {
+      console.error('Erro no controller updateSerie:', error);
+
+      if (error.code === 'NOT_FOUND') {
+        return notFoundResponse(res, error.message);
+      }
+
+      if (error.code === 'INVALID_STATUS') {
+        return errorResponse(res, 400, error.message);
+      }
+
+      if (error.code === 'VALIDATION_ERROR') {
+        return errorResponse(res, 400, error.message);
+      }
+
+      if (error.code === 'DATABASE_ERROR') {
+        return errorResponse(res, 500, error.message, { details: error.details });
+      }
+
+      return errorResponse(res, 500, 'Erro ao atualizar série');
+    }
+  }
+
+  /**
+   * DELETE /api/series/:id
+   * Deleta uma série
+   */
+  async deleteSerie(req, res) {
+    try {
+      const { id } = req.params;
+
+      await seriesService.deleteSerie(id);
+
+      return successResponse(res, 200, 'Série deletada com sucesso');
+    } catch (error) {
+      console.error('Erro no controller deleteSerie:', error);
+
+      if (error.code === 'NOT_FOUND') {
+        return notFoundResponse(res, error.message);
+      }
+
+      if (error.code === 'HAS_BETS') {
+        return errorResponse(res, 400, error.message);
+      }
+
+      if (error.code === 'INVALID_STATUS') {
+        return errorResponse(res, 400, error.message);
+      }
+
+      if (error.code === 'DATABASE_ERROR') {
+        return errorResponse(res, 500, error.message, { details: error.details });
+      }
+
+      return errorResponse(res, 500, 'Erro ao deletar série');
+    }
+  }
+
+  /**
    * GET /api/series/health
    * Verifica saúde do serviço de séries
    */
@@ -265,4 +371,5 @@ class SeriesController {
 }
 
 module.exports = new SeriesController();
+
 

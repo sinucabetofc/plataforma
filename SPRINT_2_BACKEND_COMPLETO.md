@@ -383,3 +383,5 @@ O backend da **nova estrutura** está **100% funcional** e pronto para ser integ
 **Desenvolvido com ❤️ por Vinicius Ambrozio**  
 **SinucaBet - Plataforma de Apostas em Sinuca** 🎱
 
+
+

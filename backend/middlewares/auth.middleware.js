@@ -35,19 +35,35 @@ const authenticateToken = async (req, res, next) => {
 
     console.log('✅ [AUTH MIDDLEWARE SUPABASE] Usuário autenticado:', data.user.email);
 
-    // 3. Adicionar dados do usuário ao request
+    // 3. Buscar dados completos do usuário na tabela public.users
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('id, email, name, role, is_active')
+      .eq('id', data.user.id)
+      .single();
+
+    if (userError || !userData) {
+      console.error('❌ [AUTH MIDDLEWARE] Erro ao buscar dados do usuário:', userError);
+      return unauthorizedResponse(res, 'Usuário não encontrado no sistema');
+    }
+
+    // 4. Adicionar dados do usuário ao request
     req.user = {
-      id: data.user.id,
-      email: data.user.email,
+      id: userData.id,
+      email: userData.email,
+      name: userData.name,
+      role: userData.role,
+      is_active: userData.is_active,
       metadata: data.user.user_metadata
     };
 
     console.log('✅ [AUTH MIDDLEWARE] req.user setado:', {
       id: req.user.id,
-      email: req.user.email
+      email: req.user.email,
+      role: req.user.role
     });
 
-    // 4. Continuar para próximo middleware/controller
+    // 5. Continuar para próximo middleware/controller
     next();
   } catch (error) {
     console.error('❌ [AUTH MIDDLEWARE] Erro inesperado:', error);

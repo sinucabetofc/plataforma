@@ -402,3 +402,5 @@ Todas as funcionalidades planejadas foram implementadas, testadas e documentadas
 
 🎱 **"Jogue limpo, aposte com responsabilidade!"** 🎱
 
+
+

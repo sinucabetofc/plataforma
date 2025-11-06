@@ -459,3 +459,5 @@ O SinucaBet está tomando forma e ficando **SENSACIONAL**! 🎱
 *Claude AI + Vinicius Ambrozio*  
 *SinucaBet - A revolução das apostas em sinuca* 🎱
 
+
+

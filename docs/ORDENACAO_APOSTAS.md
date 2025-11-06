@@ -135,3 +135,5 @@ const sortedUserBets = [...userBets].sort((a, b) => {
 - ✅ Limitação de 5 apostas exibidas
 - ✅ Interface limpa e organizada
 
+
+

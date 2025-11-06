@@ -111,9 +111,9 @@ RETURNS TRIGGER AS $$
 BEGIN
   IF NEW.status = 'em_andamento' AND OLD.status != 'em_andamento' THEN
     NEW.started_at = TIMEZONE('utc'::text, NOW());
-    -- Travar apostas automaticamente
-    NEW.betting_enabled = false;
-    NEW.betting_locked_at = TIMEZONE('utc'::text, NOW());
+    -- MANTER apostas abertas durante o andamento (apostas ao vivo)
+    -- Apenas registra quando começou, mas não trava
+    -- NEW.betting_enabled permanece como está (não força false)
   END IF;
   RETURN NEW;
 END;
@@ -299,7 +299,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Função: Iniciar série (travar apostas)
+-- Função: Iniciar série (apostas continuam liberadas - apostas ao vivo)
 CREATE OR REPLACE FUNCTION start_serie(p_serie_id UUID)
 RETURNS VOID AS $$
 BEGIN
@@ -365,5 +365,7 @@ SELECT * FROM series;
 -- =====================================================
 -- FIM DA MIGRATION
 -- =====================================================
+
+
 
 

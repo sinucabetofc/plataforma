@@ -171,3 +171,5 @@ className={`text-xs font-semibold ${
 - ✅ Conversão de valores funcionando
 - ✅ UI/UX melhorado
 
+
+

@@ -94,3 +94,5 @@ router.delete('/:id', authenticateToken, playersController.deletePlayer);
 
 module.exports = router;
 
+
+

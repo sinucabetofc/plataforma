@@ -110,7 +110,7 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }) {
   const onLoginSubmit = async (data) => {
     setIsLoading(true);
     try {
-      const result = await loginApi(data);
+      const result = await loginApi(data.email, data.password);
       if (result.success) {
         // A resposta tem dados aninhados: result.data.data
         const { token, user } = result.data.data || result.data;

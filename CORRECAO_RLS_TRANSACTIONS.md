@@ -84,3 +84,5 @@ Este erro só apareceu agora porque:
 **Tempo estimado**: 2 minutos  
 **Impacto**: Após correção, sistema de apostas estará 100% funcional
 
+
+

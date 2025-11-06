@@ -480,26 +480,40 @@ class MatchesService {
       // Verificar se partida existe
       await this.getMatchById(matchId);
 
-      // Verificar se há apostas (não pode deletar)
-      const { data: bets, error: betsError } = await supabase
-        .from('bets')
+      // Buscar séries da partida
+      const { data: series, error: seriesError } = await supabase
+        .from('series')
         .select('id')
-        .in('serie_id', supabase
-          .from('series')
-          .select('id')
-          .eq('match_id', matchId)
-        )
-        .limit(1);
+        .eq('match_id', matchId);
 
-      if (betsError) {
-        console.error('Erro ao verificar apostas:', betsError);
+      if (seriesError) {
+        console.error('Erro ao buscar séries:', seriesError);
+        throw {
+          code: 'DATABASE_ERROR',
+          message: 'Erro ao verificar séries da partida'
+        };
       }
 
-      if (bets && bets.length > 0) {
-        throw {
-          code: 'MATCH_HAS_BETS',
-          message: 'Não é possível deletar partida com apostas. Use cancelamento.'
-        };
+      // Se houver séries, verificar se há apostas
+      if (series && series.length > 0) {
+        const seriesIds = series.map(s => s.id);
+        
+        const { data: bets, error: betsError } = await supabase
+          .from('bets')
+          .select('id')
+          .in('serie_id', seriesIds)
+          .limit(1);
+
+        if (betsError) {
+          console.error('Erro ao verificar apostas:', betsError);
+        }
+
+        if (bets && bets.length > 0) {
+          throw {
+            code: 'MATCH_HAS_BETS',
+            message: 'Não é possível deletar partida com apostas. Use cancelamento.'
+          };
+        }
       }
 
       // Deletar partida (CASCADE vai deletar séries)
@@ -509,6 +523,7 @@ class MatchesService {
         .eq('id', matchId);
 
       if (deleteError) {
+        console.error('Erro ao deletar partida:', deleteError);
         throw {
           code: 'DATABASE_ERROR',
           message: 'Erro ao deletar partida',
@@ -521,6 +536,7 @@ class MatchesService {
         message: 'Partida deletada com sucesso'
       };
     } catch (error) {
+      console.error('Erro no deleteMatch:', error);
       if (error.code) {
         throw error;
       }
@@ -536,4 +552,3 @@ class MatchesService {
 }
 
 module.exports = new MatchesService();
-

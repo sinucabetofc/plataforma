@@ -5,6 +5,8 @@
  * ============================================================
  */
 
+'use client';
+
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
@@ -20,6 +22,9 @@ import {
 } from '../../utils/formatters';
 import AuthModal from '../../components/AuthModal';
 import DepositModal from '../../components/DepositModal';
+import AnimatedScore from '../../components/AnimatedScore';
+import ScoreNotification from '../../components/ScoreNotification';
+import { Trophy } from 'lucide-react';
 
 export default function PartidaDetalhesPage() {
   const router = useRouter();
@@ -34,20 +39,35 @@ export default function PartidaDetalhesPage() {
   useEffect(() => {
     if (!id) return;
 
+    let isInitialFetch = true;
+
     const fetchMatchDetails = async () => {
       try {
-        setLoading(true);
+        // Só mostra loading na primeira vez
+        if (isInitialFetch) {
+          setLoading(true);
+        }
         const matchData = await api.matches.getById(id);
         setMatch(matchData);
       } catch (err) {
         console.error('Erro ao buscar partida:', err);
         setError(err.message || 'Erro ao carregar partida');
       } finally {
-        setLoading(false);
+        if (isInitialFetch) {
+          setLoading(false);
+          isInitialFetch = false;
+        }
       }
     };
 
     fetchMatchDetails();
+
+    // Atualização automática a cada 3 segundos para placar ao vivo
+    const interval = setInterval(() => {
+      fetchMatchDetails();
+    }, 3000);
+
+    return () => clearInterval(interval);
   }, [id]);
 
   if (loading) {
@@ -80,7 +100,9 @@ export default function PartidaDetalhesPage() {
   }
 
   const isLive = match?.scheduled_at && new Date(match.scheduled_at) <= new Date();
-  const currentSerie = match?.series?.find(s => s.status === 'liberada');
+  // Busca série atual (liberada ou em andamento) para exibir componente de apostas
+  // Apostas só serão permitidas se status = 'liberada'
+  const currentSerie = match?.series?.find(s => s.status === 'liberada' || s.status === 'em_andamento');
 
   return (
     <>
@@ -103,18 +125,42 @@ export default function PartidaDetalhesPage() {
             <div className="flex justify-between items-start mb-4">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="flex items-center gap-2 px-3 py-1 bg-gray-800 rounded-full">
-                    <div className="text-yellow-500">📅</div>
-                    <span className="text-gray-300 text-sm">{formatMatchStatus(match.status).label}</span>
+                  <div className={`flex items-center gap-2 px-3 py-1 rounded-full border ${
+                    match.status === 'agendada' 
+                      ? 'bg-blue-500/20 border-blue-500' 
+                      : match.status === 'em_andamento'
+                      ? 'bg-red-500/20 border-red-500 animate-pulse'
+                      : match.status === 'finalizada'
+                      ? 'bg-verde-neon/20 border-verde-neon'
+                      : 'bg-gray-500/20 border-gray-500'
+                  }`}>
+                    <div className={
+                      match.status === 'agendada' 
+                        ? 'text-blue-400' 
+                        : match.status === 'em_andamento'
+                        ? 'text-red-400'
+                        : match.status === 'finalizada'
+                        ? 'text-verde-neon'
+                        : 'text-gray-400'
+                    }>{formatMatchStatus(match.status).icon}</div>
+                    <span className={`text-sm font-semibold ${
+                      match.status === 'agendada' 
+                        ? 'text-blue-300' 
+                        : match.status === 'em_andamento'
+                        ? 'text-red-300'
+                        : match.status === 'finalizada'
+                        ? 'text-verde-neon'
+                        : 'text-gray-300'
+                    }`}>{formatMatchStatus(match.status).label}</span>
                   </div>
                   
                   {match.game_rules?.game_type && (
-                    <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    <div className={`px-3 py-1 rounded-full text-xs font-semibold border ${
                       match.game_rules.game_type === 'NUMERADA' 
-                        ? 'bg-purple-900/30 text-purple-400' 
+                        ? 'bg-purple-500/20 text-purple-300 border-purple-500' 
                         : match.game_rules.game_type === 'LISA'
-                        ? 'bg-blue-900/30 text-blue-400'
-                        : 'bg-orange-900/30 text-orange-400'
+                        ? 'bg-blue-500/20 text-blue-300 border-blue-500'
+                        : 'bg-orange-500/20 text-orange-300 border-orange-500'
                     }`}>
                       {match.game_rules.game_type === 'NUMERADA' ? 'JOGO DE BOLA NUMERADA' : 
                        match.game_rules.game_type === 'LISA' ? 'JOGO DE BOLAS LISAS' : 
@@ -264,32 +310,99 @@ export default function PartidaDetalhesPage() {
 }
 
 // Componente de Aposta Individual (reutilizável e responsivo)
-function BetItem({ bet, isWinner }) {
+function BetItem({ bet, isWinner, onCancel, canCancel = false }) {
+  const [cancelling, setCancelling] = useState(false);
+
+  const handleCancel = async () => {
+    if (!confirm('Tem certeza que deseja cancelar esta aposta? O valor será reembolsado.')) {
+      return;
+    }
+    
+    try {
+      setCancelling(true);
+      await onCancel(bet.id);
+      toast.success('Aposta cancelada com sucesso!');
+    } catch (err) {
+      console.error('Erro ao cancelar aposta:', err);
+      toast.error(err.message || 'Erro ao cancelar aposta');
+    } finally {
+      setCancelling(false);
+    }
+  };
+
   const getStatusConfig = (status) => {
     switch (status) {
-      case 'matched':
-        return {
-          icon: '✅',
-          label: 'Casada',
-          borderColor: isWinner ? 'border-yellow-500/50' : 'border-green-500/50',
-          bgColor: isWinner ? 'bg-yellow-900/10' : 'bg-green-900/10',
-          badgeBg: 'bg-green-600/20',
-          badgeBorder: 'border-green-600/40',
-          badgeText: 'text-green-400',
-          messageColor: 'text-green-400',
-          message: '🤝 Casada com aposta oposta - Ativa'
-        };
-      case 'pending':
+      case 'pendente':
         return {
           icon: '⏳',
-          label: 'Aguardando',
+          label: 'Aguardando Emparceiramento',
           borderColor: 'border-yellow-500/50',
           bgColor: 'bg-yellow-900/10',
           badgeBg: 'bg-yellow-600/20',
           badgeBorder: 'border-yellow-600/40',
           badgeText: 'text-yellow-400',
           messageColor: 'text-yellow-400',
-          message: '⏰ Aguardando aposta oposta...'
+          message: '⏰ Aguardando emparceiramento com aposta oposta'
+        };
+      case 'aceita':
+        return {
+          icon: '✅',
+          label: 'Aceita',
+          borderColor: 'border-blue-500/50',
+          bgColor: 'bg-blue-900/10',
+          badgeBg: 'bg-blue-600/20',
+          badgeBorder: 'border-blue-600/40',
+          badgeText: 'text-blue-400',
+          messageColor: 'text-blue-400',
+          message: '🎮 Aposta aceita - Série em andamento'
+        };
+      case 'ganha':
+        return {
+          icon: '🏆',
+          label: 'Ganha',
+          borderColor: 'border-green-500/50',
+          bgColor: 'bg-green-900/10',
+          badgeBg: 'bg-green-600/20',
+          badgeBorder: 'border-green-600/40',
+          badgeText: 'text-green-400',
+          messageColor: 'text-green-400',
+          message: '🎉 Parabéns! Você ganhou!'
+        };
+      case 'perdida':
+        return {
+          icon: '😢',
+          label: 'Perdida',
+          borderColor: 'border-red-500/50',
+          bgColor: 'bg-red-900/10',
+          badgeBg: 'bg-red-600/20',
+          badgeBorder: 'border-red-600/40',
+          badgeText: 'text-red-400',
+          messageColor: 'text-red-400',
+          message: '💔 Não foi desta vez'
+        };
+      case 'cancelada':
+        return {
+          icon: '🚫',
+          label: 'Cancelada',
+          borderColor: 'border-gray-500/50',
+          bgColor: 'bg-gray-900/10',
+          badgeBg: 'bg-gray-600/20',
+          badgeBorder: 'border-gray-600/40',
+          badgeText: 'text-gray-400',
+          messageColor: 'text-gray-400',
+          message: '❌ Aposta cancelada'
+        };
+      case 'reembolsada':
+        return {
+          icon: '💰',
+          label: 'Reembolsada',
+          borderColor: 'border-purple-500/50',
+          bgColor: 'bg-purple-900/10',
+          badgeBg: 'bg-purple-600/20',
+          badgeBorder: 'border-purple-600/40',
+          badgeText: 'text-purple-400',
+          messageColor: 'text-purple-400',
+          message: '💵 Valor reembolsado'
         };
       default:
         return {
@@ -306,7 +419,7 @@ function BetItem({ bet, isWinner }) {
     }
   };
 
-  const config = getStatusConfig(bet.status || 'matched');
+  const config = getStatusConfig(bet.status || 'pendente');
 
   return (
     <div className={`rounded-lg overflow-hidden border-2 transition-all ${config.borderColor} ${config.bgColor}`}>
@@ -324,6 +437,17 @@ function BetItem({ bet, isWinner }) {
         <p className={`text-[10px] ${config.messageColor} flex items-center gap-1`}>
           <span>{config.message}</span>
         </p>
+        
+        {/* Botão Cancelar Aposta - só aparece para apostas pendentes */}
+        {canCancel && bet.status === 'pendente' && (
+          <button
+            onClick={handleCancel}
+            disabled={cancelling}
+            className="mt-2 w-full py-2 px-3 bg-red-600/20 hover:bg-red-600/30 border border-red-600/50 text-red-400 text-xs font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {cancelling ? '⏳ Cancelando...' : '🚫 Cancelar Aposta'}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -354,6 +478,14 @@ function SerieCard({ serie, match }) {
     fetchBets();
   }, [serie.id, serie.status]);
 
+  // Cancelar aposta
+  const handleCancelBet = async (betId) => {
+    await api.bets.cancel(betId);
+    // Recarregar apostas após cancelamento
+    const response = await api.bets.getBySerie(serie.id);
+    setBetsData(response);
+  };
+
   const getStatusInfo = () => {
     switch (serie.status) {
       case 'pendente':
@@ -383,42 +515,134 @@ function SerieCard({ serie, match }) {
     <div className={`bg-[#000000] rounded-lg border ${statusInfo.borderColor} overflow-hidden`}>
       <div className="p-4 border-b border-gray-800 flex justify-between items-center">
         <h4 className="text-lg font-bold text-white">Série {serie.serie_number}</h4>
-        <div className={`px-3 py-1 rounded-full text-xs font-semibold ${statusInfo.bgColor} ${statusInfo.color} border ${statusInfo.borderColor}`}>
-          {statusInfo.icon} {statusInfo.label}
-        </div>
+        {/* Se estiver em andamento, mostra "AO VIVO", senão mostra badge normal */}
+        {serie.status === 'em_andamento' ? (
+          <div className="px-3 py-1 rounded-full text-xs font-semibold bg-verde-neon/20 text-verde-neon border border-verde-neon animate-pulse">
+            ● AO VIVO
+          </div>
+        ) : (
+          <div className={`px-3 py-1 rounded-full text-xs font-semibold ${statusInfo.bgColor} ${statusInfo.color} border ${statusInfo.borderColor}`}>
+            {statusInfo.icon} {statusInfo.label}
+          </div>
+        )}
       </div>
 
       {/* Placar - mostra quando liberada, em andamento ou encerrada */}
       {showScore && (
-        <div className="p-4">
-          <p className="text-gray-400 text-sm mb-2">Placar:</p>
-          <div className="flex items-center justify-center gap-4">
-            <div className="text-center">
-              <p className="text-gray-400 text-sm mb-1">{match.player1.nickname || match.player1.name}</p>
-              <p className={`text-4xl font-bold ${hasWinner && winnerIsPlayer1 ? 'text-green-500' : 'text-white'}`}>
-                {serie.player1_score || 0}
+        <div className="p-6 bg-gradient-to-b from-[#0a0a0a] to-[#000000]">
+          <p className="text-gray-400 text-xs uppercase tracking-wide mb-4 text-center font-semibold">
+            Placar
+          </p>
+          <div className="flex items-center justify-center gap-6">
+            {/* Jogador 1 */}
+            <div className="text-center flex-1 max-w-xs">
+              {/* Foto */}
+              <div className="mb-3 flex justify-center">
+                <div className={`w-20 h-20 rounded-full overflow-hidden shadow-xl ${
+                  hasWinner && winnerIsPlayer1 ? 'ring-4 ring-verde-neon' : 'ring-2 ring-blue-500/50'
+                }`}>
+                  {match.player1?.photo_url ? (
+                    <img
+                      src={match.player1.photo_url}
+                      alt={match.player1.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div 
+                    className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-700 text-white text-2xl font-bold"
+                    style={{ display: match.player1?.photo_url ? 'none' : 'flex' }}
+                  >
+                    {(match.player1?.name || 'J')[0]}
+                  </div>
+                </div>
+              </div>
+              
+              <p className="text-gray-300 text-sm mb-2 font-medium">
+                {match.player1.nickname || match.player1.name}
               </p>
+              <AnimatedScore 
+                score={serie.player1_score || 0}
+                color={hasWinner && winnerIsPlayer1 ? 'text-verde-neon' : 'text-blue-500'}
+                size="text-5xl"
+              />
             </div>
-            <div className="text-2xl font-bold text-gray-600">×</div>
-            <div className="text-center">
-              <p className="text-gray-400 text-sm mb-1">{match.player2.nickname || match.player2.name}</p>
-              <p className={`text-4xl font-bold ${hasWinner && !winnerIsPlayer1 ? 'text-green-500' : 'text-white'}`}>
-                {serie.player2_score || 0}
+
+            {/* VS */}
+            <div className="flex-shrink-0">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-verde-neon to-verde-accent flex items-center justify-center shadow-verde-glow">
+                <span className="text-black font-black text-2xl">VS</span>
+              </div>
+            </div>
+
+            {/* Jogador 2 */}
+            <div className="text-center flex-1 max-w-xs">
+              {/* Foto */}
+              <div className="mb-3 flex justify-center">
+                <div className={`w-20 h-20 rounded-full overflow-hidden shadow-xl ${
+                  hasWinner && !winnerIsPlayer1 ? 'ring-4 ring-verde-neon' : 'ring-2 ring-purple-500/50'
+                }`}>
+                  {match.player2?.photo_url ? (
+                    <img
+                      src={match.player2.photo_url}
+                      alt={match.player2.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div 
+                    className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-500 to-purple-700 text-white text-2xl font-bold"
+                    style={{ display: match.player2?.photo_url ? 'none' : 'flex' }}
+                  >
+                    {(match.player2?.name || 'J')[0]}
+                  </div>
+                </div>
+              </div>
+              
+              <p className="text-gray-300 text-sm mb-2 font-medium">
+                {match.player2.nickname || match.player2.name}
               </p>
+              <AnimatedScore 
+                score={serie.player2_score || 0}
+                color={hasWinner && !winnerIsPlayer1 ? 'text-verde-neon' : 'text-purple-500'}
+                size="text-5xl"
+              />
             </div>
           </div>
+
+          {/* Notificação interativa de pontos */}
+          {(serie.status === 'em_andamento' || serie.status === 'liberada') && !hasWinner && (
+            <ScoreNotification
+              player1Score={serie.player1_score || 0}
+              player2Score={serie.player2_score || 0}
+              player1Name={match.player1.nickname || match.player1.name}
+              player2Name={match.player2.nickname || match.player2.name}
+              isLive={true}
+            />
+          )}
           
           {hasWinner && (
-            <p className="text-center mt-3 text-green-500 font-semibold">
-              🏆 Vencedor: {winnerIsPlayer1 ? match.player1.nickname || match.player1.name : match.player2.nickname || match.player2.name}
-            </p>
+            <div className="mt-6 p-4 bg-verde-neon/10 border-2 border-verde-neon rounded-lg">
+              <p className="text-center text-verde-neon font-bold text-lg flex items-center justify-center gap-2">
+                <Trophy size={24} />
+                Vencedor: {winnerIsPlayer1 ? match.player1.nickname || match.player1.name : match.player2.nickname || match.player2.name}
+              </p>
+            </div>
           )}
           
           {serie.status === 'liberada' && !hasWinner && (
-            <p className="text-center mt-3 text-green-500 font-semibold flex items-center justify-center gap-2">
-              <span className="animate-pulse">🎯</span>
-              <span>Placar ao vivo - Apostas abertas!</span>
-            </p>
+            <div className="mt-4 p-3 bg-verde-neon/5 border border-verde-neon/30 rounded-lg">
+              <p className="text-center text-verde-accent font-semibold flex items-center justify-center gap-2">
+                <span className="animate-pulse">🎯</span>
+                <span>Placar ao vivo - Apostas abertas!</span>
+              </p>
+            </div>
           )}
         </div>
       )}
@@ -483,11 +707,14 @@ function SerieCard({ serie, match }) {
                       <BetItem 
                         key={bet.id}
                         bet={{ 
+                          id: bet.id,
                           label: `Aposta #${index + 1}`, 
                           amount: bet.amount / 100, // Convertendo centavos para reais
                           status: bet.status 
                         }} 
                         isWinner={serie.status === 'encerrada' && winnerIsPlayer1}
+                        onCancel={handleCancelBet}
+                        canCancel={serie.status === 'liberada' || serie.status === 'em_andamento'}
                       />
                     ))
                 ) : (
@@ -548,11 +775,14 @@ function SerieCard({ serie, match }) {
                       <BetItem 
                         key={bet.id}
                         bet={{ 
+                          id: bet.id,
                           label: `Aposta #${index + 1}`, 
                           amount: bet.amount / 100, // Convertendo centavos para reais
                           status: bet.status 
                         }} 
                         isWinner={serie.status === 'encerrada' && !winnerIsPlayer1 && hasWinner}
+                        onCancel={handleCancelBet}
+                        canCancel={serie.status === 'liberada' || serie.status === 'em_andamento'}
                       />
                     ))
                 ) : (
@@ -683,8 +913,16 @@ function BettingSection({ serie, match, onOpenLoginModal, onOpenDepositModal }) 
             <h3 className="text-lg font-bold text-white">🎯 Fazer Aposta</h3>
             <p className="text-xs text-gray-500">Série {serie.serie_number}</p>
           </div>
-          <div className="px-3 py-1 bg-[#27E502] rounded-full">
-            <span className="text-xs font-semibold text-black">LIBERADA</span>
+          <div className={`px-3 py-1 rounded-full ${
+            serie.status === 'em_andamento' 
+              ? 'bg-red-500/20 border border-red-500 animate-pulse' 
+              : 'bg-[#27E502]'
+          }`}>
+            <span className={`text-xs font-semibold ${
+              serie.status === 'em_andamento' ? 'text-red-400' : 'text-black'
+            }`}>
+              {serie.status === 'em_andamento' ? '● AO VIVO' : 'LIBERADA'}
+            </span>
           </div>
         </div>
       </div>
@@ -868,3 +1106,4 @@ function BettingSection({ serie, match, onOpenLoginModal, onOpenDepositModal }) 
     </div>
   );
 }
+

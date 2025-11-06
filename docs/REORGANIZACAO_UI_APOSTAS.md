@@ -242,3 +242,5 @@ Os cards na página `/apostas` estavam desalinhados e desorganizados, dificultan
 - ✅ Seções bem definidas
 - ✅ Visual profissional e limpo
 
+
+

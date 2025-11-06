@@ -5,6 +5,8 @@
  * ============================================================
  */
 
+'use client';
+
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
@@ -36,12 +38,14 @@ export default function PartidasPage() {
       setLoading(true);
       setError(null);
       
+      console.log('🔍 Buscando partidas com filtros:', newFilters);
       const data = await api.matches.getAll(newFilters);
+      console.log('✅ Dados recebidos:', data);
       
       setMatches(data.matches || []);
       setPagination(data.pagination || { total: 0, has_more: false });
     } catch (err) {
-      console.error('Erro ao buscar partidas:', err);
+      console.error('❌ Erro ao buscar partidas:', err);
       setError(err.message || 'Erro ao carregar partidas');
     } finally {
       setLoading(false);

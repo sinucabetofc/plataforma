@@ -1,0 +1,421 @@
+/**
+ * ============================================================
+ * Formatters - Funções de Formatação
+ * ============================================================
+ */
+
+/**
+ * Formata valor em centavos para Real brasileiro
+ * @param {number} cents - Valor em centavos
+ * @returns {string} - Valor formatado (ex: "R$ 10,00")
+ */
+export function formatMoney(cents) {
+  if (cents === null || cents === undefined) return 'R$ 0,00';
+  
+  const reais = cents / 100;
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(reais);
+}
+
+/**
+ * Formata valor monetário em Real Brasileiro (para admin)
+ * @param {number} value - Valor a ser formatado
+ * @returns {string} Valor formatado (ex: R$ 1.234,56)
+ */
+export function formatCurrency(value) {
+  if (value === null || value === undefined) return 'R$ 0,00';
+  
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(numValue);
+}
+
+/**
+ * Formata data para formato brasileiro
+ * @param {string|Date} date - Data ISO ou objeto Date
+ * @param {boolean} showTime - Incluir horário
+ * @returns {string} - Data formatada (ex: "05/11/2025" ou "05/11/2025 às 20:00")
+ */
+export function formatDate(date, showTime = false) {
+  if (!date) return '';
+  
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  
+  const options = {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    ...(showTime && {
+      hour: '2-digit',
+      minute: '2-digit',
+    }),
+  };
+  
+  return new Intl.DateTimeFormat('pt-BR', options).format(dateObj);
+}
+
+/**
+ * Formata data relativa (há 2 horas, há 3 dias, etc)
+ * @param {string|Date} date - Data ISO ou objeto Date
+ * @returns {string} - Data relativa (ex: "há 2 horas")
+ */
+export function formatRelativeDate(date) {
+  if (!date) return '';
+  
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const now = new Date();
+  const diffMs = now - dateObj;
+  const diffSecs = Math.floor(diffMs / 1000);
+  const diffMins = Math.floor(diffSecs / 60);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  
+  if (diffSecs < 60) return 'agora há pouco';
+  if (diffMins < 60) return `há ${diffMins} ${diffMins === 1 ? 'minuto' : 'minutos'}`;
+  if (diffHours < 24) return `há ${diffHours} ${diffHours === 1 ? 'hora' : 'horas'}`;
+  if (diffDays < 7) return `há ${diffDays} ${diffDays === 1 ? 'dia' : 'dias'}`;
+  
+  return formatDate(date);
+}
+
+/**
+ * Formata horário apenas (HH:MM)
+ * @param {string|Date} date - Data ISO ou objeto Date
+ * @returns {string} - Horário (ex: "20:00")
+ */
+export function formatTime(date) {
+  if (!date) return '';
+  
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  
+  return new Intl.DateTimeFormat('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(dateObj);
+}
+
+/**
+ * Formata data completa para o formato legível
+ * @param {string|Date} date - Data ISO ou objeto Date
+ * @returns {string} - Data formatada (ex: "Segunda, 05 de Nov de 2025 às 20:00")
+ */
+export function formatFullDate(date) {
+  if (!date) return '';
+  
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  
+  return new Intl.DateTimeFormat('pt-BR', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(dateObj);
+}
+
+/**
+ * Calcula dias até a data
+ * @param {string|Date} date - Data ISO ou objeto Date
+ * @returns {number} - Dias até a data (negativo se já passou)
+ */
+export function daysUntil(date) {
+  if (!date) return 0;
+  
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const now = new Date();
+  const diffMs = dateObj - now;
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  
+  return diffDays;
+}
+
+/**
+ * Verifica se data é hoje
+ * @param {string|Date} date - Data ISO ou objeto Date
+ * @returns {boolean}
+ */
+export function isToday(date) {
+  if (!date) return false;
+  
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const today = new Date();
+  
+  return dateObj.getDate() === today.getDate() &&
+         dateObj.getMonth() === today.getMonth() &&
+         dateObj.getFullYear() === today.getFullYear();
+}
+
+/**
+ * Formata porcentagem
+ * @param {number} value - Valor numérico
+ * @param {number} decimals - Casas decimais
+ * @returns {string} - Porcentagem formatada (ex: "70%")
+ */
+export function formatPercent(value, decimals = 0) {
+  if (value === null || value === undefined) return '0%';
+  return `${value.toFixed(decimals)}%`;
+}
+
+/**
+ * Formata número grande (ex: 1000 → 1k, 1000000 → 1M)
+ * @param {number} num - Número
+ * @returns {string} - Número formatado
+ */
+export function formatCompactNumber(num) {
+  if (num === null || num === undefined) return '0';
+  if (num < 1000) return num.toString();
+  if (num < 1000000) return `${(num / 1000).toFixed(1)}k`;
+  return `${(num / 1000000).toFixed(1)}M`;
+}
+
+/**
+ * Formata status da partida para exibição
+ * @param {string} status - Status da partida
+ * @returns {Object} - { label, color, icon }
+ */
+export function formatMatchStatus(status) {
+  const statusMap = {
+    agendada: {
+      label: 'Agendada',
+      color: 'gray',
+      icon: '📅',
+      bgColor: 'bg-gray-100',
+      textColor: 'text-gray-800',
+      borderColor: 'border-gray-300',
+    },
+    em_andamento: {
+      label: 'Ao Vivo',
+      color: 'green',
+      icon: '🔴',
+      bgColor: 'bg-green-100',
+      textColor: 'text-green-800',
+      borderColor: 'border-green-300',
+      pulse: true,
+    },
+    finalizada: {
+      label: 'Finalizada',
+      color: 'blue',
+      icon: '✅',
+      bgColor: 'bg-blue-100',
+      textColor: 'text-blue-800',
+      borderColor: 'border-blue-300',
+    },
+    cancelada: {
+      label: 'Cancelada',
+      color: 'red',
+      icon: '❌',
+      bgColor: 'bg-red-100',
+      textColor: 'text-red-800',
+      borderColor: 'border-red-300',
+    },
+  };
+  
+  return statusMap[status] || statusMap.agendada;
+}
+
+/**
+ * Formata status da série
+ * @param {string} status - Status da série
+ * @returns {Object} - { label, color }
+ */
+export function formatSerieStatus(status) {
+  const statusMap = {
+    pendente: { label: 'Aguardando', color: 'gray' },
+    liberada: { label: 'Apostas Abertas', color: 'green' },
+    em_andamento: { label: 'Em Andamento', color: 'blue' },
+    encerrada: { label: 'Encerrada', color: 'purple' },
+    cancelada: { label: 'Cancelada', color: 'red' },
+  };
+  
+  return statusMap[status] || statusMap.pendente;
+}
+
+/**
+ * Formata status da aposta
+ * @param {string} status - Status da aposta
+ * @returns {Object} - { label, color, icon }
+ */
+export function formatBetStatus(status) {
+  const statusMap = {
+    pendente: { label: 'Pendente', color: 'yellow', icon: '⏳' },
+    aceita: { label: 'Aceita', color: 'blue', icon: '✓' },
+    ganha: { label: 'Ganha', color: 'green', icon: '🎉' },
+    perdida: { label: 'Perdida', color: 'red', icon: '😞' },
+    cancelada: { label: 'Cancelada', color: 'gray', icon: '❌' },
+    reembolsada: { label: 'Reembolsada', color: 'orange', icon: '↩️' },
+  };
+  
+  return statusMap[status] || statusMap.pendente;
+}
+
+/**
+ * Trunca texto com reticências
+ * @param {string} text - Texto
+ * @param {number} maxLength - Tamanho máximo
+ * @returns {string} - Texto truncado
+ */
+export function truncate(text, maxLength = 50) {
+  if (!text) return '';
+  if (text.length <= maxLength) return text;
+  return `${text.substring(0, maxLength)}...`;
+}
+
+/**
+ * Formata nome do jogador (com nickname se existir)
+ * @param {Object} player - Objeto do jogador
+ * @returns {string} - Nome formatado
+ */
+export function formatPlayerName(player) {
+  if (!player) return '';
+  if (player.nickname) {
+    return `${player.name} (${player.nickname})`;
+  }
+  return player.name;
+}
+
+/**
+ * Formata placar da série
+ * @param {number} player1Score - Pontuação jogador 1
+ * @param {number} player2Score - Pontuação jogador 2
+ * @returns {string} - Placar formatado (ex: "5 x 3")
+ */
+export function formatScore(player1Score, player2Score) {
+  return `${player1Score || 0} x ${player2Score || 0}`;
+}
+
+// ============================================================
+// FUNÇÕES ADMIN (Compatibilidade)
+// ============================================================
+
+/**
+ * Formata CPF
+ */
+export function formatCPF(cpf) {
+  if (!cpf) return '-';
+  
+  const cleaned = cpf.replace(/\D/g, '');
+  
+  if (cleaned.length !== 11) return cpf;
+  
+  return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+}
+
+/**
+ * Formata telefone
+ * @param {string} phone - Telefone a ser formatado
+ * @returns {string} Telefone formatado
+ */
+export function formatPhone(phone) {
+  if (!phone) return '-';
+  
+  const cleaned = phone.replace(/\D/g, '');
+  
+  // Celular com DDD (11 dígitos)
+  if (cleaned.length === 11) {
+    return cleaned.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+  }
+  
+  // Telefone fixo com DDD (10 dígitos)
+  if (cleaned.length === 10) {
+    return cleaned.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+  }
+  
+  return phone;
+}
+
+/**
+ * Formata número com separadores de milhar
+ * @param {number} value - Número a ser formatado
+ * @returns {string} Número formatado (ex: 1.234)
+ */
+export function formatNumber(value) {
+  if (value === null || value === undefined) return '0';
+  
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  
+  return new Intl.NumberFormat('pt-BR').format(numValue);
+}
+
+/**
+ * Formata status para exibição amigável
+ * @param {string} status - Status a ser formatado
+ * @returns {string} Status formatado
+ */
+export function formatStatus(status) {
+  const statusMap = {
+    // Usuários
+    active: 'Ativo',
+    inactive: 'Inativo',
+    blocked: 'Bloqueado',
+    
+    // Partidas
+    open: 'Aberta',
+    in_progress: 'Em Andamento',
+    finished: 'Finalizada',
+    cancelled: 'Cancelada',
+    
+    // Transações
+    pending: 'Pendente',
+    completed: 'Concluída',
+    failed: 'Falhou',
+    
+    // Apostas
+    won: 'Venceu',
+    lost: 'Perdeu',
+    matched: 'Pareada',
+    
+    // Saques
+    approved: 'Aprovado',
+    rejected: 'Recusado',
+  };
+  
+  return statusMap[status] || status;
+}
+
+/**
+ * Formata tipo de transação
+ * @param {string} type - Tipo de transação
+ * @returns {string} Tipo formatado
+ */
+export function formatTransactionType(type) {
+  const typeMap = {
+    deposit: 'Depósito',
+    withdraw: 'Saque',
+    bet: 'Aposta',
+    win: 'Ganho',
+    fee: 'Taxa',
+    refund: 'Reembolso',
+  };
+  
+  return typeMap[type] || type;
+}
+
+/**
+ * Formata chave PIX
+ * @param {string} pixKey - Chave PIX
+ * @param {string} pixType - Tipo da chave (email, cpf, phone, random)
+ * @returns {string} Chave PIX formatada
+ */
+export function formatPixKey(pixKey, pixType) {
+  if (!pixKey) return '-';
+  
+  switch (pixType) {
+    case 'cpf':
+      return formatCPF(pixKey);
+    case 'phone':
+      return formatPhone(pixKey);
+    case 'email':
+      return pixKey.toLowerCase();
+    case 'random':
+      return pixKey.length > 30 ? pixKey.substring(0, 30) + '...' : pixKey;
+    default:
+      return pixKey;
+  }
+}
+

@@ -107,6 +107,23 @@ export const auth = {
   },
 
   /**
+   * Busca perfil do usuário autenticado
+   */
+  getProfile: async () => {
+    return fetchAPI('/auth/profile');
+  },
+
+  /**
+   * Atualiza perfil do usuário autenticado
+   */
+  updateProfile: async (profileData) => {
+    return fetchAPI('/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(profileData),
+    });
+  },
+
+  /**
    * Faz logout
    */
   logout: () => {
@@ -341,7 +358,7 @@ export const bets = {
     });
 
     const data = await fetchAPI(`/bets/user?${params}`);
-    return data.data;
+    return data; // Retorna objeto completo { success, data }
   },
 
   /**
@@ -373,7 +390,7 @@ export const wallet = {
    */
   get: async () => {
     const data = await fetchAPI('/wallet');
-    return data.data;
+    return data; // Retorna estrutura completa { success, message, data }
   },
 
   /**
@@ -384,7 +401,7 @@ export const wallet = {
       method: 'POST',
       body: JSON.stringify({ amount }),
     });
-    return data.data;
+    return data; // Retorna estrutura completa
   },
 
   /**
@@ -395,7 +412,7 @@ export const wallet = {
       method: 'POST',
       body: JSON.stringify({ amount, ...pixData }),
     });
-    return data.data;
+    return data; // Retorna estrutura completa
   },
 
   /**
@@ -409,7 +426,7 @@ export const wallet = {
     });
 
     const data = await fetchAPI(`/wallet/transactions?${params}`);
-    return data.data;
+    return data; // Retorna estrutura completa
   },
 };
 
@@ -418,128 +435,162 @@ export const wallet = {
 // ============================================================
 
 // ============================================================
-// FUNÇÕES DE COMPATIBILIDADE (API Antiga)
+// FUNÇÕES GENÉRICAS PARA ADMIN PANEL
 // ============================================================
 
 /**
- * @deprecated Use api.matches.getAll() instead
+ * GET request genérico
  */
-export async function getGames(filters = {}) {
-  return matches.getAll(filters);
-}
+export const get = async (endpoint) => {
+  return fetchAPI(endpoint, {
+    method: 'GET',
+  });
+};
 
 /**
- * @deprecated Use api.bets.getRecent() instead
+ * POST request genérico
  */
-export async function getRecentBets(limit = 10) {
-  return bets.getRecent(limit);
-}
+export const post = async (endpoint, data = {}) => {
+  return fetchAPI(endpoint, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+};
 
 /**
- * @deprecated Use api.wallet.get() instead
+ * PATCH request genérico
  */
-export async function getWallet() {
-  const data = await wallet.get();
-  return { success: true, data };
-}
+export const patch = async (endpoint, data = {}) => {
+  return fetchAPI(endpoint, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+};
 
 /**
- * @deprecated Use api.wallet.deposit() instead
+ * PUT request genérico
  */
-export async function createDeposit(amount) {
-  const data = await wallet.deposit(amount);
-  return { success: true, data };
-}
+export const put = async (endpoint, data = {}) => {
+  return fetchAPI(endpoint, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+};
 
 /**
- * @deprecated Use api.auth.register() instead
+ * DELETE request genérico
  */
-export async function register(userData) {
-  const data = await auth.register(userData);
-  return data;
-}
+export const del = async (endpoint) => {
+  return fetchAPI(endpoint, {
+    method: 'DELETE',
+  });
+};
+
+// ============================================================
+// GAMES (usando a nova API de matches)
+// ============================================================
 
 /**
- * Função de login compatível com o AuthModal
+ * Busca jogos/partidas (usa nova API /api/matches)
  */
-export async function login(credentials) {
-  try {
-    const data = await auth.login(credentials.email, credentials.password);
-    return { success: true, data: { data } };
-  } catch (error) {
-    return { 
-      success: false, 
-      message: error.message || 'Erro ao fazer login',
-      statusCode: error.status || 500
-    };
-  }
-}
-
-/**
- * Função getProfile para o AuthContext
- */
-export async function getProfile() {
-  try {
-    const response = await fetchAPI('/auth/profile');
-    // A API retorna { success, message, data }, então pegamos apenas response.data
-    return { success: true, data: response.data };
-  } catch (error) {
-    return { 
-      success: false, 
-      message: error.message || 'Erro ao buscar perfil',
-      statusCode: error.status || 500,
-      isNetworkError: error.status === 500
-    };
-  }
-}
-
-/**
- * Função updateProfile para atualizar dados do perfil
- */
-export async function updateProfile(data) {
-  try {
-    const response = await fetchAPI('/auth/profile', {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-    // A API retorna { success, message, data }, então pegamos apenas response.data
-    return { success: true, data: response.data };
-  } catch (error) {
-    return { 
-      success: false, 
-      message: error.message || 'Erro ao atualizar perfil',
-      statusCode: error.status || 500
-    };
-  }
-}
-
-/**
- * Função getUserBets para buscar apostas do usuário
- */
-export async function getUserBets(filters = {}) {
+export const getGames = async (filters = {}) => {
   try {
     const params = new URLSearchParams({
-      limit: filters.limit || 50,
+      limit: filters.limit || 20,
       offset: filters.offset || 0,
       ...(filters.status && { status: filters.status }),
+      ...(filters.sport && { sport: filters.sport }),
     });
 
-    const response = await fetchAPI(`/bets/user?${params}`);
+    const data = await fetchAPI(`/matches?${params}`);
     
-    // A API retorna { success, message, data }, então pegamos apenas response.data
-    return { success: true, data: response.data };
+    // Mapear para formato esperado pelo frontend (GameCard e FeaturedGame)
+    // Adaptando de player1/player2 para o formato que os componentes esperam
+    const mappedGames = data.data.matches.map(match => {
+      // Contar séries para exibir
+      const totalSeries = match.series?.length || match.game_rules?.total_series || 3;
+      
+      return {
+        id: match.id,
+        // Nomes dos jogadores para compatibilidade com componentes
+        player_a: match.player1?.name || 'Jogador 1',
+        player_b: match.player2?.name || 'Jogador 2',
+        player_a_name: match.player1?.nickname || match.player1?.name || 'Jogador 1',
+        player_b_name: match.player2?.nickname || match.player2?.name || 'Jogador 2',
+        // Dados completos dos jogadores
+        player1: match.player1,
+        player2: match.player2,
+        // Modalidade e série
+        modality: match.sport || 'sinuca',
+        series: totalSeries,
+        // Vantagens (se houver nas regras)
+        player_a_advantage: 0,
+        player_b_advantage: 0,
+        // Total apostado por jogador (será preenchido quando tivermos apostas)
+        player_a_total_bets: 0,
+        player_b_total_bets: 0,
+        // Status mapeado
+        status: match.status === 'agendada' ? 'open' : 
+                match.status === 'em_andamento' ? 'in_progress' : 
+                match.status === 'finalizada' ? 'finished' : 'open',
+        // Outros dados
+        scheduled_at: match.scheduled_at,
+        location: match.location,
+        youtube_url: match.youtube_url,
+        stream_active: match.stream_active,
+        game_rules: match.game_rules,
+        series_data: match.series || [],
+        created_at: match.created_at,
+        updated_at: match.updated_at
+      };
+    });
+
+    return {
+      success: true,
+      data: {
+        games: mappedGames,
+        pagination: data.data.pagination
+      }
+    };
   } catch (error) {
-    return { 
-      success: false, 
-      message: error.message || 'Erro ao buscar apostas',
-      statusCode: error.status || 500
+    console.error('Erro ao buscar jogos:', error);
+    return {
+      success: false,
+      message: error.message || 'Erro ao buscar jogos'
     };
   }
-}
+};
 
 // ============================================================
 // Exportar tudo junto também
 // ============================================================
+
+// Exportar funções separadamente para compatibilidade
+export const login = auth.login;
+export const register = auth.register;
+export const getProfile = auth.getProfile;
+export const updateProfile = auth.updateProfile;
+export const getWallet = wallet.get;
+export const createDeposit = wallet.deposit;
+export const createWithdraw = wallet.withdraw;
+export const getTransactions = wallet.getTransactions;
+export const getUserBets = bets.getUserBets;
+
+// ============================================================
+// ADMIN
+// ============================================================
+
+export const admin = {
+  /**
+   * Cancela uma aposta (admin)
+   */
+  cancelBet: async (betId) => {
+    const data = await fetchAPI(`/admin/bets/${betId}`, {
+      method: 'DELETE',
+    });
+    return data;
+  },
+};
 
 const api = {
   auth,
@@ -548,6 +599,7 @@ const api = {
   series,
   bets,
   wallet,
+  admin,
 };
 
 export default api;

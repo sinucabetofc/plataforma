@@ -224,8 +224,8 @@ export default function Header({ onOpenAuthModal }) {
                   onClick={() => setShowBalanceMenu(!showBalanceMenu)}
                   className="group flex cursor-pointer items-center gap-2 rounded-lg bg-[#1a1a1a] px-4 py-2.5 transition-all hover:bg-cinza-claro"
                 >
-                  <span className="text-base font-bold text-white">
-                    {formatCurrency(walletData?.total_balance || 0)}
+                  <span className="text-base font-bold text-verde-neon">
+                    {formatCurrency(walletData?.available_balance || 0)}
                   </span>
                   <ChevronDown size={16} className={`text-white transition-transform ${showBalanceMenu ? 'rotate-180' : ''}`} />
                 </button>
@@ -239,23 +239,25 @@ export default function Header({ onOpenAuthModal }) {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <DollarSign size={16} className="text-verde-neon" />
-                          <span className="text-sm text-texto-secundario">Saldo</span>
+                          <span className="text-sm text-texto-secundario">Disponível</span>
                         </div>
                         <span className="text-base font-bold text-verde-neon">
                           {formatCurrency(walletData?.available_balance || 0)}
                         </span>
                       </div>
 
-                      {/* Saldo em Aposta */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <TrendingUp size={16} className="text-sinuca-warning" />
-                          <span className="text-sm text-texto-secundario">Saldo em aposta</span>
+                      {/* Saldo Bloqueado */}
+                      {walletData?.blocked_balance > 0 && (
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <TrendingUp size={16} className="text-yellow-500" />
+                            <span className="text-sm text-texto-secundario">Bloqueado</span>
+                          </div>
+                          <span className="text-base font-bold text-yellow-500">
+                            {formatCurrency(walletData?.blocked_balance || 0)}
+                          </span>
                         </div>
-                        <span className="text-base font-bold text-sinuca-warning">
-                          {formatCurrency(walletData?.locked_balance || 0)}
-                        </span>
-                      </div>
+                      )}
 
                       {/* Divisor */}
                       <div className="border-t border-cinza-borda"></div>

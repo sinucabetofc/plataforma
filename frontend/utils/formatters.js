@@ -20,6 +20,22 @@ export function formatMoney(cents) {
 }
 
 /**
+ * Formata valor monetário em Real Brasileiro (para admin)
+ * @param {number} value - Valor a ser formatado
+ * @returns {string} Valor formatado (ex: R$ 1.234,56)
+ */
+export function formatCurrency(value) {
+  if (value === null || value === undefined) return 'R$ 0,00';
+  
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(numValue);
+}
+
+/**
  * Formata data para formato brasileiro
  * @param {string|Date} date - Data ISO ou objeto Date
  * @param {boolean} showTime - Incluir horário
@@ -167,36 +183,36 @@ export function formatMatchStatus(status) {
   const statusMap = {
     agendada: {
       label: 'Agendada',
-      color: 'gray',
+      color: 'blue',
       icon: '📅',
-      bgColor: 'bg-gray-100',
-      textColor: 'text-gray-800',
-      borderColor: 'border-gray-300',
+      bgColor: 'bg-blue-500/20',
+      textColor: 'text-blue-400',
+      borderColor: 'border-blue-500',
     },
     em_andamento: {
       label: 'Ao Vivo',
       color: 'green',
       icon: '🔴',
-      bgColor: 'bg-green-100',
-      textColor: 'text-green-800',
-      borderColor: 'border-green-300',
+      bgColor: 'bg-red-500/20',
+      textColor: 'text-red-400',
+      borderColor: 'border-red-500',
       pulse: true,
     },
     finalizada: {
       label: 'Finalizada',
-      color: 'blue',
+      color: 'green',
       icon: '✅',
-      bgColor: 'bg-blue-100',
-      textColor: 'text-blue-800',
-      borderColor: 'border-blue-300',
+      bgColor: 'bg-verde-neon/20',
+      textColor: 'text-verde-neon',
+      borderColor: 'border-verde-neon',
     },
     cancelada: {
       label: 'Cancelada',
       color: 'red',
       icon: '❌',
-      bgColor: 'bg-red-100',
-      textColor: 'text-red-800',
-      borderColor: 'border-red-300',
+      bgColor: 'bg-red-500/20',
+      textColor: 'text-red-400',
+      borderColor: 'border-red-500',
     },
   };
   
@@ -272,4 +288,144 @@ export function formatPlayerName(player) {
 export function formatScore(player1Score, player2Score) {
   return `${player1Score || 0} x ${player2Score || 0}`;
 }
+
+
+/**
+ * Formata CPF
+ * @param {string} cpf - CPF a ser formatado
+ * @returns {string} CPF formatado
+ */
+export function formatCPF(cpf) {
+  if (!cpf) return '-';
+  
+  const cleaned = cpf.replace(/\D/g, '');
+  
+  if (cleaned.length !== 11) return cpf;
+  
+  return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+}
+
+/**
+ * Formata telefone
+ * @param {string} phone - Telefone a ser formatado
+ * @returns {string} Telefone formatado
+ */
+export function formatPhone(phone) {
+  if (!phone) return '-';
+  
+  const cleaned = phone.replace(/\D/g, '');
+  
+  // Celular com DDD (11 dígitos)
+  if (cleaned.length === 11) {
+    return cleaned.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+  }
+  
+  // Telefone fixo com DDD (10 dígitos)
+  if (cleaned.length === 10) {
+    return cleaned.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+  }
+  
+  return phone;
+}
+
+/**
+ * Formata número com separadores de milhar
+ * @param {number} value - Número a ser formatado
+ * @returns {string} Número formatado (ex: 1.234)
+ */
+export function formatNumber(value) {
+  if (value === null || value === undefined) return '0';
+  
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  
+  return new Intl.NumberFormat('pt-BR').format(numValue);
+}
+
+/**
+ * Formata status para exibição amigável
+ * @param {string} status - Status a ser formatado
+ * @returns {string} Status formatado
+ */
+export function formatStatus(status) {
+  const statusMap = {
+    // Usuários
+    active: 'Ativo',
+    inactive: 'Inativo',
+    blocked: 'Bloqueado',
+    
+    // Partidas
+    open: 'Aberta',
+    agendada: 'Agendada',
+    in_progress: 'Em Andamento',
+    em_andamento: 'Ao Vivo',
+    finished: 'Finalizada',
+    finalizada: 'Finalizada',
+    cancelled: 'Cancelada',
+    cancelada: 'Cancelada',
+    
+    // Transações
+    pending: 'Pendente',
+    completed: 'Concluída',
+    failed: 'Falhou',
+    
+    // Apostas
+    pendente: 'Pendente',
+    ganha: 'Ganha',
+    perdida: 'Perdida',
+    perdeu: 'Perdeu',
+    casada: 'Casada',
+    casado: 'Casado',
+    won: 'Venceu',
+    lost: 'Perdeu',
+    matched: 'Pareada',
+    
+    // Saques
+    approved: 'Aprovado',
+    rejected: 'Recusado',
+  };
+  
+  return statusMap[status] || status;
+}
+
+/**
+ * Formata tipo de transação
+ * @param {string} type - Tipo de transação
+ * @returns {string} Tipo formatado
+ */
+export function formatTransactionType(type) {
+  const typeMap = {
+    deposit: 'Depósito',
+    withdraw: 'Saque',
+    bet: 'Aposta',
+    win: 'Ganho',
+    fee: 'Taxa',
+    refund: 'Reembolso',
+  };
+  
+  return typeMap[type] || type;
+}
+
+/**
+ * Formata chave PIX
+ * @param {string} pixKey - Chave PIX
+ * @param {string} pixType - Tipo da chave (email, cpf, phone, random)
+ * @returns {string} Chave PIX formatada
+ */
+export function formatPixKey(pixKey, pixType) {
+  if (!pixKey) return '-';
+  
+  switch (pixType) {
+    case 'cpf':
+      return formatCPF(pixKey);
+    case 'phone':
+      return formatPhone(pixKey);
+    case 'email':
+      return pixKey.toLowerCase();
+    case 'random':
+      return pixKey.length > 30 ? pixKey.substring(0, 30) + '...' : pixKey;
+    default:
+      return pixKey;
+  }
+}
+
 

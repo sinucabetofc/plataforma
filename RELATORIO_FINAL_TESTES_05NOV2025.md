@@ -514,3 +514,5 @@ O **SinucaBet** está pronto para uso com:
 **Data**: 05/11/2025, 17:52  
 **Versão**: 1.0 - Release Candidate
 
+
+

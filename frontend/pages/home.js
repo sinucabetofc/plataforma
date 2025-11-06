@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
@@ -29,6 +31,7 @@ export default function Home() {
       const result = await api.matches.getAll({ limit: 50 });
       return result;
     },
+    enabled: typeof window !== 'undefined', // Só executa no cliente
     refetchInterval: 10000, // Atualiza a cada 10s
   });
 
@@ -99,8 +102,8 @@ export default function Home() {
 
   const matches = matchesData?.matches || [];
   
-  // Filtrar partidas por status (status vem em português do backend)
-  const liveMatches = matches.filter((m) => m.status === 'ao_vivo' || m.status === 'live');
+  // Filtrar partidas por status (status vem do backend como 'em_andamento', 'agendada', 'finalizada')
+  const liveMatches = matches.filter((m) => m.status === 'em_andamento' || m.status === 'ao_vivo' || m.status === 'live');
   
   // Ordenar partidas agendadas por data/hora (mais próximas primeiro)
   const scheduledMatches = matches
@@ -243,7 +246,7 @@ export default function Home() {
                     </span>
                   </div>
                   <h2 className="text-2xl font-bold text-texto-principal">
-                    Partidas Ao Vivo
+                    Partidas Rolando
                   </h2>
                   <span className="rounded-full bg-verde-neon/20 px-3 py-1 text-sm font-bold text-verde-neon">
                     {liveMatches.length}

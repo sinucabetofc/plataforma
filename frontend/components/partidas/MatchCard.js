@@ -26,9 +26,16 @@ export default function MatchCard({ match }) {
           <div className="flex justify-between items-center mb-3">
             {/* Badge de Status */}
             <span className={`
-              px-3 py-1 rounded-full text-xs font-semibold
-              ${statusInfo.bgColor} ${statusInfo.textColor}
+              px-3 py-1 rounded-full text-xs font-semibold border
               flex items-center gap-1
+              ${match.status === 'agendada' 
+                ? 'bg-blue-500/20 text-blue-300 border-blue-500' 
+                : match.status === 'em_andamento'
+                ? 'bg-red-500/20 text-red-300 border-red-500 animate-pulse'
+                : match.status === 'finalizada'
+                ? 'bg-verde-neon/20 text-verde-neon border-verde-neon'
+                : 'bg-gray-500/20 text-gray-300 border-gray-500'
+              }
             `}>
               <span>{statusInfo.icon}</span>
               {statusInfo.label}
@@ -44,15 +51,17 @@ export default function MatchCard({ match }) {
           {match.game_rules?.game_type && (
             <div className="flex items-center">
               <span className={`
-                px-3 py-1.5 rounded-lg text-xs font-semibold uppercase
-                ${match.game_rules.game_type.includes('NUMERADA') 
-                  ? 'bg-purple-900/30 text-purple-400 border border-purple-700' 
-                  : match.game_rules.game_type.includes('LISA')
-                  ? 'bg-blue-900/30 text-blue-400 border border-blue-700'
-                  : 'bg-orange-900/30 text-orange-400 border border-orange-700'
+                px-3 py-1.5 rounded-lg text-xs font-semibold uppercase border
+                ${match.game_rules.game_type === 'NUMERADA' 
+                  ? 'bg-purple-500/20 text-purple-300 border-purple-500' 
+                  : match.game_rules.game_type === 'LISA'
+                  ? 'bg-blue-500/20 text-blue-300 border-blue-500'
+                  : 'bg-orange-500/20 text-orange-300 border-orange-500'
                 }
               `}>
-                {match.game_rules.game_type}
+                {match.game_rules.game_type === 'NUMERADA' ? 'NUMERADA' : 
+                 match.game_rules.game_type === 'LISA' ? 'LISA' : 
+                 match.game_rules.game_type}
               </span>
             </div>
           )}
@@ -296,4 +305,3 @@ function SerieStatus({ serie, match }) {
     </div>
   );
 }
-

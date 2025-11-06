@@ -73,3 +73,5 @@ Backend rodando grátis 24/7! 🚀
 
 📚 **Guia Completo:** Veja `RENDER_DEPLOY.md`
 
+
+

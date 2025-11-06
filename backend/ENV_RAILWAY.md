@@ -69,3 +69,5 @@ FRONTEND_URL=https://plataforma-hazel.vercel.app
 - ✅ Gere `JWT_SECRET` único e forte
 - ✅ Use HTTPS em produção (Railway faz automaticamente)
 
+
+

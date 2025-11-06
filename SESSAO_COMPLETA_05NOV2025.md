@@ -388,3 +388,5 @@ Quando estiver pronto, vamos criar a experiência completa de apostas! 🎱
 
 **FIM DA SESSÃO - 05/11/2025** ✅
 
+
+

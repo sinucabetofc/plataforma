@@ -42,10 +42,11 @@ class BetsService {
         };
       }
 
-      if (serie.status !== 'liberada') {
+      // Permitir apostas em séries liberadas OU em andamento (apostas ao vivo)
+      if (serie.status !== 'liberada' && serie.status !== 'em_andamento') {
         throw {
           code: 'SERIE_NOT_AVAILABLE',
-          message: 'Série não está liberada para apostas',
+          message: 'Série não está disponível para apostas',
           details: { status: serie.status }
         };
       }
@@ -420,44 +421,18 @@ class BetsService {
         };
       }
 
-      // Validar que série ainda está liberada
-      if (bet.serie.status !== 'liberada') {
+      // Validar que série ainda não foi encerrada (permitir cancelar em "liberada" ou "em_andamento")
+      if (bet.serie.status !== 'liberada' && bet.serie.status !== 'em_andamento') {
         throw {
-          code: 'SERIE_STARTED',
-          message: 'Não é possível cancelar aposta após série iniciar'
+          code: 'SERIE_ENDED',
+          message: 'Não é possível cancelar aposta após série encerrar'
         };
       }
 
-      // Reembolsar valor
-      await supabase
-        .from('wallet')
-        .update({
-          balance: supabase.sql`balance + ${bet.amount}`
-        })
-        .eq('user_id', userId);
-
-      // Criar transação de reembolso
-      const { data: wallet } = await supabase
-        .from('wallet')
-        .select('id, balance')
-        .eq('user_id', userId)
-        .single();
-
-      if (wallet) {
-        await supabase
-          .from('transactions')
-          .insert({
-            wallet_id: wallet.id,
-            bet_id: bet.id,
-            type: 'reembolso',
-            amount: bet.amount,
-            balance_before: wallet.balance - bet.amount,
-            balance_after: wallet.balance,
-            description: 'Cancelamento de aposta'
-          });
-      }
-
-      // Atualizar status da aposta
+      // SISTEMA DE BLOQUEIO: Não reembolsamos porque nunca debitamos
+      // O saldo estava apenas "bloqueado" virtualmente
+      // Apenas atualizamos o status da aposta para "cancelada"
+      
       const { error: updateError } = await supabase
         .from('bets')
         .update({
@@ -477,7 +452,7 @@ class BetsService {
       return {
         success: true,
         message: 'Aposta cancelada com sucesso',
-        refunded_amount: bet.amount
+        refunded_amount: bet.amount // Valor que foi reembolsado
       };
     } catch (error) {
       if (error.code) {

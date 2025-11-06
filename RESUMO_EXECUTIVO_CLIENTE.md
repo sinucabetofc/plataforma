@@ -202,3 +202,5 @@ Todos os screenshots salvos em `.playwright-mcp/`:
 **Versão:** 2.0 Final Production Ready
 
 
+
+

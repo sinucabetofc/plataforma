@@ -25,3 +25,5 @@ services:
       - key: FRONTEND_URL
         value: https://sinucabet.vercel.app
 
+
+

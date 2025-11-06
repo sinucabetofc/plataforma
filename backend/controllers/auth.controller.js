@@ -48,6 +48,8 @@ class AuthController {
           pix_key: result.user.pix_key,
           pix_type: result.user.pix_type,
           email_verified: result.user.email_verified,
+          role: result.user.role,
+          is_active: result.user.is_active,
           created_at: result.user.created_at
         },
         token: result.token,
@@ -94,10 +96,14 @@ class AuthController {
    */
   async login(req, res) {
     try {
+      // Debug: Log do body recebido
+      console.log('📩 [LOGIN] Body recebido:', JSON.stringify(req.body));
+      
       // 1. Validar dados de entrada com Zod
       const validationResult = loginSchema.safeParse(req.body);
 
       if (!validationResult.success) {
+        console.log('❌ [LOGIN] Erro de validação:', validationResult.error.errors);
         return validationErrorResponse(res, validationResult.error.errors);
       }
 
@@ -117,6 +123,8 @@ class AuthController {
           pix_key: result.user.pix_key,
           pix_type: result.user.pix_type,
           email_verified: result.user.email_verified,
+          role: result.user.role,
+          is_active: result.user.is_active,
           created_at: result.user.created_at
         },
         token: result.token,

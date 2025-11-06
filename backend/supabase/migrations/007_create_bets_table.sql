@@ -128,8 +128,9 @@ BEGIN
     RAISE EXCEPTION 'Série não encontrada';
   END IF;
   
-  IF serie_status_val != 'liberada' THEN
-    RAISE EXCEPTION 'Série não está liberada para apostas (status: %)', serie_status_val;
+  -- Permitir apostas em séries liberadas OU em andamento (apostas ao vivo)
+  IF serie_status_val != 'liberada' AND serie_status_val != 'em_andamento' THEN
+    RAISE EXCEPTION 'Série não está disponível para apostas (status: %)', serie_status_val;
   END IF;
   
   IF NOT serie_betting_enabled THEN
@@ -371,5 +372,7 @@ SELECT * FROM bets;
 -- =====================================================
 -- FIM DA MIGRATION
 -- =====================================================
+
+
 
 

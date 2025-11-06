@@ -179,3 +179,5 @@ Seu backend estará rodando 24/7 na Railway!
 3. Configure alertas de erro (opcional)
 4. Setup CI/CD avançado (opcional)
 
+
+

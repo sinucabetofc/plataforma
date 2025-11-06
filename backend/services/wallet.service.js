@@ -30,7 +30,21 @@ class WalletService {
         };
       }
 
-      // 2. Buscar últimas 10 transações
+      // 2. Calcular saldo bloqueado (apostas pendentes e aceitas)
+      const { data: pendingBets, error: betsError } = await supabase
+        .from('bets')
+        .select('amount')
+        .eq('user_id', userId)
+        .in('status', ['pendente', 'aceita']);
+
+      if (betsError) {
+        console.error('Erro ao buscar apostas pendentes:', betsError);
+      }
+
+      // Somar valor de todas as apostas pendentes/aceitas
+      const blockedBalance = pendingBets?.reduce((sum, bet) => sum + bet.amount, 0) || 0;
+
+      // 3. Buscar últimas 10 transações
       const { data: transactions, error: transactionsError } = await supabase
         .from('transactions')
         .select('id, type, amount, balance_before, balance_after, description, created_at, metadata')
@@ -44,23 +58,23 @@ class WalletService {
 
       // Converter centavos para reais
       const balanceInReais = parseFloat(wallet.balance) / 100;
-      const blockedInReais = parseFloat(wallet.blocked_balance) / 100;
+      const blockedInReais = blockedBalance / 100; // Usar valor calculado
       const availableInReais = balanceInReais - blockedInReais;
       
       return {
         // Formato esperado pelo frontend
         total_balance: balanceInReais,
         available_balance: availableInReais,
-        locked_balance: blockedInReais,
+        blocked_balance: blockedInReais, // Saldo bloqueado calculado
         
         // Dados adicionais
         wallet: {
           id: wallet.id,
           balance: parseFloat(wallet.balance), // em centavos
-          blocked_balance: parseFloat(wallet.blocked_balance),
+          blocked_balance: blockedBalance, // Saldo bloqueado calculado
           total_deposited: parseFloat(wallet.total_deposited),
           total_withdrawn: parseFloat(wallet.total_withdrawn),
-          available_balance: parseFloat(wallet.balance) - parseFloat(wallet.blocked_balance),
+          available_balance: parseFloat(wallet.balance) - blockedBalance,
           created_at: wallet.created_at,
           updated_at: wallet.updated_at
         },

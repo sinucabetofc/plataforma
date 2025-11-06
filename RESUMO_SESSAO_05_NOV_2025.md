@@ -310,3 +310,5 @@ https://supabase.com/dashboard
 🚀 **ESTÁ TUDO DOCUMENTADO E PRONTO PARA CONTINUAR!**
 
 
+
+

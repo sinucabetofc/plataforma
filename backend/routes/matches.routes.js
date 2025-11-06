@@ -116,3 +116,5 @@ router.delete('/:id', authenticateToken, matchesController.deleteMatch);
 
 module.exports = router;
 
+
+

@@ -31,3 +31,5 @@ CREATE POLICY "transactions_select_policy"
   USING (user_id = auth.uid());
 */
 
+
+

@@ -452,3 +452,5 @@ Todas as funcionalidades planejadas foram implementadas, testadas e integradas. 
 
 🎱 **"Partidas ao alcance de um clique!"** 🎱
 
+
+
