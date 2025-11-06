@@ -4,9 +4,9 @@
  * ============================================================
  */
 
-import Sidebar from '../admin/Sidebar';
-import Topbar from '../admin/Topbar';
-import ProtectedRoute from '../admin/ProtectedRoute';
+import Sidebar from './Sidebar';
+import Topbar from './Topbar';
+import ProtectedRoute from './ProtectedRoute';
 
 export default function Layout({ children }) {
   return (
