@@ -1,11 +1,17 @@
-backend/
-admin/
-database/
+/backend/
+/admin/
+/database/
 node_modules/
 .git/
 *.log
 .env
 .env.local
+*.md
+docs/
+*.sql
+*.sh
+test-*.js
+*.yaml
 
 
 
