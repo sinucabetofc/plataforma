@@ -257,7 +257,7 @@ class WalletService {
         console.warn('⚠️  Usando dados MOCK do Woovi (desenvolvimento)');
         return {
           charge_id: data.correlationID,
-          qrcode_url: 'https://via.placeholder.com/300x300.png?text=QR+Code+Pix+Mock',
+          qrcode_url: 'https://ui-avatars.com/api/?name=PIX+QRCode&size=300&background=00C247&color=fff',
           brcode: '00020126580014br.gov.bcb.pix0136' + data.correlationID + '520400005303986540' + (data.value / 100).toFixed(2) + '5802BR5913SinucaBet6009SaoPaulo62070503***63041234',
           expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString()
         };

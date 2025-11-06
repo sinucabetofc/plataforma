@@ -73,9 +73,9 @@ export default function ImageUpload({ value, onChange, label }) {
 
   // Sugestões de URLs de placeholder
   const placeholderSuggestions = [
-    'https://via.placeholder.com/150',
-    'https://i.pravatar.cc/150',
     'https://ui-avatars.com/api/?name=Jogador&size=150&background=27E502&color=000',
+    'https://i.pravatar.cc/150',
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=player',
   ];
 
   return (
@@ -208,7 +208,7 @@ export default function ImageUpload({ value, onChange, label }) {
               alt="Preview"
               className="w-32 h-32 rounded-full object-cover border-2 border-green-500"
               onError={(e) => {
-                e.target.src = 'https://via.placeholder.com/150?text=Erro';
+                e.target.src = 'https://ui-avatars.com/api/?name=Erro&size=150&background=ff0000&color=fff';
                 toast.error('Erro ao carregar imagem. Verifique a URL.');
               }}
             />

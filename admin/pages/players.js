@@ -209,7 +209,7 @@ export default function PlayersPage() {
                 {/* Foto */}
                 <div className="flex items-start gap-4 mb-4">
                   <img
-                    src={player.photo_url || 'https://via.placeholder.com/80'}
+                    src={player.photo_url || 'https://ui-avatars.com/api/?name=Player&size=80&background=27E502&color=000'}
                     alt={player.name}
                     className="w-20 h-20 rounded-full object-cover border-2 border-green-500"
                   />

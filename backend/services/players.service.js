@@ -28,7 +28,7 @@ class PlayersService {
         .insert({
           name: name.trim(),
           nickname: nickname?.trim() || name.trim().split(' ')[0],
-          photo_url: photo_url || 'https://via.placeholder.com/150',
+          photo_url: photo_url || 'https://ui-avatars.com/api/?name=Jogador&size=150&background=27E502&color=000',
           bio: bio || '',
           active,
           total_matches: 0,

@@ -18,36 +18,44 @@ class AuthService {
     const { name, email, password, phone, cpf, pix_key, pix_type } = userData;
 
     try {
-      // 1. Verificar se email já existe (Supabase Auth faz isso, mas checamos primeiro)
-      const { data: existingUsers } = await supabase
-        .from('users')
-        .select('id')
-        .eq('email', email)
-        .limit(1);
+      console.log('📝 [REGISTER] Iniciando registro para:', email);
 
-      if (existingUsers && existingUsers.length > 0) {
-        throw {
-          code: 'CONFLICT',
-          message: 'Email já cadastrado'
-        };
+      // 1. Verificar se CPF já existe (verificação essencial)
+      try {
+        const { data: existingCPF, error: cpfCheckError } = await supabase
+          .from('users')
+          .select('id')
+          .eq('cpf', cpf)
+          .limit(1);
+
+        if (cpfCheckError) {
+          console.error('❌ [REGISTER] Erro ao verificar CPF:', cpfCheckError);
+          throw {
+            code: 'DATABASE_ERROR',
+            message: 'Erro ao verificar CPF no banco de dados',
+            details: cpfCheckError
+          };
+        }
+
+        if (existingCPF && existingCPF.length > 0) {
+          console.log('⚠️ [REGISTER] CPF já cadastrado:', cpf);
+          throw {
+            code: 'CONFLICT',
+            message: 'CPF já cadastrado'
+          };
+        }
+      } catch (error) {
+        // Se for um erro conhecido, propaga
+        if (error.code === 'CONFLICT' || error.code === 'DATABASE_ERROR') {
+          throw error;
+        }
+        // Se for erro desconhecido, loga e continua (deixa o Supabase Auth validar email)
+        console.warn('⚠️ [REGISTER] Erro ao verificar duplicatas, continuando...', error);
       }
 
-      // 2. Verificar se CPF já existe
-      const { data: existingCPF } = await supabase
-        .from('users')
-        .select('id')
-        .eq('cpf', cpf)
-        .limit(1);
-
-      if (existingCPF && existingCPF.length > 0) {
-        throw {
-          code: 'CONFLICT',
-          message: 'CPF já cadastrado'
-        };
-      }
-
-      // 3. Criar usuário no Supabase Auth (usando Admin API)
+      // 2. Criar usuário no Supabase Auth (usando Admin API)
       // Backend usa service_role_key, então precisa ser admin.createUser
+      console.log('🔐 [REGISTER] Criando usuário no Supabase Auth...');
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email,
         password,
@@ -62,10 +70,21 @@ class AuthService {
       });
 
       if (authError) {
-        console.error('Erro no Supabase Auth signUp:', authError);
+        console.error('❌ [REGISTER] Erro no Supabase Auth:', authError);
+        
+        // Verificar se é erro de email duplicado
+        if (authError.message?.includes('already registered') || 
+            authError.message?.includes('already exists') ||
+            authError.status === 422) {
+          throw {
+            code: 'CONFLICT',
+            message: 'Email já cadastrado'
+          };
+        }
+        
         throw {
           code: 'AUTH_ERROR',
-          message: authError.message || 'Erro ao criar usuário',
+          message: authError.message || 'Erro ao criar usuário no sistema de autenticação',
           details: authError
         };
       }
@@ -77,15 +96,10 @@ class AuthService {
         };
       }
 
-      console.log('📝 [REGISTER] Criando usuário em public.users:', {
-        id: authData.user.id,
-        email,
-        name,
-        phone,
-        cpf
-      });
+      console.log('✅ [REGISTER] Usuário criado no Supabase Auth:', authData.user.id);
+      console.log('📝 [REGISTER] Criando registro em public.users...');
 
-      // 4. Criar registro em public.users manualmente (não depende de trigger)
+      // 3. Criar registro em public.users manualmente (não depende de trigger)
       const { data: newUser, error: insertError } = await supabase
         .from('users')
         .insert({
@@ -116,9 +130,9 @@ class AuthService {
         };
       }
 
-      console.log('✅ [REGISTER] Usuário criado em public.users:', newUser.email);
+      console.log('✅ [REGISTER] Registro criado em public.users:', newUser.email);
 
-      // 5. Criar carteira para o usuário
+      // 4. Criar carteira para o usuário
       const { error: walletInsertError } = await supabase
         .from('wallet')
         .insert({
@@ -132,22 +146,23 @@ class AuthService {
         });
 
       if (walletInsertError) {
-        console.error('⚠️ Erro ao criar carteira:', walletInsertError);
+        console.error('⚠️ [REGISTER] Erro ao criar carteira:', walletInsertError);
         // Continua mesmo se wallet falhar
       } else {
-        console.log('✅ Carteira criada para:', newUser.email);
+        console.log('✅ [REGISTER] Carteira criada para:', newUser.email);
       }
 
       const user = newUser;
 
-      // 6. Buscar dados da carteira
+      // 5. Buscar dados da carteira
       const { data: wallet, error: walletError } = await supabase
         .from('wallet')
         .select('balance, blocked_balance, total_deposited, total_withdrawn')
         .eq('user_id', user.id)
         .single();
 
-      // 7. Retornar dados do usuário e sessão
+      // 6. Retornar dados do usuário e sessão
+      console.log('🎉 [REGISTER] Registro completo com sucesso!');
       return {
         user: {
           id: user.id,
@@ -492,6 +507,8 @@ class AuthService {
 }
 
 module.exports = new AuthService();
+
+
 
 
 
