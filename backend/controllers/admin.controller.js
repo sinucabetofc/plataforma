@@ -42,8 +42,9 @@ class AdminController {
       }
 
       const openMatches = matchesData?.filter(m => m.status === 'open').length || 0;
-      const inProgressMatches = matchesData?.filter(m => m.status === 'in_progress').length || 0;
-      const finishedMatches = matchesData?.filter(m => m.status === 'finished').length || 0;
+      const scheduledMatches = matchesData?.filter(m => m.status === 'agendada').length || 0;
+      const inProgressMatches = matchesData?.filter(m => m.status === 'em_andamento').length || 0;
+      const finishedMatches = matchesData?.filter(m => m.status === 'finalizada').length || 0;
 
       // 3. Estatísticas de Apostas
       const { data: betsData, error: betsError } = await supabase
@@ -57,6 +58,11 @@ class AdminController {
       // Somar valores em centavos e converter para reais
       const totalBetsInCents = betsData?.reduce((sum, bet) => sum + parseFloat(bet.amount || 0), 0) || 0;
       const totalBets = totalBetsInCents / 100;
+
+      // Calcular total de apostas CASADAS (status = 'aceita')
+      const matchedBetsData = betsData?.filter(bet => bet.status === 'aceita') || [];
+      const totalMatchedBetsInCents = matchedBetsData.reduce((sum, bet) => sum + parseFloat(bet.amount || 0), 0) || 0;
+      const totalMatchedBets = totalMatchedBetsInCents / 100;
       
       // Apostas do mês
       const now = new Date();
@@ -215,13 +221,16 @@ class AdminController {
         },
         matches: {
           open: openMatches,
-          in_progress: inProgressMatches,
+          scheduled: scheduledMatches, // Jogos agendados
+          in_progress: inProgressMatches, // Jogos ao vivo
           finished: finishedMatches
         },
         bets: {
           total: totalBets,
           month: monthBetsTotal,
-          today: todayBetsTotal
+          today: todayBetsTotal,
+          matched_count: matchedBetsData.length, // Quantidade de apostas casadas
+          matched_total: totalMatchedBets // Valor total casado
         },
         deposits: {
           today: todayDepositsTotal
@@ -238,7 +247,8 @@ class AdminController {
         wallets: {
           total_balance: totalPlayersBalance,
           real_balance: totalRealDeposits,
-          fake_balance: totalFakeBalance
+          fake_balance: totalFakeBalance,
+          matched_bets_total: totalMatchedBets // Total de apostas casadas
         },
         platform: {
           profit: platformProfit
@@ -532,6 +542,91 @@ class AdminController {
 
       return successResponse(res, 200, 'Transações obtidas com sucesso', {
         transactions: transactions || [],
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: count,
+          totalPages
+        }
+      });
+    } catch (error) {
+      console.error('Erro ao buscar transações:', error);
+      return errorResponse(res, 500, 'Erro ao buscar transações');
+    }
+  }
+
+  /**
+   * GET /api/admin/transactions
+   * Retorna todas as transações do sistema
+   */
+  async getAllTransactions(req, res) {
+    try {
+      // Verificar se o usuário é admin
+      if (req.user.role !== 'admin') {
+        return errorResponse(res, 403, 'Acesso negado. Apenas administradores.');
+      }
+
+      const { page = 1, limit = 20, type, status, userId } = req.query;
+
+      // Construir query base
+      let query = supabase
+        .from('transactions')
+        .select('*', { count: 'exact' });
+
+      // Aplicar filtros
+      if (type && type !== 'null') {
+        query = query.eq('type', type);
+      }
+
+      if (status && status !== 'null') {
+        query = query.eq('status', status);
+      }
+
+      if (userId && userId !== 'null') {
+        query = query.eq('user_id', userId);
+      }
+
+      // Aplicar paginação
+      const offset = (page - 1) * limit;
+      query = query
+        .range(offset, offset + parseInt(limit) - 1)
+        .order('created_at', { ascending: false });
+
+      const { data: transactions, error, count } = await query;
+
+      if (error) {
+        console.error('Erro ao buscar transações:', error);
+        return errorResponse(res, 500, 'Erro ao buscar transações');
+      }
+
+      // Buscar dados dos usuários únicos
+      const userIds = [...new Set(transactions?.map(t => t.user_id).filter(Boolean))];
+      
+      let usersMap = {};
+      if (userIds.length > 0) {
+        const { data: users } = await supabase
+          .from('users')
+          .select('id, name, email')
+          .in('id', userIds);
+        
+        if (users) {
+          usersMap = users.reduce((acc, user) => {
+            acc[user.id] = user;
+            return acc;
+          }, {});
+        }
+      }
+
+      // Adicionar dados do usuário a cada transação
+      const transactionsWithUsers = transactions?.map(transaction => ({
+        ...transaction,
+        user: transaction.user_id ? usersMap[transaction.user_id] || null : null
+      })) || [];
+
+      const totalPages = Math.ceil(count / limit);
+
+      return successResponse(res, 200, 'Transações obtidas com sucesso', {
+        transactions: transactionsWithUsers,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),

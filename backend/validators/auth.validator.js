@@ -72,6 +72,7 @@ const registerSchema = z.object({
     .regex(cpfRegex, 'Formato de CPF inválido (use XXX.XXX.XXX-XX)')
     .trim()
     .refine(validateCPF, 'CPF inválido'),
+    // NOTA: CPF duplicado é permitido no sistema
 
   pix_key: z
     .string({

@@ -367,17 +367,20 @@ export function formatStatus(status) {
     pending: 'Pendente',
     completed: 'Concluída',
     failed: 'Falhou',
+    cancelled: 'Cancelada',
     
     // Apostas
-    pendente: 'Pendente',
+    pendente: 'Aguardando emparelhamento',
+    aceita: 'Aposta casada',
     ganha: 'Ganha',
     perdida: 'Perdida',
     perdeu: 'Perdeu',
-    casada: 'Casada',
-    casado: 'Casado',
+    casada: 'Aposta casada',
+    casado: 'Aposta casada',
     won: 'Venceu',
     lost: 'Perdeu',
-    matched: 'Pareada',
+    matched: 'Aposta casada',
+    reembolsada: 'Reembolsada',
     
     // Saques
     approved: 'Aprovado',
@@ -427,5 +430,6 @@ export function formatPixKey(pixKey, pixType) {
       return pixKey;
   }
 }
+
 
 

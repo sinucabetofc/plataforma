@@ -45,6 +45,9 @@ function Apostas() {
       throw new Error(result.message);
     },
     refetchInterval: 15000, // Atualiza a cada 15 segundos
+    refetchOnMount: true, // ← ADICIONADO: Sempre buscar ao montar
+    refetchOnWindowFocus: true, // ← ADICIONADO: Buscar ao focar janela
+    staleTime: 0, // ← ADICIONADO: Considerar dados sempre desatualizados
   });
 
   const formatCurrency = (value) => {

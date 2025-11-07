@@ -205,11 +205,17 @@ class SeriesService {
     try {
       const serie = await this.getSerieById(serieId);
 
+      // Se já está liberada, retornar sucesso sem fazer nada (idempotência)
+      if (serie.status === 'liberada') {
+        console.log(`⚠️ Série ${serieId} já está liberada, retornando sem alterações`);
+        return serie;
+      }
+
       // Validar que série está pendente
       if (serie.status !== 'pendente') {
         throw {
           code: 'INVALID_STATUS',
-          message: `Série deve estar pendente. Status atual: ${serie.status}`
+          message: `Não é possível liberar série. Status atual: ${serie.status}`
         };
       }
 
@@ -256,11 +262,17 @@ class SeriesService {
     try {
       const serie = await this.getSerieById(serieId);
 
+      // Se já está em andamento, retornar sucesso sem fazer nada (idempotência)
+      if (serie.status === 'em_andamento') {
+        console.log(`⚠️ Série ${serieId} já está em andamento, retornando sem alterações`);
+        return serie;
+      }
+
       // Validar que série está liberada
       if (serie.status !== 'liberada') {
         throw {
           code: 'INVALID_STATUS',
-          message: `Série deve estar liberada. Status atual: ${serie.status}`
+          message: `Não é possível iniciar série. Status atual: ${serie.status}`
         };
       }
 
@@ -322,11 +334,21 @@ class SeriesService {
 
       const serie = await this.getSerieById(serieId);
 
+      // Se já está encerrada, retornar sucesso sem fazer nada (idempotência)
+      if (serie.status === 'encerrada') {
+        console.log(`⚠️ Série ${serieId} já está encerrada, retornando sem alterações`);
+        const betsStats = await this._getSeriesBetsStats(serieId);
+        return {
+          ...serie,
+          bets_stats: betsStats
+        };
+      }
+
       // Validar que série está em andamento
       if (serie.status !== 'em_andamento') {
         throw {
           code: 'INVALID_STATUS',
-          message: `Série deve estar em andamento. Status atual: ${serie.status}`
+          message: `Não é possível finalizar série. Status atual: ${serie.status}`
         };
       }
 
@@ -394,6 +416,16 @@ class SeriesService {
   async cancelSerie(serieId) {
     try {
       const serie = await this.getSerieById(serieId);
+
+      // Se já está cancelada, retornar sucesso sem fazer nada (idempotência)
+      if (serie.status === 'cancelada') {
+        console.log(`⚠️ Série ${serieId} já está cancelada, retornando sem alterações`);
+        return {
+          serie,
+          refunded_bets: 0,
+          refunded_amount: 0
+        };
+      }
 
       // Não pode cancelar série já encerrada
       if (serie.status === 'encerrada') {

@@ -28,8 +28,6 @@ export default function MatchInfoCard({ match, onUpdate }) {
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({
     location: match.location || '',
-    youtube_url: match.youtube_url || '',
-    stream_active: match.stream_active || false,
   });
 
   const updateMatch = useUpdateMatch();
@@ -73,14 +71,14 @@ export default function MatchInfoCard({ match, onUpdate }) {
       data: formData,
     });
     setEditing(false);
-    onUpdate();
+    if (onUpdate && typeof onUpdate === 'function') {
+      onUpdate();
+    }
   };
 
   const handleCancel = () => {
     setFormData({
       location: match.location || '',
-      youtube_url: match.youtube_url || '',
-      stream_active: match.stream_active || false,
     });
     setEditing(false);
   };
@@ -270,12 +268,6 @@ export default function MatchInfoCard({ match, onUpdate }) {
             </div>
             <div className="space-y-2">
               <StatusBadge status={match.status} />
-              {match.stream_active && (
-                <div className="flex items-center gap-2 text-sm text-red-500 font-medium bg-red-500/10 px-3 py-1 rounded-lg">
-                  <Activity size={14} className="animate-pulse" />
-                  Stream Ativa
-                </div>
-              )}
             </div>
           </div>
 
@@ -322,7 +314,7 @@ export default function MatchInfoCard({ match, onUpdate }) {
 
       {/* Transmissão e Regras */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* YouTube URL */}
+        {/* YouTube URL (Somente Leitura) */}
         <div className="admin-card">
           <div className="flex items-center gap-2 mb-4">
             <Youtube size={20} className="text-red-500" />
@@ -331,59 +323,30 @@ export default function MatchInfoCard({ match, onUpdate }) {
             </label>
           </div>
           <div className="bg-admin-bg rounded-xl p-4">
-            {editing ? (
-              <input
-                type="url"
-                value={formData.youtube_url}
-                onChange={(e) => setFormData({ ...formData, youtube_url: e.target.value })}
-                className="input w-full"
-                placeholder="https://youtube.com/watch?v=..."
-              />
-            ) : (
-              <div>
-                {match.youtube_url ? (
-                  <div className="space-y-2">
-                    <a
-                      href={match.youtube_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-admin-primary hover:underline text-sm break-all block"
-                    >
-                      {match.youtube_url}
-                    </a>
-                    <a
-                      href={match.youtube_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
-                    >
-                      <Youtube size={16} />
-                      Abrir no YouTube
-                    </a>
-                  </div>
-                ) : (
-                  <p className="text-admin-text-muted">Não informado</p>
-                )}
+            {match.youtube_url ? (
+              <div className="space-y-2">
+                <a
+                  href={match.youtube_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-admin-primary hover:underline text-sm break-all block"
+                >
+                  {match.youtube_url}
+                </a>
+                <a
+                  href={match.youtube_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  <Youtube size={16} />
+                  Abrir no YouTube
+                </a>
               </div>
+            ) : (
+              <p className="text-admin-text-muted">Não informado</p>
             )}
           </div>
-
-          {/* Stream Ativa */}
-          {editing && (
-            <div className="mt-4">
-              <label className="flex items-center gap-3 cursor-pointer p-3 bg-admin-bg rounded-lg border-2 border-admin-border hover:border-admin-primary transition-colors">
-                <input
-                  type="checkbox"
-                  checked={formData.stream_active}
-                  onChange={(e) => setFormData({ ...formData, stream_active: e.target.checked })}
-                  className="w-5 h-5 rounded border-admin-border"
-                />
-                <span className="text-sm font-medium text-admin-text-primary">
-                  Stream está ativa
-                </span>
-              </label>
-            </div>
-          )}
         </div>
 
         {/* Regras do Jogo */}
@@ -451,6 +414,7 @@ export default function MatchInfoCard({ match, onUpdate }) {
     </div>
   );
 }
+
 
 
 

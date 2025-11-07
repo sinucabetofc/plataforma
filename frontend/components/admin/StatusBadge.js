@@ -42,6 +42,8 @@ const STATUS_COLORS = {
   matched: 'status-info', // Aposta casada/pareada
   casada: 'status-info', // Aposta casada
   casado: 'status-info', // Aposta casado
+  aceita: 'status-info', // Aposta aceita (casada)
+  reembolsada: 'status-info', // Aposta reembolsada
 };
 
 export default function StatusBadge({ status, className = '' }) {

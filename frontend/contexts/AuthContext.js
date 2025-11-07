@@ -31,6 +31,7 @@ export function AuthProvider({ children }) {
 
       // Se não tem token, não está autenticado
       if (!token) {
+        console.log('🔓 [AUTH] Nenhum token encontrado - usuário não logado');
         setUser(null);
         setLoading(false);
         setInitialized(true);
@@ -40,6 +41,7 @@ export function AuthProvider({ children }) {
       // Se tem token e usuário salvo, usa o cache primeiro (UX)
       // Isso mantém o usuário logado durante o carregamento
       if (savedUser) {
+        console.log('✅ [AUTH] Carregando sessão:', savedUser.email);
         setUser(savedUser);
         setLoading(false);
         setInitialized(true);
@@ -54,20 +56,27 @@ export function AuthProvider({ children }) {
           setUser(userData);
           // Atualiza localStorage com dados mais recentes
           saveAuth(token, userData);
+          console.log('✅ [AUTH] Usuário validado:', userData.email);
         } else if (result.statusCode === 401) {
-          // Apenas limpa se for erro 401 confirmado (token inválido)
-          console.warn('Token inválido, fazendo logout...');
+          // Token inválido - fazer logout silencioso
+          console.log('🔓 [AUTH] Token expirado, fazendo logout');
           setUser(null);
           clearAuth();
         } else if (result.isNetworkError) {
           // Em erro de rede, mantém o usuário logado
-          console.warn('Erro de rede ao validar token, mantendo usuário logado');
+          console.log('🌐 [AUTH] Sem conexão, mantendo usuário logado');
           // Mantém savedUser
         }
       } catch (error) {
-        // Em qualquer erro inesperado, mantém o usuário logado
-        // O interceptor do axios vai lidar com 401 se necessário
-        console.warn('Erro ao validar token, mantendo usuário logado:', error);
+        // Erros 401 são normais quando não logado - não logar como erro
+        if (error.status === 401) {
+          console.log('🔓 [AUTH] Não autenticado');
+          setUser(null);
+          clearAuth();
+        } else {
+          // Apenas logar erros inesperados
+          console.log('⚠️ [AUTH] Mantendo sessão local:', error.message);
+        }
       }
     } catch (error) {
       console.error('Erro ao carregar usuário:', error);
@@ -152,18 +161,23 @@ export function AuthProvider({ children }) {
       if (result.success) {
         const userData = result.data.data || result.data;
         updateUser(userData);
+        console.log('🔄 [AUTH] Dados atualizados:', userData.email);
         return userData;
       } else if (result.statusCode === 401) {
-        // Token inválido - fazer logout
+        // Token inválido - fazer logout silencioso
+        console.log('🔓 [AUTH] Sessão expirada, redirecionando...');
         logout();
         return null;
       } else {
         // Outros erros (incluindo rede) - mantém usuário
-        console.warn('Erro ao recarregar usuário, mantendo dados atuais');
+        console.log('🌐 [AUTH] Mantendo dados locais');
         return user;
       }
     } catch (error) {
-      console.error('Erro ao recarregar usuário:', error);
+      // Não logar 401 como erro
+      if (error.status !== 401) {
+        console.log('⚠️ [AUTH] Mantendo sessão:', error.message);
+      }
       return user; // Retorna usuário atual em vez de null
     }
   }, [updateUser, user, logout]);

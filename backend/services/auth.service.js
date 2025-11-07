@@ -20,31 +20,7 @@ class AuthService {
     try {
       console.log('📝 [REGISTER] Iniciando registro para:', email);
 
-      // 1. Verificar se CPF já existe (ESSENCIAL - única verificação manual)
-      console.log('🔍 [REGISTER] Verificando CPF:', cpf);
-      const { data: existingCPF, error: cpfCheckError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('cpf', cpf)
-        .maybeSingle(); // Use maybeSingle ao invés de single para não dar erro se não encontrar
-
-      if (cpfCheckError && cpfCheckError.code !== 'PGRST116') {
-        console.error('❌ [REGISTER] Erro ao verificar CPF:', cpfCheckError);
-        throw {
-          code: 'DATABASE_ERROR',
-          message: 'Erro ao verificar CPF no banco de dados'
-        };
-      }
-
-      if (existingCPF) {
-        console.log('⚠️ [REGISTER] CPF já cadastrado');
-        throw {
-          code: 'CONFLICT',
-          message: 'CPF já cadastrado'
-        };
-      }
-
-      // 2. Criar usuário no Supabase Auth (ele valida email duplicado automaticamente)
+      // 1. Criar usuário no Supabase Auth (ele valida email duplicado automaticamente)
       console.log('🔐 [REGISTER] Criando usuário no Supabase Auth...');
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email,
@@ -87,64 +63,73 @@ class AuthService {
       }
 
       console.log('✅ [REGISTER] Usuário criado no Supabase Auth:', authData.user.id);
-      console.log('📝 [REGISTER] Criando registro em public.users...');
+      console.log('⏳ [REGISTER] Aguardando trigger criar registro em public.users...');
 
-      // 3. Criar registro em public.users manualmente (não depende de trigger)
-      const { data: newUser, error: insertError } = await supabase
+      // 3. Aguardar um pouco para o trigger executar
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // 4. Buscar usuário criado pelo trigger em public.users
+      let user;
+      const { data: newUser, error: fetchError } = await supabase
         .from('users')
-        .insert({
-          id: authData.user.id,
-          email,
-          name,
-          phone,
-          cpf,
-          pix_key: pix_key || email,
-          pix_type: pix_type || 'email',
-          email_verified: false,
-          is_active: true,
-          created_at: new Date().toISOString()
-        })
         .select('id, name, email, phone, cpf, pix_key, pix_type, email_verified, role, is_active, created_at')
+        .eq('id', authData.user.id)
         .single();
 
-      if (insertError || !newUser) {
-        console.error('❌ [REGISTER] Erro ao criar usuário em public.users!');
-        console.error('❌ [REGISTER] Error:', insertError);
-        console.error('❌ [REGISTER] Error code:', insertError?.code);
-        console.error('❌ [REGISTER] Error message:', insertError?.message);
-        console.error('❌ [REGISTER] Error details:', insertError?.details);
-        console.error('❌ [REGISTER] Error hint:', insertError?.hint);
-        throw {
-          code: 'SYNC_ERROR',
-          message: `Erro ao criar perfil: ${insertError?.message || 'Desconhecido'}`
-        };
-      }
+      if (fetchError || !newUser) {
+        console.error('❌ [REGISTER] Erro: Trigger não criou usuário em public.users!');
+        console.error('❌ [REGISTER] Error:', fetchError);
+        console.error('❌ [REGISTER] Tentando criar manualmente como fallback...');
+        
+        // Fallback: Criar manualmente se trigger falhou
+        const { data: manualUser, error: insertError } = await supabase
+          .from('users')
+          .insert({
+            id: authData.user.id,
+            email,
+            name,
+            phone,
+            cpf,
+            pix_key: pix_key || email,
+            pix_type: pix_type || 'email',
+            email_verified: false,
+            is_active: true,
+            created_at: new Date().toISOString()
+          })
+          .select('id, name, email, phone, cpf, pix_key, pix_type, email_verified, role, is_active, created_at')
+          .single();
 
-      console.log('✅ [REGISTER] Registro criado em public.users:', newUser.email);
-
-      // 4. Criar carteira para o usuário
-      const { error: walletInsertError } = await supabase
-        .from('wallet')
-        .insert({
-          user_id: authData.user.id,
-          balance: 0.00,
-          blocked_balance: 0.00,
-          total_deposited: 0.00,
-          total_withdrawn: 0.00,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-
-      if (walletInsertError) {
-        console.error('⚠️ [REGISTER] Erro ao criar carteira:', walletInsertError);
-        // Continua mesmo se wallet falhar
+        if (insertError) {
+          console.error('❌ [REGISTER] Falha no fallback manual:', insertError);
+          throw {
+            code: 'SYNC_ERROR',
+            message: `Erro ao criar perfil do usuário: ${insertError?.message || 'Desconhecido'}`
+          };
+        }
+        
+        user = manualUser;
+        console.log('✅ [REGISTER] Usuário criado manualmente em public.users');
+        
+        // Fallback: Criar carteira manualmente também
+        const { error: walletInsertError } = await supabase
+          .from('wallet')
+          .insert({
+            user_id: authData.user.id,
+            balance: 0,
+            blocked_balance: 0,
+            total_deposited: 0,
+            total_withdrawn: 0
+          });
+        
+        if (walletInsertError) {
+          console.error('⚠️ [REGISTER] Erro ao criar carteira manualmente:', walletInsertError);
+        }
       } else {
-        console.log('✅ [REGISTER] Carteira criada para:', newUser.email);
+        user = newUser;
+        console.log('✅ [REGISTER] Usuário criado pelo trigger em public.users:', newUser.email);
       }
 
-      const user = newUser;
-
-      // 5. Buscar dados da carteira
+      // 5. Buscar dados da carteira (deve ter sido criada pelo trigger)
       const { data: wallet, error: walletError } = await supabase
         .from('wallet')
         .select('balance, blocked_balance, total_deposited, total_withdrawn')

@@ -67,10 +67,11 @@ export default function Dashboard() {
         />
         
         <CardInfo
-          title="Jogos Ativos"
-          value={(stats?.matches?.open || 0) + (stats?.matches?.in_progress || 0)}
+          title="Jogos ao Vivo"
+          value={stats?.matches?.in_progress || 0}
           icon={<Trophy size={24} />}
-          trend={`${stats?.matches?.finished || 0} finalizados`}
+          trend={`${stats?.matches?.scheduled || 0} jogos agendados`}
+          className="border-red-500"
         />
         
         <CardInfo
@@ -111,10 +112,10 @@ export default function Dashboard() {
 
         <CardInfo
           title="Saldo Total Casado"
-          value={stats?.wallets?.real_balance || 0}
+          value={stats?.wallets?.matched_bets_total || 0}
           isCurrency
           icon={<DollarSolid size={24} />}
-          trend="Depósitos reais"
+          trend={`${stats?.bets?.matched_count || 0} apostas emparceiradas`}
           className="border-emerald-500"
         />
         
@@ -295,6 +296,7 @@ export default function Dashboard() {
     </div>
   );
 }
+
 
 
 

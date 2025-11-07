@@ -232,7 +232,7 @@ export default function Header({ onOpenAuthModal }) {
 
                 {/* Dropdown do Saldo */}
                 {showBalanceMenu && (
-                  <div className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-cinza-borda bg-[#1a1a1a] shadow-2xl z-50">
+                  <div className="fixed md:absolute left-4 right-4 md:left-auto md:right-0 top-20 md:top-full mt-0 md:mt-2 w-auto md:w-80 rounded-lg border border-cinza-borda bg-[#1a1a1a] shadow-2xl z-50">
                     {/* Informações do Saldo */}
                     <div className="p-4 space-y-3">
                       {/* Saldo Disponível */}
@@ -321,7 +321,7 @@ export default function Header({ onOpenAuthModal }) {
 
                 {/* Dropdown Menu */}
                 {showUserMenu && (
-                  <div className="absolute right-0 top-full mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-lg border border-cinza-borda bg-[#1a1a1a] shadow-2xl z-50">
+                  <div className="fixed md:absolute left-4 right-4 md:left-auto md:right-0 top-20 md:top-full mt-0 md:mt-2 w-auto md:w-64 rounded-lg border border-cinza-borda bg-[#1a1a1a] shadow-2xl z-50">
                     <div className="p-3 border-b border-cinza-borda">
                       <p className="text-sm font-semibold text-white">
                         {user?.name || 'Usuário'}

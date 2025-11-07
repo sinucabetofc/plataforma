@@ -162,9 +162,19 @@ export default function MatchCard({ match }) {
               <p className="text-xs font-semibold text-yellow-500 mb-2 flex items-center gap-1">
                 ⭐ Vantagens
               </p>
-              <p className="text-xs text-gray-300">
-                {match.game_rules.advantages}
-              </p>
+              <div className="space-y-1">
+                {Array.isArray(match.game_rules.advantages) ? (
+                  match.game_rules.advantages.map((advantage, idx) => (
+                    <p key={idx} className="text-xs text-gray-300">
+                      • {advantage}
+                    </p>
+                  ))
+                ) : (
+                  <p className="text-xs text-gray-300">
+                    {match.game_rules.advantages}
+                  </p>
+                )}
+              </div>
             </div>
           )}
 

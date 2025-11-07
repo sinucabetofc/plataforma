@@ -47,7 +47,13 @@ export default function Home() {
       try {
         const result = await api.bets.getUserBets({ limit: 10 });
         console.log('User Bets Result:', result); // Debug
-        return result || { bets: [], stats: {} };
+        // API retorna { success, message, data: { bets, stats } }
+        // Precisamos retornar result.data, não result
+        if (result.success && result.data) {
+          console.log('Apostas encontradas:', result.data.bets?.length || 0);
+          return result.data; // ← CORREÇÃO: retornar result.data
+        }
+        return { bets: [], stats: {} };
       } catch (error) {
         console.error('Erro ao buscar apostas:', error);
         return { bets: [], stats: {} };
@@ -55,6 +61,8 @@ export default function Home() {
     },
     enabled: authenticated,
     refetchInterval: 15000, // Atualiza a cada 15s
+    refetchOnMount: true, // ← ADICIONADO
+    staleTime: 0, // ← ADICIONADO
   });
 
   // Buscar séries finalizadas para "Últimos Resultados"

@@ -11,6 +11,148 @@ import StatusBadge from '../../components/admin/StatusBadge';
 import { formatCurrency, formatDate, formatTransactionType } from '../../utils/formatters';
 import { FileText } from 'lucide-react';
 
+// Badge colorido para tipos de transação
+const TransactionTypeBadge = ({ type }) => {
+  const typeConfig = {
+    aposta: { 
+      label: 'Aposta', 
+      bgColor: 'bg-red-500/20', 
+      textColor: 'text-red-400', 
+      borderColor: 'border-red-500/50' 
+    },
+    ganho: { 
+      label: 'Ganho', 
+      bgColor: 'bg-green-500/20', 
+      textColor: 'text-green-400', 
+      borderColor: 'border-green-500/50' 
+    },
+    reembolso: { 
+      label: 'Reembolso', 
+      bgColor: 'bg-blue-500/20', 
+      textColor: 'text-blue-400', 
+      borderColor: 'border-blue-500/50' 
+    },
+    deposito: { 
+      label: 'Depósito', 
+      bgColor: 'bg-emerald-500/20', 
+      textColor: 'text-emerald-400', 
+      borderColor: 'border-emerald-500/50' 
+    },
+    saque: { 
+      label: 'Saque', 
+      bgColor: 'bg-orange-500/20', 
+      textColor: 'text-orange-400', 
+      borderColor: 'border-orange-500/50' 
+    },
+    taxa: { 
+      label: 'Taxa', 
+      bgColor: 'bg-purple-500/20', 
+      textColor: 'text-purple-400', 
+      borderColor: 'border-purple-500/50' 
+    },
+    admin_credit: { 
+      label: 'Crédito Admin', 
+      bgColor: 'bg-cyan-500/20', 
+      textColor: 'text-cyan-400', 
+      borderColor: 'border-cyan-500/50' 
+    },
+    admin_debit: { 
+      label: 'Débito Admin', 
+      bgColor: 'bg-pink-500/20', 
+      textColor: 'text-pink-400', 
+      borderColor: 'border-pink-500/50' 
+    },
+  };
+
+  const config = typeConfig[type] || { 
+    label: type, 
+    bgColor: 'bg-gray-500/20', 
+    textColor: 'text-gray-400', 
+    borderColor: 'border-gray-500/50' 
+  };
+
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${config.bgColor} ${config.textColor} ${config.borderColor}`}>
+      {config.label}
+    </span>
+  );
+};
+
+// Badge de status específico para transações
+const TransactionStatusBadge = ({ status, type, metadata }) => {
+  // Determinar texto e cor baseado no status E tipo
+  let label, colorClass;
+
+  // Para transações de APOSTA
+  if (type === 'aposta') {
+    if (status === 'pending') {
+      label = 'Aguardando emparelhamento';
+      colorClass = 'status-warning'; // 🟡 Amarelo
+    } else if (status === 'completed') {
+      // Verificar se é aposta casada ou resolvida através do metadata
+      const betStatus = metadata?.bet_status;
+      
+      if (betStatus === 'aceita') {
+        label = 'Aposta casada';
+        colorClass = 'status-info'; // 🔵 Azul
+      } else {
+        label = 'Concluída';
+        colorClass = 'status-success'; // 🟢 Verde
+      }
+    } else if (status === 'cancelled') {
+      label = 'Cancelada';
+      colorClass = 'status-error'; // 🔴 Vermelho
+    } else {
+      label = status;
+      colorClass = 'status-info';
+    }
+  }
+  // Para transações de DEPÓSITO ou SAQUE
+  else if (type === 'deposito' || type === 'saque') {
+    if (status === 'pending') {
+      label = 'Pendente';
+      colorClass = 'status-warning'; // 🟡 Amarelo
+    } else if (status === 'completed') {
+      label = 'Concluída';
+      colorClass = 'status-success'; // 🟢 Verde
+    } else if (status === 'failed') {
+      label = 'Falhou';
+      colorClass = 'status-error'; // 🔴 Vermelho
+    } else if (status === 'cancelled') {
+      label = 'Cancelada';
+      colorClass = 'status-error'; // 🔴 Vermelho
+    } else {
+      label = status;
+      colorClass = 'status-info';
+    }
+  }
+  // Para outros tipos (ganho, reembolso, etc)
+  else {
+    if (status === 'pending') {
+      label = 'Pendente';
+      colorClass = 'status-warning'; // 🟡 Amarelo
+    } else if (status === 'completed') {
+      label = 'Concluída';
+      colorClass = 'status-success'; // 🟢 Verde
+    } else if (status === 'failed') {
+      label = 'Falhou';
+      colorClass = 'status-error'; // 🔴 Vermelho
+    } else if (status === 'cancelled') {
+      label = 'Cancelada';
+      colorClass = 'status-error'; // 🔴 Vermelho
+    } else {
+      label = status;
+      colorClass = 'status-info';
+    }
+  }
+
+  return (
+    <span className={`status-badge ${colorClass}`}>
+      {label}
+    </span>
+  );
+};
+
 export default function Transactions() {
   const { filters, setTransactionsFilters } = useAdminStore();
   const transactionsFilters = filters.transactions;
@@ -31,17 +173,25 @@ export default function Transactions() {
     {
       key: 'type',
       label: 'Tipo',
-      render: (value) => formatTransactionType(value),
+      render: (value) => <TransactionTypeBadge type={value} />,
     },
     {
       key: 'amount',
       label: 'Valor',
-      render: (value) => formatCurrency(value),
+      render: (value) => {
+        const amount = value / 100;
+        const isNegative = amount < 0;
+        return (
+          <span className={`font-semibold ${isNegative ? 'text-red-400' : 'text-green-400'}`}>
+            {formatCurrency(amount)}
+          </span>
+        );
+      },
     },
     {
       key: 'status',
       label: 'Status',
-      render: (status) => <StatusBadge status={status} />,
+      render: (status, row) => <TransactionStatusBadge status={status} type={row.type} metadata={row.metadata} />,
     },
     {
       key: 'created_at',
@@ -78,12 +228,12 @@ export default function Transactions() {
               onChange={(e) => setTransactionsFilters({ type: e.target.value || null, page: 1 })}
             >
               <option value="">Todos</option>
-              <option value="deposit">Depósito</option>
-              <option value="withdraw">Saque</option>
-              <option value="bet">Aposta</option>
-              <option value="win">Ganho</option>
-              <option value="fee">Taxa</option>
-              <option value="refund">Reembolso</option>
+              <option value="deposito">Depósito</option>
+              <option value="saque">Saque</option>
+              <option value="aposta">Aposta</option>
+              <option value="ganho">Ganho</option>
+              <option value="taxa">Taxa</option>
+              <option value="reembolso">Reembolso</option>
             </select>
           </div>
 

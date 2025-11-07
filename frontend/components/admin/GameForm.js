@@ -20,6 +20,14 @@ export default function GameForm({ onSubmit, onCancel, initialData = null, isLoa
   const [players, setPlayers] = useState([]);
   const [loadingPlayers, setLoadingPlayers] = useState(true);
   
+  // Processar advantages: converter string para array se necessário
+  const processAdvantages = () => {
+    const adv = initialData?.game_rules?.advantages;
+    if (!adv) return [''];
+    if (Array.isArray(adv)) return adv.length > 0 ? adv : [''];
+    return [adv]; // String única vira array de 1 elemento
+  };
+
   const [formData, setFormData] = useState({
     player1_id: initialData?.player1?.id || '',
     player2_id: initialData?.player2?.id || '',
@@ -27,7 +35,7 @@ export default function GameForm({ onSubmit, onCancel, initialData = null, isLoa
     scheduled_at: initialData?.scheduled_at || '',
     location: initialData?.location || 'Brasil',
     game_type: initialData?.game_rules?.game_type || 'LISA',
-    advantages: initialData?.game_rules?.advantages || '',
+    advantages: processAdvantages(),
     total_series: initialData?.total_series || 1,
     youtube_url: initialData?.youtube_url || '',
   });
@@ -98,6 +106,9 @@ export default function GameForm({ onSubmit, onCancel, initialData = null, isLoa
       return;
     }
 
+    // Filtrar vantagens vazias
+    const validAdvantages = formData.advantages.filter(adv => adv.trim() !== '');
+
     // Preparar dados para envio (agrupar game_rules)
     const dataToSubmit = {
       player1_id: formData.player1_id,
@@ -109,7 +120,7 @@ export default function GameForm({ onSubmit, onCancel, initialData = null, isLoa
       youtube_url: formData.youtube_url,
       game_rules: {
         game_type: formData.game_type,
-        advantages: formData.advantages,
+        advantages: validAdvantages.length > 0 ? validAdvantages : null,
       }
     };
 
@@ -123,6 +134,26 @@ export default function GameForm({ onSubmit, onCancel, initialData = null, isLoa
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
+  };
+
+  // Funções para gerenciar vantagens
+  const handleAdvantageChange = (index, value) => {
+    const newAdvantages = [...formData.advantages];
+    newAdvantages[index] = value;
+    setFormData(prev => ({ ...prev, advantages: newAdvantages }));
+  };
+
+  const addAdvantage = () => {
+    setFormData(prev => ({ ...prev, advantages: [...prev.advantages, ''] }));
+  };
+
+  const removeAdvantage = (index) => {
+    const newAdvantages = formData.advantages.filter((_, i) => i !== index);
+    // Manter pelo menos um campo vazio
+    if (newAdvantages.length === 0) {
+      newAdvantages.push('');
+    }
+    setFormData(prev => ({ ...prev, advantages: newAdvantages }));
   };
 
   return (
@@ -323,19 +354,43 @@ export default function GameForm({ onSubmit, onCancel, initialData = null, isLoa
             </div>
           </div>
 
-          {/* Vantagens */}
+          {/* Vantagens (Múltiplas) */}
           <div>
             <label className="block text-sm font-medium text-admin-text-secondary mb-2">
               Vantagens
             </label>
-            <textarea
-              className="input min-h-[80px]"
-              placeholder="Ex: Jogador 1 começa com 2 bolas de vantagem..."
-              value={formData.advantages}
-              onChange={(e) => handleChange('advantages', e.target.value)}
-            />
+            <div className="space-y-2">
+              {formData.advantages.map((advantage, index) => (
+                <div key={index} className="flex gap-2">
+                  <input
+                    type="text"
+                    className="input flex-1"
+                    placeholder="Ex: Kaique começa com 2 bolas de vantagem"
+                    value={advantage}
+                    onChange={(e) => handleAdvantageChange(index, e.target.value)}
+                  />
+                  {formData.advantages.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeAdvantage(index)}
+                      className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                      title="Remover vantagem"
+                    >
+                      <X size={18} />
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={addAdvantage}
+                className="text-sm text-admin-green hover:text-verde-neon flex items-center gap-1 transition-colors"
+              >
+                + Adicionar outra vantagem
+              </button>
+            </div>
             <p className="text-xs text-admin-text-muted mt-1">
-              💡 Descreva vantagens ou condições especiais do jogo
+              💡 Adicione múltiplas vantagens ou condições especiais do jogo
             </p>
           </div>
 

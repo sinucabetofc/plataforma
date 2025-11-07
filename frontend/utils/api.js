@@ -50,6 +50,15 @@ async function fetchAPI(endpoint, options = {}) {
     const data = await response.json();
 
     if (!response.ok) {
+      // Não logar erros 401 como erro (são normais quando não logado)
+      if (response.status === 401) {
+        // Silencioso - apenas lança o erro
+      } else if (response.status >= 500) {
+        console.error(`❌ [API] Erro ${response.status} em ${endpoint}:`, data.message);
+      } else if (response.status >= 400) {
+        console.log(`⚠️ [API] ${response.status} em ${endpoint}:`, data.message);
+      }
+      
       throw new APIError(
         data.message || 'Erro na requisição',
         response.status,
@@ -63,7 +72,8 @@ async function fetchAPI(endpoint, options = {}) {
       throw error;
     }
     
-    console.error('Erro na requisição:', error);
+    // Erro de rede ou parsing
+    console.error('❌ [API] Erro de conexão:', error.message);
     throw new APIError('Erro de conexão com o servidor', 500, null);
   }
 }
@@ -93,7 +103,8 @@ export const auth = {
       });
     }
     
-    return data.data;
+    // Retornar resposta completa com success (padronizado)
+    return data;
   },
 
   /**

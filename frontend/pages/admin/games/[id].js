@@ -18,7 +18,7 @@ export default function GameDetailsPage() {
   const router = useRouter();
   const { id } = router.query;
   
-  const { data: match, isLoading, error } = useMatch(id);
+  const { data: match, isLoading, error, refetch } = useMatch(id);
   const updateStatus = useUpdateMatchStatus();
 
   if (isLoading) {
@@ -64,7 +64,7 @@ export default function GameDetailsPage() {
       </div>
 
       {/* Informações da Partida */}
-      <MatchInfoCard match={match} />
+      <MatchInfoCard match={match} onUpdate={refetch} />
 
       {/* Grid com 2 colunas em telas grandes */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -82,6 +82,7 @@ export default function GameDetailsPage() {
     </div>
   );
 }
+
 
 
 

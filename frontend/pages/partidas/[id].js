@@ -26,6 +26,62 @@ import AnimatedScore from '../../components/AnimatedScore';
 import ScoreNotification from '../../components/ScoreNotification';
 import { Trophy } from 'lucide-react';
 
+// Componente de Fallback para erros do YouTube
+function YoutubeErrorFallback({ youtubeUrl, onRetry }) {
+  return (
+    <div className="aspect-video bg-gradient-to-br from-red-900/20 via-[#0a0a0a] to-[#000000] flex flex-col items-center justify-center p-8">
+      <div className="text-center max-w-md">
+        {/* Ícone */}
+        <div className="text-6xl mb-4">📺</div>
+        
+        {/* Título */}
+        <h3 className="text-xl font-bold text-white mb-2">
+          Vídeo com Restrição de Incorporação
+        </h3>
+        
+        {/* Descrição */}
+        <p className="text-gray-400 text-sm mb-6">
+          Este vídeo não pode ser exibido aqui devido às configurações de privacidade do proprietário no YouTube.
+        </p>
+        
+        {/* Botões */}
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          {/* Botão principal: Abrir no YouTube */}
+          <a
+            href={youtubeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-all shadow-lg"
+          >
+            <span>▶️</span>
+            <span>Assistir no YouTube</span>
+            <span>↗</span>
+          </a>
+          
+          {/* Botão secundário: Tentar novamente */}
+          {onRetry && (
+            <button
+              onClick={onRetry}
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg transition-all"
+            >
+              <span>🔄</span>
+              <span>Tentar Novamente</span>
+            </button>
+          )}
+        </div>
+        
+        {/* Dica */}
+        <div className="mt-6 p-3 bg-yellow-900/20 border border-yellow-700/50 rounded-lg">
+          <p className="text-yellow-400 text-xs flex items-center justify-center gap-2">
+            <span>💡</span>
+            <span>O proprietário do vídeo desativou a incorporação. Assista diretamente no YouTube.</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function PartidaDetalhesPage() {
   const router = useRouter();
   const { id } = router.query;
@@ -35,6 +91,7 @@ export default function PartidaDetalhesPage() {
   const [error, setError] = useState(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showDepositModal, setShowDepositModal] = useState(false);
+  const [youtubeError, setYoutubeError] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -190,12 +247,7 @@ export default function PartidaDetalhesPage() {
                 )}
                 <h2 className="text-lg font-bold text-white mb-1">{match.player1.name}</h2>
                 {match.player1.nickname && (
-                  <p className="text-sm text-gray-400 mb-1">({match.player1.nickname})</p>
-                )}
-                {match.player1.win_rate !== undefined && (
-                  <p className="text-xs text-gray-500">
-                    Taxa de ganho: <span className="text-green-500 font-semibold">{formatPercent(match.player1.win_rate)}</span>
-                  </p>
+                  <p className="text-sm text-gray-400">({match.player1.nickname})</p>
                 )}
               </div>
 
@@ -215,23 +267,26 @@ export default function PartidaDetalhesPage() {
                 )}
                 <h2 className="text-lg font-bold text-white mb-1">{match.player2.name}</h2>
                 {match.player2.nickname && (
-                  <p className="text-sm text-gray-400 mb-1">({match.player2.nickname})</p>
-                )}
-                {match.player2.win_rate !== undefined && (
-                  <p className="text-xs text-gray-500">
-                    Taxa de ganho: <span className="text-green-500 font-semibold">{formatPercent(match.player2.win_rate)}</span>
-                  </p>
+                  <p className="text-sm text-gray-400">({match.player2.nickname})</p>
                 )}
               </div>
             </div>
 
-            {/* Regras */}
-            {match.game_rules && (
-              <div className="mt-4 p-4 bg-[#1a1a1a] rounded-lg border border-gray-800">
-                <p className="text-sm font-semibold text-white mb-2">📋 Regras:</p>
-                <ul className="text-sm text-gray-400 space-y-1 list-disc list-inside">
+            {/* Vantagens */}
+            {match.game_rules && (match.game_rules.advantages || match.game_rules.points_to_win) && (
+              <div className="mt-4 p-4 bg-[#1a1a1a] rounded-lg border border-yellow-500/30">
+                <p className="text-sm font-semibold text-yellow-300 mb-2 flex items-center gap-2">
+                  ⭐ Vantagens:
+                </p>
+                <ul className="text-sm text-yellow-100 space-y-1 list-disc list-inside">
                   {match.game_rules.advantages && (
-                    <li>{match.game_rules.advantages}</li>
+                    Array.isArray(match.game_rules.advantages) ? (
+                      match.game_rules.advantages.map((advantage, idx) => (
+                        <li key={idx}>{advantage}</li>
+                      ))
+                    ) : (
+                      <li>{match.game_rules.advantages}</li>
+                    )
                   )}
                   {match.game_rules.points_to_win && (
                     <li>Jogo até {match.game_rules.points_to_win} pontos</li>
@@ -241,24 +296,51 @@ export default function PartidaDetalhesPage() {
             )}
           </div>
 
-          {/* YouTube Player */}
+          {/* YouTube Player com Fallback */}
           {match.youtube_url && (
             <div className="mb-6">
               <div className="bg-[#000000] rounded-lg overflow-hidden border border-gray-800">
-                <div className="aspect-video">
-                  <iframe
-                    src={`${match.youtube_url.replace('watch?v=', 'embed/')}?autoplay=1&mute=0&controls=1&modestbranding=1&rel=0`}
-                    className="w-full h-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
+                {!youtubeError ? (
+                  <>
+                    <div className="aspect-video relative bg-black">
+                      <iframe
+                        src={`${match.youtube_url.replace('watch?v=', 'embed/')}?autoplay=1&mute=0&controls=1&modestbranding=1&rel=0`}
+                        className="w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        onError={() => setYoutubeError(true)}
+                      />
+                    </div>
+                    <div className="p-3 bg-red-900/20 border-t border-red-800">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <p className="text-red-400 text-sm font-semibold flex items-center gap-2">
+                          <span className="animate-pulse">🔴</span>
+                          Transmissão ao vivo
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setYoutubeError(true)}
+                            className="text-xs text-gray-500 hover:text-gray-300 transition-colors px-2 py-1 rounded hover:bg-gray-800"
+                            title="Vídeo não carrega? Clique aqui"
+                          >
+                            ⚠️ Vídeo com erro?
+                          </button>
+                          <button
+                            onClick={() => window.open(match.youtube_url, '_blank')}
+                            className="text-xs text-gray-400 hover:text-white transition-colors flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-800"
+                          >
+                            Abrir no YouTube ↗
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <YoutubeErrorFallback 
+                    youtubeUrl={match.youtube_url}
+                    onRetry={() => setYoutubeError(false)}
                   />
-                </div>
-                <div className="p-3 bg-red-900/20 border-t border-red-800">
-                  <p className="text-red-400 text-sm font-semibold flex items-center gap-2">
-                    <span className="animate-pulse">🔴</span>
-                    Transmissão ao vivo
-                  </p>
-                </div>
+                )}
               </div>
             </div>
           )}
@@ -699,10 +781,14 @@ function SerieCard({ serie, match }) {
                   <div className="text-center py-3 text-xs text-gray-400">
                     Carregando apostas...
                   </div>
-                ) : betsData && betsData.by_player && Object.values(betsData.by_player).some(p => p.player.id === match.player1.id && p.bets.length > 0) ? (
+                ) : betsData && betsData.by_player && Object.values(betsData.by_player).some(p => 
+                    p.player.id === match.player1.id && 
+                    p.bets.some(bet => bet.status !== 'cancelada' && bet.status !== 'reembolsada')
+                  ) ? (
                   Object.values(betsData.by_player)
                     .filter(p => p.player.id === match.player1.id)
                     .flatMap(p => p.bets)
+                    .filter(bet => bet.status !== 'cancelada' && bet.status !== 'reembolsada') // Ocultar apostas canceladas/reembolsadas
                     .map((bet, index) => (
                       <BetItem 
                         key={bet.id}
@@ -767,10 +853,14 @@ function SerieCard({ serie, match }) {
                   <div className="text-center py-3 text-xs text-gray-400">
                     Carregando apostas...
                   </div>
-                ) : betsData && betsData.by_player && Object.values(betsData.by_player).some(p => p.player.id === match.player2.id && p.bets.length > 0) ? (
+                ) : betsData && betsData.by_player && Object.values(betsData.by_player).some(p => 
+                    p.player.id === match.player2.id && 
+                    p.bets.some(bet => bet.status !== 'cancelada' && bet.status !== 'reembolsada')
+                  ) ? (
                   Object.values(betsData.by_player)
                     .filter(p => p.player.id === match.player2.id)
                     .flatMap(p => p.bets)
+                    .filter(bet => bet.status !== 'cancelada' && bet.status !== 'reembolsada') // Ocultar apostas canceladas/reembolsadas
                     .map((bet, index) => (
                       <BetItem 
                         key={bet.id}
@@ -1106,4 +1196,5 @@ function BettingSection({ serie, match, onOpenLoginModal, onOpenDepositModal }) 
     </div>
   );
 }
+
 

@@ -110,10 +110,18 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }) {
   const onLoginSubmit = async (data) => {
     setIsLoading(true);
     try {
+      // loginApi agora retorna {success, message, data: {user, token, wallet}}
       const result = await loginApi(data.email, data.password);
-      if (result.success) {
-        // A resposta tem dados aninhados: result.data.data
-        const { token, user } = result.data.data || result.data;
+      
+      if (result.success && result.data) {
+        const { token, user, wallet } = result.data;
+        
+        if (!token || !user) {
+          toast.error('Erro ao processar login');
+          return;
+        }
+        
+        console.log('✅ [LOGIN] Login bem-sucedido:', user.email);
         
         // Usa o AuthContext para fazer login (atualiza estado global)
         authLogin(token, user);
@@ -126,11 +134,19 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }) {
           router.push('/home');
         }
       } else {
-        toast.error(result.message || 'Credenciais inválidas');
+        toast.error(result.message || 'Erro ao fazer login');
       }
     } catch (error) {
-      console.error('Erro no login:', error);
-      toast.error('Erro ao conectar com servidor');
+      console.error('❌ [LOGIN] Erro no login:', error);
+      
+      // Verificar tipo de erro
+      if (error.status === 401) {
+        toast.error('Email ou senha inválidos');
+      } else if (error.status >= 500) {
+        toast.error('Erro no servidor. Tente novamente.');
+      } else {
+        toast.error(error.message || 'Erro ao fazer login');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -155,9 +171,17 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }) {
 
     try {
       const result = await registerApi(completeData);
-      if (result.success) {
-        // A resposta tem dados aninhados: result.data.data
-        const { token, user } = result.data.data || result.data;
+      
+      // result já vem com a estrutura {success, data: {user, token, wallet}}
+      if (result.success && result.data) {
+        const { token, user, wallet } = result.data;
+        
+        if (!token || !user) {
+          toast.error('Erro ao processar cadastro');
+          return;
+        }
+        
+        console.log('✅ [REGISTER] Cadastro bem-sucedido:', user.email);
         
         // Usa o AuthContext para fazer login (atualiza estado global)
         authLogin(token, user);

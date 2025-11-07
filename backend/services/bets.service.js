@@ -122,7 +122,10 @@ class BetsService {
         };
       }
 
-      // 5. Buscar saldo atualizado
+      // 5. Tentar matching automático com apostas pendentes do lado oposto
+      const matchingResult = await this._performAutoMatching(bet, serie);
+
+      // 6. Buscar saldo atualizado
       const { data: updatedWallet } = await supabase
         .from('wallet')
         .select('balance')
@@ -140,8 +143,14 @@ class BetsService {
             nickname: bet.chosen_player.nickname
           },
           amount: bet.amount,
-          status: bet.status,
+          status: matchingResult.status || bet.status,
+          matched_with: matchingResult.matched_bet_id || null,
           placed_at: bet.placed_at
+        },
+        matching: {
+          success: matchingResult.matched,
+          matched_bet_id: matchingResult.matched_bet_id,
+          message: matchingResult.message
         },
         wallet: {
           balance: updatedWallet ? updatedWallet.balance : wallet.balance - amount
@@ -429,10 +438,55 @@ class BetsService {
         };
       }
 
-      // SISTEMA DE BLOQUEIO: Não reembolsamos porque nunca debitamos
-      // O saldo estava apenas "bloqueado" virtualmente
-      // Apenas atualizamos o status da aposta para "cancelada"
-      
+      // 1. Buscar wallet do usuário
+      const { data: wallet, error: walletError } = await supabase
+        .from('wallet')
+        .select('id, balance')
+        .eq('user_id', userId)
+        .single();
+
+      if (walletError || !wallet) {
+        throw {
+          code: 'WALLET_NOT_FOUND',
+          message: 'Carteira não encontrada'
+        };
+      }
+
+      // 2. Reembolsar o saldo
+      const { error: updateWalletError } = await supabase
+        .from('wallet')
+        .update({
+          balance: wallet.balance + bet.amount
+        })
+        .eq('user_id', userId);
+
+      if (updateWalletError) {
+        throw {
+          code: 'DATABASE_ERROR',
+          message: 'Erro ao reembolsar saldo',
+          details: updateWalletError.message
+        };
+      }
+
+      // 3. Criar transação de reembolso
+      const { error: transactionError } = await supabase
+        .from('transactions')
+        .insert({
+          wallet_id: wallet.id,
+          bet_id: betId,
+          type: 'reembolso',
+          amount: bet.amount,
+          balance_before: wallet.balance,
+          balance_after: wallet.balance + bet.amount,
+          description: `Reembolso de aposta cancelada - Série ${bet.serie_id}`
+        });
+
+      if (transactionError) {
+        console.error('Erro ao criar transação de reembolso:', transactionError);
+        // Não falhar por erro na transação, apenas logar
+      }
+
+      // 4. Atualizar status da aposta para cancelada
       const { error: updateError } = await supabase
         .from('bets')
         .update({
@@ -536,6 +590,105 @@ class BetsService {
         code: 'INTERNAL_ERROR',
         message: 'Erro ao buscar apostas recentes',
         details: error.message
+      };
+    }
+  }
+
+  /**
+   * Realiza matching automático de apostas
+   * @param {Object} newBet - Nova aposta criada
+   * @param {Object} serie - Dados da série
+   * @returns {Promise<Object>} Resultado do matching
+   */
+  async _performAutoMatching(newBet, serie) {
+    try {
+      console.log(`🔄 [MATCHING] Tentando emparelhar aposta ${newBet.id} (R$ ${newBet.amount / 100})`);
+
+      // Buscar ID do jogador oposto
+      const opponentPlayerId = newBet.chosen_player_id === serie.match.player1_id 
+        ? serie.match.player2_id 
+        : serie.match.player1_id;
+
+      console.log(`🔍 [MATCHING] Buscando apostas pendentes em ${opponentPlayerId} com mesmo valor...`);
+
+      // Buscar apostas pendentes do jogador oposto com o MESMO VALOR
+      const { data: oppositeBets, error: searchError } = await supabase
+        .from('bets')
+        .select('id, user_id, amount, chosen_player_id, placed_at')
+        .eq('serie_id', newBet.serie_id)
+        .eq('status', 'pendente')
+        .eq('chosen_player_id', opponentPlayerId)
+        .eq('amount', newBet.amount) // MESMO VALOR
+        .order('placed_at', { ascending: true }) // FIFO (primeiro que apostou)
+        .limit(1);
+
+      if (searchError) {
+        console.error('❌ [MATCHING] Erro ao buscar apostas opostas:', searchError);
+        return { matched: false, message: 'Erro ao buscar apostas' };
+      }
+
+      // Se não encontrou nenhuma aposta oposta com mesmo valor
+      if (!oppositeBets || oppositeBets.length === 0) {
+        console.log('⏳ [MATCHING] Nenhuma aposta oposta encontrada. Ficará pendente.');
+        return { 
+          matched: false, 
+          status: 'pendente',
+          message: 'Aguardando aposta oposta com mesmo valor' 
+        };
+      }
+
+      // ENCONTROU PAR! Vamos casar as apostas
+      const matchedBet = oppositeBets[0];
+      console.log(`✅ [MATCHING] PAR ENCONTRADO! Casando aposta ${newBet.id} com ${matchedBet.id}`);
+
+      // Atualizar AMBAS as apostas para status 'aceita'
+      const { error: updateError } = await supabase
+        .from('bets')
+        .update({ 
+          status: 'aceita',
+          matched_bet_id: matchedBet.id,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', newBet.id);
+
+      if (updateError) {
+        console.error('❌ [MATCHING] Erro ao atualizar nova aposta:', updateError);
+        return { matched: false, message: 'Erro ao atualizar aposta' };
+      }
+
+      const { error: updateError2 } = await supabase
+        .from('bets')
+        .update({ 
+          status: 'aceita',
+          matched_bet_id: newBet.id,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', matchedBet.id);
+
+      if (updateError2) {
+        console.error('❌ [MATCHING] Erro ao atualizar aposta oposta:', updateError2);
+        return { matched: false, message: 'Erro ao atualizar aposta oposta' };
+      }
+
+      console.log('🎉 [MATCHING] APOSTAS CASADAS COM SUCESSO!');
+      console.log(`   → Aposta 1: ${newBet.id} (${newBet.user_id})`);
+      console.log(`   → Aposta 2: ${matchedBet.id} (${matchedBet.user_id})`);
+      console.log(`   → Valor: R$ ${newBet.amount / 100} cada`);
+
+      return {
+        matched: true,
+        status: 'aceita',
+        matched_bet_id: matchedBet.id,
+        matched_user_id: matchedBet.user_id,
+        message: 'Aposta emparelhada com sucesso!'
+      };
+
+    } catch (error) {
+      console.error('❌ [MATCHING] Erro no processo de matching:', error);
+      return { 
+        matched: false, 
+        status: 'pendente',
+        message: 'Erro no matching, aposta ficará pendente' 
       };
     }
   }

@@ -28,6 +28,15 @@ router.get('/users', authenticateToken, (req, res) => {
 });
 
 /**
+ * @route   GET /api/admin/transactions
+ * @desc    Lista todas as transações do sistema
+ * @access  Private (Admin only)
+ */
+router.get('/transactions', authenticateToken, (req, res) => {
+  adminController.getAllTransactions(req, res);
+});
+
+/**
  * @route   GET /api/admin/users/:userId/transactions
  * @desc    Obtém transações de um usuário específico
  * @access  Private (Admin only)
