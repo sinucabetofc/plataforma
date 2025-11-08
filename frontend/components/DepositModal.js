@@ -85,6 +85,15 @@ export default function DepositModal({
   const checkPaymentStatus = async () => {
     try {
       const token = localStorage.getItem('token');
+      
+      // Verificar se token existe
+      if (!token) {
+        console.error('❌ Token não encontrado - usuário precisa fazer login novamente');
+        stopPolling();
+        toast.error('Sessão expirada. Faça login novamente.');
+        return;
+      }
+      
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const url = apiUrl.includes('/api') 
         ? `${apiUrl}/wallet/transactions/${transactionId}`
@@ -110,6 +119,12 @@ export default function DepositModal({
       }
     } catch (err) {
       console.error('Erro ao verificar status:', err);
+      
+      // Se erro 401, parar polling e avisar usuário
+      if (err.response?.status === 401) {
+        stopPolling();
+        toast.error('Sessão expirada. Faça login novamente para ver atualizações.');
+      }
     }
   };
 
