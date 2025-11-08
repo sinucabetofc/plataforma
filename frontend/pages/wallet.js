@@ -25,6 +25,8 @@ function Wallet() {
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [pixData, setPixData] = useState(null);
+  const [transactionId, setTransactionId] = useState(null);
 
   // Buscar dados da carteira
   const {
@@ -68,19 +70,28 @@ function Wallet() {
       return result.data;
     },
     onSuccess: (data) => {
-      toast.success('Depósito iniciado! Aguardando pagamento...');
-      setShowDepositModal(false);
-      refetchWallet();
-      refetchTransactions();
-      // TODO: Abrir QR Code do Pix (integração Woovi)
-      if (data.pix_qrcode) {
-        window.open(data.pix_url, '_blank');
-      }
+      toast.success('QR Code gerado! Aguardando pagamento...');
+      
+      // Passar dados do PIX para o modal
+      setPixData(data.pix);
+      setTransactionId(data.transaction_id);
+      
+      // Manter modal aberto para exibir QR Code
+      // (não fechar o modal)
     },
     onError: (error) => {
       toast.error(error.message || 'Erro ao criar depósito');
     },
   });
+
+  // Callback quando pagamento é confirmado
+  const handlePaymentSuccess = () => {
+    refetchWallet();
+    refetchTransactions();
+    setPixData(null);
+    setTransactionId(null);
+    setShowDepositModal(false);
+  };
 
   // Mutation para saque
   const withdrawMutation = useMutation({
@@ -243,9 +254,16 @@ function Wallet() {
       {/* Modal de Depósito Moderno */}
       <DepositModal
         isOpen={showDepositModal}
-        onClose={() => setShowDepositModal(false)}
+        onClose={() => {
+          setShowDepositModal(false);
+          setPixData(null);
+          setTransactionId(null);
+        }}
         onDeposit={handleDeposit}
         isLoading={depositMutation.isPending}
+        pixData={pixData}
+        transactionId={transactionId}
+        onPaymentSuccess={handlePaymentSuccess}
       />
 
       {/* Modal de Saque */}
