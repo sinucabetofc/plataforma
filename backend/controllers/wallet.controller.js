@@ -122,13 +122,37 @@ class WalletController {
   async wooviWebhook(req, res) {
     try {
       console.log('📥 Webhook Woovi recebido:', JSON.stringify(req.body, null, 2));
+      console.log('📥 Headers:', JSON.stringify(req.headers, null, 2));
+
+      // Verificar se é webhook de teste
+      if (req.body.evento === 'teste_webhook' || req.body.event === 'teste_webhook') {
+        console.log('✅ Webhook de teste recebido com sucesso!');
+        return successResponse(res, 200, 'Webhook de teste recebido com sucesso', {
+          evento: 'teste_webhook',
+          message: 'Webhook configurado corretamente!'
+        });
+      }
+
+      // Verificar se tem o evento correto
+      if (!req.body.event || req.body.event !== 'OPENPIX:CHARGE_COMPLETED') {
+        console.log('⏳ Evento ignorado:', req.body.event);
+        return successResponse(res, 200, 'Evento recebido', {
+          event: req.body.event,
+          message: 'Evento não é CHARGE_COMPLETED, ignorado'
+        });
+      }
 
       // 1. Validar dados do webhook
       const validationResult = wooviWebhookSchema.safeParse(req.body);
 
       if (!validationResult.success) {
         console.error('❌ Webhook inválido:', validationResult.error.errors);
-        return validationErrorResponse(res, validationResult.error.errors);
+        console.error('❌ Payload recebido:', req.body);
+        
+        // Retornar 200 mesmo com validação falha para não bloquear Woovi
+        return successResponse(res, 200, 'Webhook recebido mas não processado', {
+          validation_errors: validationResult.error.errors
+        });
       }
 
       const webhookData = validationResult.data;
@@ -170,6 +194,30 @@ class WalletController {
       return successResponse(res, 200, 'Webhook processado com erro', {
         error: error.message
       });
+    }
+  }
+
+  /**
+   * GET /api/wallet/transactions/:transactionId
+   * Busca uma transação específica (para polling)
+   */
+  async getTransaction(req, res) {
+    try {
+      const { transactionId } = req.params;
+      const userId = req.user.id;
+
+      // Buscar transação
+      const transaction = await walletService.getTransaction(transactionId, userId);
+
+      return successResponse(res, 200, 'Transação encontrada', transaction);
+    } catch (error) {
+      console.error('Erro no controller getTransaction:', error);
+
+      if (error.code === 'NOT_FOUND') {
+        return notFoundResponse(res, error.message);
+      }
+
+      return errorResponse(res, 500, 'Erro ao buscar transação');
     }
   }
 

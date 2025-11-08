@@ -100,6 +100,13 @@ router.post('/deposit', authenticateToken, depositLimiter, walletController.crea
  */
 router.post('/withdraw', authenticateToken, withdrawLimiter, walletController.createWithdraw);
 
+/**
+ * GET /api/wallet/transactions/:transactionId
+ * Busca uma transação específica (para polling de status)
+ * Retorna: Dados da transação incluindo status atualizado
+ */
+router.get('/transactions/:transactionId', authenticateToken, walletLimiter, walletController.getTransaction);
+
 // ============================================================
 // Exportar Router
 // ============================================================

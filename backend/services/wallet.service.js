@@ -31,6 +31,8 @@ class WalletService {
       }
 
       // 2. Calcular saldo bloqueado (apostas pendentes e aceitas)
+      // ⚠️ NOTA: Desde migration 1021, apostas são DEBITADAS ao criar
+      // Portanto, blocked_balance é apenas informativo, NÃO deve subtrair do balance
       const { data: pendingBets, error: betsError } = await supabase
         .from('bets')
         .select('amount')
@@ -41,7 +43,7 @@ class WalletService {
         console.error('Erro ao buscar apostas pendentes:', betsError);
       }
 
-      // Somar valor de todas as apostas pendentes/aceitas
+      // Somar valor de todas as apostas pendentes/aceitas (apenas para exibição)
       const blockedBalance = pendingBets?.reduce((sum, bet) => sum + bet.amount, 0) || 0;
 
       // 3. Buscar últimas 10 transações
@@ -58,8 +60,10 @@ class WalletService {
 
       // Converter centavos para reais
       const balanceInReais = parseFloat(wallet.balance) / 100;
-      const blockedInReais = blockedBalance / 100; // Usar valor calculado
-      const availableInReais = balanceInReais - blockedInReais;
+      const blockedInReais = blockedBalance / 100; // Apenas informativo
+      
+      // ✅ CORREÇÃO: Não subtrair blocked do balance porque já foi debitado!
+      const availableInReais = balanceInReais; // Saldo já reflete apostas feitas
       
       return {
         // Formato esperado pelo frontend
@@ -71,10 +75,10 @@ class WalletService {
         wallet: {
           id: wallet.id,
           balance: parseFloat(wallet.balance), // em centavos
-          blocked_balance: blockedBalance, // Saldo bloqueado calculado
+          blocked_balance: blockedBalance, // Saldo bloqueado calculado (apenas informativo)
           total_deposited: parseFloat(wallet.total_deposited),
           total_withdrawn: parseFloat(wallet.total_withdrawn),
-          available_balance: parseFloat(wallet.balance) - blockedBalance,
+          available_balance: parseFloat(wallet.balance), // ✅ Não subtrai blocked (já debitado)
           created_at: wallet.created_at,
           updated_at: wallet.updated_at
         },
@@ -156,9 +160,13 @@ class WalletService {
           metadata: {
             correlationID,
             woovi_charge_id: pixData.charge_id,
+            woovi_correlation_id: pixData.correlation_id,
             qr_code_url: pixData.qrcode_url,
             br_code: pixData.brcode,
-            expires_at: pixData.expires_at
+            payment_link: pixData.payment_link,
+            expires_at: pixData.expires_at,
+            expires_in: pixData.expires_in,
+            woovi_status: pixData.status
           }
         })
         .select('id, type, amount, status, created_at, metadata')
@@ -178,10 +186,12 @@ class WalletService {
         transaction_id: transaction.id,
         amount: parseFloat(amount),
         status: 'pending',
-        qr_code: {
-          url: pixData.qrcode_url,
-          brcode: pixData.brcode,
-          expires_at: pixData.expires_at
+        pix: {
+          qrCode: pixData.brcode,
+          qrCodeImage: pixData.qrcode_url,
+          paymentLink: pixData.payment_link,
+          expiresAt: pixData.expires_at,
+          expiresIn: pixData.expires_in
         },
         created_at: transaction.created_at,
         message: 'QR Code gerado com sucesso. Aguardando confirmação do pagamento.'
@@ -233,39 +243,41 @@ class WalletService {
         },
         {
           headers: {
-            'Authorization': `AppID ${WOOVI_APP_ID}`,
-            'Content-Type': 'application/json'
+            'Authorization': WOOVI_APP_ID,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
           }
         }
       );
+
+      console.log('✅ Cobrança Woovi criada:', {
+        correlationID: data.correlationID,
+        value: data.value,
+        transactionID: response.data.charge?.transactionID
+      });
 
       if (!response.data || !response.data.brCode) {
         throw new Error('Resposta inválida da API Woovi');
       }
 
+      const charge = response.data.charge || response.data;
+
       return {
-        charge_id: response.data.correlationID || data.correlationID,
-        qrcode_url: response.data.qrCodeImage || response.data.encodedImage,
-        brcode: response.data.brCode,
-        expires_at: response.data.expiresDate || new Date(Date.now() + 30 * 60 * 1000).toISOString() // 30 minutos
+        charge_id: charge.transactionID || charge.identifier,
+        correlation_id: charge.correlationID || data.correlationID,
+        qrcode_url: charge.qrCodeImage,
+        brcode: response.data.brCode || charge.brCode,
+        payment_link: charge.paymentLinkUrl,
+        expires_at: charge.expiresDate,
+        expires_in: charge.expiresIn || 86400,
+        status: charge.status
       };
     } catch (error) {
-      console.error('Erro ao gerar QR Code Woovi:', error.response?.data || error.message);
+      console.error('❌ Erro ao gerar QR Code Woovi:', error.response?.data || error.message);
       
-      // Em ambiente de desenvolvimento, retornar dados mock
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('⚠️  Usando dados MOCK do Woovi (desenvolvimento)');
-        return {
-          charge_id: data.correlationID,
-          qrcode_url: 'https://ui-avatars.com/api/?name=PIX+QRCode&size=300&background=00C247&color=fff',
-          brcode: '00020126580014br.gov.bcb.pix0136' + data.correlationID + '520400005303986540' + (data.value / 100).toFixed(2) + '5802BR5913SinucaBet6009SaoPaulo62070503***63041234',
-          expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString()
-        };
-      }
-
       throw {
         code: 'EXTERNAL_API_ERROR',
-        message: 'Erro ao gerar QR Code Pix',
+        message: 'Erro ao gerar QR Code Pix. Verifique as credenciais da Woovi.',
         details: error.response?.data?.message || error.message
       };
     }
@@ -425,7 +437,8 @@ class WalletService {
       const netAmount = parseFloat(amount.toFixed(2));
 
       // 4. Verificar saldo disponível
-      const availableBalance = parseFloat(wallet.balance) - parseFloat(wallet.blocked_balance);
+      // ✅ Saldo já reflete apostas debitadas, não precisa subtrair blocked_balance
+      const availableBalance = parseFloat(wallet.balance);
       
       if (availableBalance < totalAmount) {
         throw {
@@ -550,6 +563,54 @@ class WalletService {
   }
 
   /**
+   * Busca uma transação específica
+   * @param {string} transactionId - ID da transação
+   * @param {string} userId - ID do usuário (para segurança)
+   * @returns {Promise<Object>} Dados da transação
+   */
+  async getTransaction(transactionId, userId) {
+    try {
+      const { data: transaction, error } = await supabase
+        .from('transactions')
+        .select('id, user_id, type, amount, fee, net_amount, status, description, metadata, created_at, processed_at')
+        .eq('id', transactionId)
+        .eq('user_id', userId)
+        .single();
+
+      if (error || !transaction) {
+        throw {
+          code: 'NOT_FOUND',
+          message: 'Transação não encontrada'
+        };
+      }
+
+      return {
+        id: transaction.id,
+        type: transaction.type,
+        amount: parseFloat(transaction.amount),
+        fee: parseFloat(transaction.fee || 0),
+        net_amount: parseFloat(transaction.net_amount || transaction.amount),
+        status: transaction.status,
+        description: transaction.description,
+        metadata: transaction.metadata,
+        created_at: transaction.created_at,
+        processed_at: transaction.processed_at
+      };
+    } catch (error) {
+      if (error.code) {
+        throw error;
+      }
+
+      console.error('Erro ao buscar transação:', error);
+      throw {
+        code: 'INTERNAL_ERROR',
+        message: 'Erro ao buscar transação',
+        details: error.message
+      };
+    }
+  }
+
+  /**
    * Bloqueia saldo para uma aposta
    * @param {string} userId - ID do usuário
    * @param {number} amount - Valor a bloquear
@@ -570,7 +631,8 @@ class WalletService {
         };
       }
 
-      const availableBalance = parseFloat(wallet.balance) - parseFloat(wallet.blocked_balance);
+      // ✅ Saldo já reflete apostas debitadas, não precisa subtrair blocked_balance
+      const availableBalance = parseFloat(wallet.balance);
 
       if (availableBalance < amount) {
         throw {
