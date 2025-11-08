@@ -202,7 +202,7 @@ export default function DepositModal({
           )}
 
           {/* Conteúdo */}
-          <div className="p-6 md:p-8">
+          <div className="p-5 md:p-6">
             {/* ========================================= */}
             {/* STEP 1: SELEÇÃO DE VALOR */}
             {/* ========================================= */}
@@ -320,42 +320,42 @@ export default function DepositModal({
             {/* ========================================= */}
             {step === 2 && pixData && (
               <>
-                <div className="text-center mb-6">
-                  <h2 className="text-2xl font-bold text-texto-principal mb-2">
+                <div className="text-center mb-4">
+                  <h2 className="text-xl font-bold text-texto-principal mb-1">
                     Pague com PIX
                   </h2>
-                  <p className="text-texto-secundario text-sm">
+                  <p className="text-texto-secundario text-xs">
                     Escaneie o QR Code ou copie o código
                   </p>
                 </div>
 
-                {/* QR Code */}
-                <div className="bg-white p-6 rounded-xl mb-6">
-                  <div className="flex justify-center mb-4">
+                {/* QR Code - Menor */}
+                <div className="bg-white p-4 rounded-xl mb-4">
+                  <div className="flex justify-center mb-3">
                     {pixData.qrCodeImage ? (
                       <img 
                         src={pixData.qrCodeImage} 
                         alt="QR Code PIX"
-                        className="w-64 h-64 rounded-lg"
+                        className="w-48 h-48 rounded-lg"
                       />
                     ) : (
-                      <div className="w-64 h-64 bg-gray-100 rounded-lg flex items-center justify-center">
-                        <QrCode size={64} className="text-gray-400" />
+                      <div className="w-48 h-48 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <QrCode size={48} className="text-gray-400" />
                       </div>
                     )}
                   </div>
 
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-green-600 mb-2">
+                    <p className="text-xl font-bold text-green-600 mb-1">
                       {formatCurrency(amount)}
                     </p>
                     {timeLeft && timeLeft !== 'Expirado' && (
-                      <p className="text-sm text-gray-500">
+                      <p className="text-xs text-gray-500">
                         Expira em: <span className="font-semibold">{timeLeft}</span>
                       </p>
                     )}
                     {timeLeft === 'Expirado' && (
-                      <p className="text-sm text-red-600 font-semibold">
+                      <p className="text-xs text-red-600 font-semibold">
                         ⚠️ QR Code expirado
                       </p>
                     )}
@@ -365,9 +365,9 @@ export default function DepositModal({
                 {/* Botão Copiar Código */}
                 <button
                   onClick={handleCopyCode}
-                  className="w-full mb-3 px-4 py-3 bg-cinza-claro hover:bg-cinza-medio border border-cinza-borda rounded-lg text-sm font-medium text-texto-principal transition-all hover:border-verde-neon/50 flex items-center justify-center gap-2"
+                  className="w-full mb-2 px-4 py-2.5 bg-cinza-claro hover:bg-cinza-medio border border-cinza-borda rounded-lg text-sm font-medium text-texto-principal transition-all hover:border-verde-neon/50 flex items-center justify-center gap-2"
                 >
-                  <Copy size={18} />
+                  <Copy size={16} />
                   Copiar Código PIX
                 </button>
 
@@ -377,23 +377,23 @@ export default function DepositModal({
                     href={pixData.paymentLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block w-full mb-4 px-4 py-3 bg-verde-neon hover:bg-verde-neon/90 text-cinza-escuro text-center rounded-lg font-bold transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
+                    className="block w-full mb-3 px-4 py-2.5 bg-verde-neon hover:bg-verde-neon/90 text-cinza-escuro text-center rounded-lg font-bold transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
                   >
-                    <ExternalLink size={18} />
+                    <ExternalLink size={16} />
                     Abrir no App do Banco
                   </a>
                 )}
 
                 {/* Status de Aguardando */}
-                <div className="text-center py-4 mb-4">
+                <div className="text-center py-2 mb-3">
                   <div className="flex items-center justify-center gap-2 text-texto-secundario">
                     <div className="w-2 h-2 bg-verde-neon rounded-full animate-pulse"></div>
-                    <span className="text-sm">Aguardando pagamento...</span>
+                    <span className="text-xs">Aguardando pagamento...</span>
                   </div>
                 </div>
 
-                {/* Instruções */}
-                <div className="bg-cinza-claro border border-cinza-borda rounded-lg p-4 mb-4">
+                {/* Instruções - Mais Compactas */}
+                <div className="bg-cinza-claro border border-cinza-borda rounded-lg p-3 mb-3">
                   <p className="text-xs text-texto-secundario leading-relaxed">
                     <strong className="text-texto-normal">Como pagar:</strong><br />
                     1. Abra o app do seu banco<br />
@@ -405,10 +405,10 @@ export default function DepositModal({
                   </p>
                 </div>
 
-                {/* Botão Cancelar */}
+                {/* Botão Cancelar - Mais Visível */}
                 <button
                   onClick={handleClose}
-                  className="w-full px-4 py-2 border border-cinza-borda rounded-lg hover:bg-cinza-claro transition text-sm text-texto-secundario"
+                  className="w-full px-4 py-3 border-2 border-cinza-borda rounded-lg hover:bg-cinza-claro hover:border-texto-secundario transition text-base font-medium text-texto-normal"
                 >
                   Cancelar
                 </button>
