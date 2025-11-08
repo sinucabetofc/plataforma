@@ -157,3 +157,4 @@ WHERE status = 'em_andamento';
 -- FIM DA MIGRATION
 -- =====================================================
 
+

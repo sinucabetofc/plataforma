@@ -30,6 +30,15 @@ const betsRoutes = require('./routes/bets.routes');
 // Rotas admin
 const adminRoutes = require('./routes/admin.routes');
 
+// Rotas de influencers (admin)
+const influencersRoutes = require('./routes/influencers.routes');
+
+// Rotas de autenticação de influencers
+const influencersAuthRoutes = require('./routes/influencers-auth.routes');
+
+// Rotas do painel de influencers
+const influencersPanelRoutes = require('./routes/influencers-panel.routes');
+
 // Rotas de upload
 const uploadRoutes = require('./routes/upload.routes');
 
@@ -153,8 +162,18 @@ app.use('/api/matches', matchesRoutes);
 app.use('/api/series', seriesRoutes);
 app.use('/api/bets', betsRoutes); // Nova estrutura de apostas
 
+// Rotas de influencers (admin) (requerem autenticação + role='admin')
+// IMPORTANTE: Deve vir ANTES da rota genérica /api/admin
+app.use('/api/admin/influencers', influencersRoutes);
+
 // Rotas admin (requerem autenticação + role='admin')
 app.use('/api/admin', adminRoutes);
+
+// Rotas de autenticação de influencers
+app.use('/api/influencers/auth', influencersAuthRoutes);
+
+// Rotas do painel de influencers (requerem autenticação de influencer)
+app.use('/api/influencers', influencersPanelRoutes);
 
 // Rotas de upload (requerem autenticação)
 app.use('/api/upload', uploadRoutes);

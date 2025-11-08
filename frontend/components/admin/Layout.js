@@ -7,11 +7,12 @@
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import ProtectedRoute from './ProtectedRoute';
+import MobileNav from './MobileNav';
 
 export default function Layout({ children }) {
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-admin-black">
+      <div className="min-h-screen bg-admin-black pb-16 lg:pb-0">
         {/* Sidebar */}
         <Sidebar />
 
@@ -27,6 +28,9 @@ export default function Layout({ children }) {
             </div>
           </main>
         </div>
+        
+        {/* Mobile Nav */}
+        <MobileNav />
       </div>
     </ProtectedRoute>
   );

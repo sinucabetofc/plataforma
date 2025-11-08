@@ -26,3 +26,4 @@ BEGIN
   RAISE NOTICE 'Sistema agora permite CPF duplicado';
 END $$;
 
+

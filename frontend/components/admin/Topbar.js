@@ -34,16 +34,8 @@ export default function Topbar() {
   return (
     <header className="h-16 bg-black border-b border-black fixed top-0 right-0 left-0 lg:left-64 z-30">
       <div className="h-full px-4 lg:px-6 flex items-center justify-between">
-        {/* Botão menu (mobile) */}
-        <button
-          onClick={toggleSidebar}
-          className="lg:hidden text-admin-text-secondary hover:text-admin-green"
-        >
-          <Menu size={24} />
-        </button>
-
-        {/* Título da página (desktop) */}
-        <div className="hidden lg:block">
+        {/* Título da página */}
+        <div>
           <h1 className="text-xl font-bold text-admin-text-primary">
             Painel Administrativo
           </h1>

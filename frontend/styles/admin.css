@@ -239,6 +239,17 @@ h6 {
   background-color: #dc2626;
 }
 
+.btn-warning {
+  background-color: var(--status-warning);
+  color: var(--admin-black);
+  font-weight: 600;
+}
+
+.btn-warning:hover:not(:disabled) {
+  background-color: #f59e0b;
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+}
+
 .btn-outline {
   background-color: transparent;
   border: 1px solid var(--admin-green);
@@ -425,6 +436,144 @@ h6 {
   .admin-card {
     padding: 1rem;
   }
+}
+
+/* Admin specific class aliases */
+.admin-input {
+  width: 100%;
+  padding: 0.625rem 1rem;
+  background-color: var(--admin-gray-dark);
+  border: 1px solid #000000;
+  border-radius: var(--radius);
+  color: var(--admin-text-primary);
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.admin-input:focus {
+  outline: none;
+  border-color: var(--admin-green);
+  box-shadow: 0 0 0 3px rgba(39, 229, 2, 0.1);
+}
+
+.admin-input::placeholder {
+  color: var(--admin-text-muted);
+}
+
+.admin-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-select {
+  width: 100%;
+  padding: 0.625rem 1rem;
+  background-color: var(--admin-gray-dark);
+  border: 1px solid #000000;
+  border-radius: var(--radius);
+  color: var(--admin-text-primary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-select:focus {
+  outline: none;
+  border-color: var(--admin-green);
+  box-shadow: 0 0 0 3px rgba(39, 229, 2, 0.1);
+}
+
+.admin-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--admin-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.admin-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background-color: var(--admin-green);
+  color: var(--admin-black);
+  font-weight: 600;
+  font-size: 0.875rem;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-btn-primary:hover:not(:disabled) {
+  background-color: var(--admin-green-hover);
+  box-shadow: 0 0 20px rgba(39, 229, 2, 0.3);
+}
+
+.admin-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background-color: var(--admin-gray-light);
+  color: var(--admin-text-primary);
+  font-weight: 500;
+  font-size: 0.875rem;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-btn-secondary:hover:not(:disabled) {
+  background-color: var(--admin-gray-medium);
+}
+
+.admin-btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Status badge variants */
+.status-badge-default {
+  background-color: rgba(160, 160, 160, 0.1);
+  color: var(--admin-text-secondary);
+  border: 1px solid var(--admin-text-muted);
+}
+
+.status-badge-success {
+  background-color: rgba(39, 229, 2, 0.1);
+  color: var(--status-success);
+  border: 1px solid var(--status-success);
+}
+
+.status-badge-warning {
+  background-color: rgba(251, 191, 36, 0.1);
+  color: var(--status-warning);
+  border: 1px solid var(--status-warning);
+}
+
+.status-badge-error {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--status-error);
+  border: 1px solid var(--status-error);
+}
+
+.status-badge-info {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: var(--status-info);
+  border: 1px solid var(--status-info);
 }
 
 /* Print styles */

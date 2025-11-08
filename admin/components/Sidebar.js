@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { Home, Users, Trophy, DollarSign, TrendingUp, UserCircle } from 'lucide-react';
+import { Home, Users, Trophy, DollarSign, TrendingUp, UserCircle, Star } from 'lucide-react';
 
 export default function Sidebar() {
   const router = useRouter();
@@ -9,6 +9,7 @@ export default function Sidebar() {
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Usuários', href: '/users', icon: Users },
     { name: 'Jogadores', href: '/players', icon: UserCircle },
+    { name: 'Influencers', href: '/influencers', icon: Star },
     { name: 'Partidas', href: '/games', icon: Trophy },
     { name: 'Apostas', href: '/bets', icon: TrendingUp },
     { name: 'Saques', href: '/withdrawals', icon: DollarSign },

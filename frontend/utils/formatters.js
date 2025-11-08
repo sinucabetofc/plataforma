@@ -306,6 +306,32 @@ export function formatCPF(cpf) {
 }
 
 /**
+ * Aplica máscara de CPF enquanto digita
+ * @param {string} value - Valor do input
+ * @returns {string} Valor com máscara aplicada
+ */
+export function maskCPF(value) {
+  if (!value) return '';
+  
+  // Remove tudo que não é número
+  const cleaned = value.replace(/\D/g, '');
+  
+  // Limita a 11 dígitos
+  const limited = cleaned.substring(0, 11);
+  
+  // Aplica máscara conforme o usuário digita
+  if (limited.length <= 3) {
+    return limited;
+  } else if (limited.length <= 6) {
+    return `${limited.slice(0, 3)}.${limited.slice(3)}`;
+  } else if (limited.length <= 9) {
+    return `${limited.slice(0, 3)}.${limited.slice(3, 6)}.${limited.slice(6)}`;
+  } else {
+    return `${limited.slice(0, 3)}.${limited.slice(3, 6)}.${limited.slice(6, 9)}-${limited.slice(9)}`;
+  }
+}
+
+/**
  * Formata telefone
  * @param {string} phone - Telefone a ser formatado
  * @returns {string} Telefone formatado
@@ -326,6 +352,32 @@ export function formatPhone(phone) {
   }
   
   return phone;
+}
+
+/**
+ * Aplica máscara de telefone enquanto digita
+ * @param {string} value - Valor do input
+ * @returns {string} Valor com máscara aplicada
+ */
+export function maskPhone(value) {
+  if (!value) return '';
+  
+  // Remove tudo que não é número
+  const cleaned = value.replace(/\D/g, '');
+  
+  // Limita a 11 dígitos
+  const limited = cleaned.substring(0, 11);
+  
+  // Aplica máscara conforme o usuário digita
+  if (limited.length <= 2) {
+    return limited;
+  } else if (limited.length <= 7) {
+    return `(${limited.slice(0, 2)}) ${limited.slice(2)}`;
+  } else if (limited.length <= 11) {
+    return `(${limited.slice(0, 2)}) ${limited.slice(2, 7)}-${limited.slice(7)}`;
+  }
+  
+  return limited;
 }
 
 /**

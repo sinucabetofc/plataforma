@@ -7,7 +7,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, UserCircle } from 'lucide-react';
+import { X, UserCircle, Star } from 'lucide-react';
 import { get } from '../../utils/api';
 import toast from 'react-hot-toast';
 
@@ -18,7 +18,9 @@ const GAME_TYPES = [
 
 export default function GameForm({ onSubmit, onCancel, initialData = null, isLoading = false }) {
   const [players, setPlayers] = useState([]);
+  const [influencers, setInfluencers] = useState([]);
   const [loadingPlayers, setLoadingPlayers] = useState(true);
+  const [loadingInfluencers, setLoadingInfluencers] = useState(true);
   
   // Processar advantages: converter string para array se necessário
   const processAdvantages = () => {
@@ -38,11 +40,13 @@ export default function GameForm({ onSubmit, onCancel, initialData = null, isLoa
     advantages: processAdvantages(),
     total_series: initialData?.total_series || 1,
     youtube_url: initialData?.youtube_url || '',
+    influencer_id: initialData?.influencer_id || '',
+    influencer_commission: initialData?.influencer_commission || '',
   });
 
   const [errors, setErrors] = useState({});
 
-  // Buscar jogadores cadastrados
+  // Buscar jogadores e influencers cadastrados
   useEffect(() => {
     const fetchPlayers = async () => {
       try {
@@ -57,7 +61,21 @@ export default function GameForm({ onSubmit, onCancel, initialData = null, isLoa
       }
     };
 
+    const fetchInfluencers = async () => {
+      try {
+        setLoadingInfluencers(true);
+        const response = await get('/admin/influencers?is_active=true&limit=100');
+        setInfluencers(response.data || []);
+      } catch (error) {
+        console.error('Erro ao buscar influencers:', error);
+        // Não mostrar erro, apenas deixa vazio
+      } finally {
+        setLoadingInfluencers(false);
+      }
+    };
+
     fetchPlayers();
+    fetchInfluencers();
   }, []);
 
   const validate = () => {
@@ -118,6 +136,8 @@ export default function GameForm({ onSubmit, onCancel, initialData = null, isLoa
       location: formData.location,
       total_series: formData.total_series,
       youtube_url: formData.youtube_url,
+      influencer_id: formData.influencer_id || null,
+      influencer_commission: formData.influencer_commission ? parseFloat(formData.influencer_commission) : null,
       game_rules: {
         game_type: formData.game_type,
         advantages: validAdvantages.length > 0 ? validAdvantages : null,
@@ -406,6 +426,77 @@ export default function GameForm({ onSubmit, onCancel, initialData = null, isLoa
               value={formData.youtube_url}
               onChange={(e) => handleChange('youtube_url', e.target.value)}
             />
+          </div>
+
+          {/* Influencer / Parceiro */}
+          <div className="pt-4 border-t border-admin-gray-light">
+            <div className="flex items-center gap-2 mb-4">
+              <Star className="text-status-warning" size={20} />
+              <h4 className="text-md font-semibold text-admin-text-primary">
+                Influencer / Parceiro
+              </h4>
+            </div>
+            <p className="text-xs text-admin-text-muted mb-4">
+              Selecione o influencer que irá transmitir este jogo (opcional)
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-admin-text-secondary mb-2">
+                  Influencer
+                </label>
+                {loadingInfluencers ? (
+                  <div className="input flex items-center justify-center text-admin-text-muted">
+                    Carregando...
+                  </div>
+                ) : (
+                  <select
+                    className="select"
+                    value={formData.influencer_id}
+                    onChange={(e) => {
+                      const influencerId = e.target.value;
+                      handleChange('influencer_id', influencerId);
+                      
+                      // Auto-preencher comissão se não tiver
+                      if (influencerId && !formData.influencer_commission) {
+                        const selectedInfluencer = influencers.find(inf => inf.id === influencerId);
+                        if (selectedInfluencer) {
+                          handleChange('influencer_commission', selectedInfluencer.commission_percentage);
+                        }
+                      }
+                    }}
+                  >
+                    <option value="">Nenhum influencer</option>
+                    {influencers.map((influencer) => (
+                      <option key={influencer.id} value={influencer.id}>
+                        {influencer.name} ({influencer.commission_percentage}%)
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {formData.influencer_id && (
+                <div>
+                  <label className="block text-sm font-medium text-admin-text-secondary mb-2">
+                    Comissão para este jogo (%)
+                  </label>
+                  <input
+                    type="number"
+                    className="input"
+                    value={formData.influencer_commission}
+                    onChange={(e) => handleChange('influencer_commission', e.target.value)}
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    placeholder="Comissão específica"
+                  />
+                  <p className="text-xs text-admin-text-muted mt-1">
+                    Deixe vazio para usar a comissão padrão do influencer
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Ações */}

@@ -375,3 +375,4 @@ O que mudou foi apenas o **backend**, que agora:
 **Desenvolvedor:** AI Assistant  
 **Status:** ✅ Pronto para produção
 
+

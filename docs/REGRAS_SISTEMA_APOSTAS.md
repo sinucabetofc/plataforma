@@ -405,3 +405,4 @@ Se Lado A ganhar:
 **Documentação Oficial**  
 **Atualizado em:** 07/11/2025
 
+

@@ -87,3 +87,4 @@ SELECT 'Trigger de reembolso automático criado com sucesso!' as status;
 -- FIM DA MIGRATION
 -- =====================================================
 
+

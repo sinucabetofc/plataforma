@@ -9,6 +9,7 @@ import BottomNav from '../components/BottomNav';
 import AuthModal from '../components/AuthModal';
 import { AuthProvider } from '../contexts/AuthContext';
 import AdminLayout from '../components/admin/Layout';
+import ParceirosLayout from '../components/parceiros/ParceirosLayout';
 
 /**
  * Custom App - Configuração global do Next.js
@@ -38,12 +39,13 @@ function MyApp({ Component, pageProps }) {
     setIsMounted(true);
   }, []);
 
-  // Verificar se é página admin
+  // Verificar se é página admin ou parceiros
   const isAdminPage = router.pathname.startsWith('/admin');
+  const isParceirosPage = router.pathname.startsWith('/parceiros');
 
   // Páginas que não devem mostrar o BottomNav
   const noBottomNavPages = [];
-  const showBottomNav = !noBottomNavPages.includes(router.pathname) && !isAdminPage;
+  const showBottomNav = !noBottomNavPages.includes(router.pathname) && !isAdminPage && !isParceirosPage;
 
   // Função para abrir modal de auth
   const handleOpenAuthModal = (mode = 'login') => {
@@ -53,7 +55,6 @@ function MyApp({ Component, pageProps }) {
 
   // Se for página admin, usa layout específico
   if (isAdminPage) {
-    // Página de login admin não usa Layout (não precisa de proteção)
     const isLoginPage = router.pathname === '/admin/login';
     
     return (
@@ -78,6 +79,48 @@ function MyApp({ Component, pageProps }) {
               success: {
                 iconTheme: {
                   primary: '#27e502',
+                  secondary: '#000',
+                },
+              },
+              error: {
+                iconTheme: {
+                  primary: '#ef4444',
+                  secondary: '#fff',
+                },
+              },
+            }}
+          />
+        )}
+      </QueryClientProvider>
+    );
+  }
+
+  // Se for página parceiros, usa layout específico (SEM Header/BottomNav da plataforma)
+  if (isParceirosPage) {
+    const isLoginPage = router.pathname === '/parceiros/login' || router.pathname === '/parceiros';
+    
+    return (
+      <QueryClientProvider client={queryClient}>
+        {isLoginPage ? (
+          <Component {...pageProps} />
+        ) : (
+          <ParceirosLayout>
+            <Component {...pageProps} />
+          </ParceirosLayout>
+        )}
+        {isMounted && (
+          <Toaster
+            position="bottom-right"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: '#1a1a1a',
+                color: '#fff',
+                border: '1px solid #2a2a2a',
+              },
+              success: {
+                iconTheme: {
+                  primary: '#fbbf24', // Amarelo para parceiros
                   secondary: '#000',
                 },
               },
@@ -156,6 +199,7 @@ function MyApp({ Component, pageProps }) {
 }
 
 export default MyApp;
+
 
 
 

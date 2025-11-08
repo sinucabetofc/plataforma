@@ -278,3 +278,4 @@ Se o usuário reportar novamente que está recebendo o dobro ao cancelar, solici
 **Última atualização**: 07/11/2025  
 **Próxima revisão**: Após implementar matching automático
 
+

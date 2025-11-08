@@ -206,3 +206,4 @@ GROUP BY u.id, u.email, w.balance;
 -- FIM DA MIGRATION
 -- =====================================================
 
+

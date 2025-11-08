@@ -1115,9 +1115,6 @@ function BettingSection({ serie, match, onOpenLoginModal, onOpenDepositModal }) 
             >
               <div className="text-center">
                 <p className="font-bold text-sm">{match.player1.nickname || match.player1.name}</p>
-                {match.player1.win_rate && (
-                  <p className="text-xs mt-1 opacity-75">Taxa: {formatPercent(match.player1.win_rate)}</p>
-                )}
               </div>
             </button>
             
@@ -1132,9 +1129,6 @@ function BettingSection({ serie, match, onOpenLoginModal, onOpenDepositModal }) 
             >
               <div className="text-center">
                 <p className="font-bold text-sm">{match.player2.nickname || match.player2.name}</p>
-                {match.player2.win_rate && (
-                  <p className="text-xs mt-1 opacity-75">Taxa: {formatPercent(match.player2.win_rate)}</p>
-                )}
               </div>
             </button>
           </div>

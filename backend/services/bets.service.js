@@ -16,7 +16,13 @@ class BetsService {
    */
   async createBet(userId, betData) {
     try {
+      // 🔍 DEBUG: Verificar valor recebido
+      console.log('🎯 [BACKEND] Recebeu betData:', betData);
+      
       const { serie_id, chosen_player_id, amount } = betData;
+      
+      console.log('🎯 [BACKEND] Amount extraído:', amount, 'tipo:', typeof amount);
+      console.log('🎯 [BACKEND] Em reais:', amount / 100);
 
       // 1. Verificar se série existe e está liberada
       const { data: serie, error: serieError } = await supabase
@@ -226,6 +232,7 @@ class BetsService {
         betsByPlayer[playerId].total_amount += bet.amount;
         betsByPlayer[playerId].bets.push({
           id: bet.id,
+          user_id: bet.user_id, // ← ADICIONADO para validação no frontend
           user: {
             id: bet.user.id,
             name: bet.user.name
@@ -245,6 +252,7 @@ class BetsService {
         by_player: betsByPlayer,
         all_bets: bets.map(bet => ({
           id: bet.id,
+          user_id: bet.user_id, // ← ADICIONADO para validação no frontend
           user: {
             id: bet.user.id,
             name: bet.user.name
@@ -404,6 +412,12 @@ class BetsService {
    */
   async cancelBet(betId, userId) {
     try {
+      console.log('========================================');
+      console.log('🚫 [CANCEL] INÍCIO DO CANCELAMENTO');
+      console.log('========================================');
+      console.log('Bet ID:', betId);
+      console.log('User ID:', userId);
+      
       // Buscar aposta
       const { data: bet, error: betError } = await supabase
         .from('bets')
@@ -421,6 +435,10 @@ class BetsService {
           message: 'Aposta não encontrada'
         };
       }
+
+      console.log('Aposta encontrada:');
+      console.log('  - Valor:', bet.amount / 100, 'reais');
+      console.log('  - Status atual:', bet.status);
 
       // Validar que aposta está pendente
       if (bet.status !== 'pendente') {
@@ -452,6 +470,11 @@ class BetsService {
         };
       }
 
+      console.log('Wallet ANTES do reembolso:');
+      console.log('  - Saldo:', wallet.balance / 100, 'reais');
+      console.log('  - Vai creditar:', bet.amount / 100, 'reais');
+      console.log('  - Saldo esperado:', (wallet.balance + bet.amount) / 100, 'reais');
+
       // 2. Reembolsar o saldo
       const { error: updateWalletError } = await supabase
         .from('wallet')
@@ -468,25 +491,44 @@ class BetsService {
         };
       }
 
+      console.log('✅ Wallet atualizada com sucesso');
+
+      // Verificar saldo após update
+      const { data: walletAfter } = await supabase
+        .from('wallet')
+        .select('balance')
+        .eq('user_id', userId)
+        .single();
+      
+      console.log('Wallet DEPOIS do UPDATE:');
+      console.log('  - Saldo real:', walletAfter?.balance / 100, 'reais');
+      console.log('  - Diferença:', (walletAfter?.balance - wallet.balance) / 100, 'reais');
+
       // 3. Criar transação de reembolso
+      console.log('Criando transação de reembolso...');
       const { error: transactionError } = await supabase
         .from('transactions')
         .insert({
           wallet_id: wallet.id,
+          user_id: userId, // ← ADICIONADO para rastreamento
           bet_id: betId,
           type: 'reembolso',
           amount: bet.amount,
           balance_before: wallet.balance,
           balance_after: wallet.balance + bet.amount,
-          description: `Reembolso de aposta cancelada - Série ${bet.serie_id}`
+          description: `Reembolso de aposta cancelada - Série ${bet.serie_id}`,
+          status: 'completed' // ← ADICIONADO para consistência
         });
 
       if (transactionError) {
-        console.error('Erro ao criar transação de reembolso:', transactionError);
+        console.error('❌ Erro ao criar transação de reembolso:', transactionError);
         // Não falhar por erro na transação, apenas logar
+      } else {
+        console.log('✅ Transação de reembolso criada');
       }
 
       // 4. Atualizar status da aposta para cancelada
+      console.log('Atualizando status da aposta para cancelada...');
       const { error: updateError } = await supabase
         .from('bets')
         .update({
@@ -502,6 +544,25 @@ class BetsService {
           details: updateError.message
         };
       }
+
+      console.log('✅ Status da aposta atualizado');
+
+      // Verificar saldo final
+      const { data: walletFinal } = await supabase
+        .from('wallet')
+        .select('balance')
+        .eq('user_id', userId)
+        .single();
+      
+      console.log('========================================');
+      console.log('🎯 [CANCEL] RESUMO FINAL');
+      console.log('========================================');
+      console.log('Saldo INICIAL:', wallet.balance / 100, 'reais');
+      console.log('Valor REEMBOLSADO:', bet.amount / 100, 'reais');
+      console.log('Saldo ESPERADO:', (wallet.balance + bet.amount) / 100, 'reais');
+      console.log('Saldo REAL FINAL:', walletFinal?.balance / 100, 'reais');
+      console.log('DIFERENÇA:', (walletFinal?.balance - wallet.balance - bet.amount) / 100, 'reais');
+      console.log('========================================');
 
       return {
         success: true,

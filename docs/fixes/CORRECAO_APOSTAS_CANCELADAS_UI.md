@@ -235,3 +235,4 @@ Criar página `/apostas/historico` com todas as apostas, incluindo canceladas, c
 **Correção aplicada em:** 07/11/2025  
 **Status:** ✅ PRONTO PARA PRODUÇÃO
 
+

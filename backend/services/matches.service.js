@@ -161,7 +161,7 @@ class MatchesService {
           player1:players!matches_player1_id_fkey(id, name, nickname, photo_url),
           player2:players!matches_player2_id_fkey(id, name, nickname, photo_url),
           creator:users!matches_created_by_fkey(id, name, email),
-          influencer:users!matches_influencer_id_fkey(id, name, email)
+          influencer:influencers!matches_influencer_id_fkey(id, name, email)
         `, { count: 'exact' });
 
       // Aplicar filtros
@@ -290,7 +290,7 @@ class MatchesService {
           player1:players!matches_player1_id_fkey(id, name, nickname, photo_url, win_rate),
           player2:players!matches_player2_id_fkey(id, name, nickname, photo_url, win_rate),
           creator:users!matches_created_by_fkey(id, name, email),
-          influencer:users!matches_influencer_id_fkey(id, name, email)
+          influencer:influencers!matches_influencer_id_fkey(id, name, email)
         `)
         .eq('id', matchId)
         .single();
@@ -552,3 +552,4 @@ class MatchesService {
 }
 
 module.exports = new MatchesService();
+

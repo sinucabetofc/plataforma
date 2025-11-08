@@ -10,6 +10,7 @@ import {
   LayoutDashboard, 
   Users, 
   UserCircle,
+  Star,
   Trophy, 
   Target, 
   DollarSign, 
@@ -33,6 +34,11 @@ const menuItems = [
     name: 'Jogadores',
     href: '/admin/players',
     icon: UserCircle,
+  },
+  {
+    name: 'Influencers',
+    href: '/admin/influencers',
+    icon: Star,
   },
   {
     name: 'Jogos',
