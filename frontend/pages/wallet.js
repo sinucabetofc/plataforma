@@ -58,7 +58,6 @@ function Wallet() {
       }
       throw new Error(result.message);
     },
-    enabled: authenticated, // Só buscar se autenticado
   });
 
   // Mutation para depósito
