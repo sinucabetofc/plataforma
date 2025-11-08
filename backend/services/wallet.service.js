@@ -121,10 +121,10 @@ class WalletService {
         };
       }
 
-      // 2. Verificar se carteira existe
+      // 2. Verificar se carteira existe e buscar saldo atual
       const { data: wallet, error: walletError } = await supabase
         .from('wallet')
-        .select('id')
+        .select('id, balance')
         .eq('user_id', userId)
         .single();
 
@@ -134,6 +134,8 @@ class WalletService {
           message: 'Carteira não encontrada'
         };
       }
+
+      const currentBalance = parseFloat(wallet.balance) || 0;
 
       // 3. Gerar correlationID único para rastreamento
       const correlationID = `DEPOSIT-${userId}-${Date.now()}-${uuidv4().substring(0, 8)}`;
@@ -147,6 +149,7 @@ class WalletService {
       });
 
       // 5. Criar transação pendente no banco
+      // Para depósitos pendentes, balance não muda até confirmação do webhook
       const { data: transaction, error: transactionError } = await supabase
         .from('transactions')
         .insert({
@@ -154,6 +157,8 @@ class WalletService {
           user_id: userId,
           type: 'deposito',
           amount: amount,
+          balance_before: currentBalance,
+          balance_after: currentBalance, // Não muda até webhook confirmar
           fee: 0,
           net_amount: amount,
           status: 'pending',
@@ -350,11 +355,12 @@ class WalletService {
         };
       }
 
-      // 4. Atualizar status da transação
+      // 4. Atualizar status da transação e balance_after
       const { error: updateTransactionError } = await supabase
         .from('transactions')
         .update({
           status: 'completed',
+          balance_after: newBalance,
           processed_at: new Date().toISOString(),
           metadata: {
             ...transaction.metadata,
