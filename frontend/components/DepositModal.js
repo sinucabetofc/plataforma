@@ -85,14 +85,16 @@ export default function DepositModal({
   const checkPaymentStatus = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || ''}/api/wallet/transactions/${transactionId}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        }
-      );
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const url = apiUrl.includes('/api') 
+        ? `${apiUrl}/wallet/transactions/${transactionId}`
+        : `${apiUrl}/api/wallet/transactions/${transactionId}`;
+      
+      const response = await axios.get(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
 
       if (response.data.data.status === 'completed') {
         stopPolling();
