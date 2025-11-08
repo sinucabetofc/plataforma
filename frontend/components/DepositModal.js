@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, CreditCard, QrCode, Flame, Copy, CheckCircle, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
 import axios from 'axios';
+import Cookies from 'js-cookie';
 
 /**
  * Modal de Depósito com 3 Etapas - Integração Woovi PIX
@@ -84,7 +85,8 @@ export default function DepositModal({
 
   const checkPaymentStatus = async () => {
     try {
-      const token = localStorage.getItem('token');
+      // Buscar token do cookie (mesmo método usado no resto da aplicação)
+      const token = Cookies.get('sinucabet_token');
       
       // Verificar se token existe
       if (!token) {
