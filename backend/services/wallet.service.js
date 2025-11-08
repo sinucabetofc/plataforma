@@ -151,7 +151,7 @@ class WalletService {
         .from('transactions')
         .insert({
           user_id: userId,
-          type: 'deposit',
+          type: 'deposito',
           amount: amount,
           fee: 0,
           net_amount: amount,
@@ -296,7 +296,7 @@ class WalletService {
         .from('transactions')
         .select('id, user_id, amount, status, metadata')
         .eq('metadata->>correlationID', correlationID)
-        .eq('type', 'deposit')
+        .eq('type', 'deposito')
         .single();
 
       if (transactionError || !transaction) {
@@ -478,7 +478,7 @@ class WalletService {
         .from('transactions')
         .insert({
           user_id: userId,
-          type: 'withdraw',
+          type: 'saque',
           amount: netAmount,
           fee: fee,
           net_amount: netAmount,
@@ -516,7 +516,7 @@ class WalletService {
         .from('transactions')
         .insert({
           user_id: userId,
-          type: 'fee',
+          type: 'taxa',
           amount: fee,
           fee: 0,
           net_amount: -fee,
