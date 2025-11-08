@@ -150,17 +150,20 @@ class WalletService {
 
       // 5. Criar transação pendente no banco
       // Para depósitos pendentes, balance não muda até confirmação do webhook
+      // IMPORTANTE: Valores salvos em CENTAVOS (50 reais = 5000 centavos)
+      const amountInCents = Math.round(amount * 100);
+      
       const { data: transaction, error: transactionError } = await supabase
         .from('transactions')
         .insert({
           wallet_id: wallet.id,
           user_id: userId,
           type: 'deposito',
-          amount: amount,
+          amount: amountInCents, // ✅ Salvar em CENTAVOS
           balance_before: currentBalance,
           balance_after: currentBalance, // Não muda até webhook confirmar
           fee: 0,
-          net_amount: amount,
+          net_amount: amountInCents, // ✅ Salvar em CENTAVOS
           status: 'pending',
           description: description || 'Depósito via Pix',
           metadata: {
@@ -438,31 +441,32 @@ class WalletService {
         };
       }
 
-      // 3. Calcular taxa de 8%
-      const fee = parseFloat((amount * 0.08).toFixed(2));
-      const totalAmount = parseFloat((amount + fee).toFixed(2));
-      const netAmount = parseFloat(amount.toFixed(2));
+      // 3. Calcular taxa de 8% (VALORES EM CENTAVOS)
+      const amountInCents = Math.round(amount * 100); // R$ 50 = 5000 centavos
+      const feeInCents = Math.round(amountInCents * 0.08); // 8% do valor
+      const totalAmountInCents = amountInCents + feeInCents;
+      const netAmountInCents = amountInCents;
 
       // 4. Verificar saldo disponível
       // ✅ Saldo já reflete apostas debitadas, não precisa subtrair blocked_balance
-      const availableBalance = parseFloat(wallet.balance);
+      const availableBalance = parseFloat(wallet.balance); // Já em centavos
       
-      if (availableBalance < totalAmount) {
+      if (availableBalance < totalAmountInCents) {
         throw {
           code: 'INSUFFICIENT_BALANCE',
           message: 'Saldo insuficiente para realizar o saque',
           details: {
-            available: availableBalance,
-            required: totalAmount,
+            available: availableBalance / 100, // Converter para reais na mensagem
+            required: totalAmountInCents / 100,
             amount: amount,
-            fee: fee
+            fee: feeInCents / 100
           }
         };
       }
 
-      // 5. Atualizar saldo da carteira (descontar total)
-      const newBalance = parseFloat((parseFloat(wallet.balance) - totalAmount).toFixed(2));
-      const newTotalWithdrawn = parseFloat((parseFloat(wallet.total_withdrawn) + amount).toFixed(2));
+      // 5. Atualizar saldo da carteira (descontar total) - VALORES EM CENTAVOS
+      const newBalance = parseFloat(wallet.balance) - totalAmountInCents;
+      const newTotalWithdrawn = parseFloat(wallet.total_withdrawn) + netAmountInCents;
 
       const { error: updateWalletError } = await supabase
         .from('wallet')
@@ -480,20 +484,25 @@ class WalletService {
         };
       }
 
-      // 6. Criar transação de saque (principal)
+      // 6. Criar transação de saque (principal) - VALORES EM CENTAVOS
+      const oldBalance = parseFloat(wallet.balance);
+      
       const { data: withdrawTransaction, error: withdrawError } = await supabase
         .from('transactions')
         .insert({
+          wallet_id: wallet.id, // ✅ Adicionar wallet_id
           user_id: userId,
           type: 'saque',
-          amount: netAmount,
-          fee: fee,
-          net_amount: netAmount,
+          amount: netAmountInCents, // ✅ Em centavos
+          balance_before: oldBalance, // ✅ Saldo antes (em centavos)
+          balance_after: newBalance, // ✅ Saldo depois (em centavos)
+          fee: feeInCents, // ✅ Em centavos
+          net_amount: netAmountInCents, // ✅ Em centavos
           status: 'pending',
           description: description || 'Solicitação de saque via Pix',
           metadata: {
             pix_key: pixKey,
-            total_debited: totalAmount,
+            total_debited: totalAmountInCents, // ✅ Em centavos
             awaiting_admin_confirmation: true,
             requested_at: new Date().toISOString()
           }
@@ -518,21 +527,24 @@ class WalletService {
         };
       }
 
-      // 7. Criar transação de taxa (relacionada ao saque)
+      // 7. Criar transação de taxa (relacionada ao saque) - VALORES EM CENTAVOS
       const { error: feeError } = await supabase
         .from('transactions')
         .insert({
+          wallet_id: wallet.id, // ✅ Adicionar wallet_id
           user_id: userId,
           type: 'taxa',
-          amount: fee,
+          amount: feeInCents, // ✅ Em centavos
+          balance_before: newBalance, // ✅ Saldo já foi debitado
+          balance_after: newBalance, // ✅ Taxa não muda saldo (já debitado junto)
           fee: 0,
-          net_amount: -fee,
+          net_amount: -feeInCents, // ✅ Em centavos (negativo)
           status: 'completed',
           description: `Taxa de saque (8%)`,
           metadata: {
             related_transaction_id: withdrawTransaction.id,
             fee_percentage: 8,
-            base_amount: amount
+            base_amount: amountInCents // ✅ Em centavos
           }
         });
 
@@ -541,15 +553,15 @@ class WalletService {
         // Não falhar a operação por causa da taxa, mas logar o erro
       }
 
-      // 8. Retornar dados do saque
+      // 8. Retornar dados do saque (converter para reais na resposta)
       return {
         transaction_id: withdrawTransaction.id,
         status: 'pending',
-        amount_requested: netAmount,
-        fee: fee,
-        total_debited: totalAmount,
-        net_to_receive: netAmount,
-        new_balance: newBalance,
+        amount_requested: netAmountInCents / 100, // Converter para reais
+        fee: feeInCents / 100, // Converter para reais
+        total_debited: totalAmountInCents / 100, // Converter para reais
+        net_to_receive: netAmountInCents / 100, // Converter para reais
+        new_balance: newBalance / 100, // Converter para reais
         pix_key: pixKey,
         created_at: withdrawTransaction.created_at,
         message: 'Solicitação de saque criada com sucesso. Aguardando confirmação do administrador.',
