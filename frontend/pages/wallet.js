@@ -52,12 +52,13 @@ function Wallet() {
   } = useQuery({
     queryKey: ['transactions'],
     queryFn: async () => {
-      const result = await getTransactions(10, 0);
+      const result = await getTransactions({ limit: 50, offset: 0 });
       if (result.success) {
         return result.data;
       }
       throw new Error(result.message);
     },
+    enabled: authenticated, // Só buscar se autenticado
   });
 
   // Mutation para depósito
@@ -235,9 +236,9 @@ function Wallet() {
 
           {transactionsLoading ? (
             <Loader text="Carregando transações..." />
-          ) : transactionsData?.transactions?.length > 0 ? (
+          ) : transactionsData?.length > 0 ? (
             <div className="space-y-4">
-              {transactionsData.transactions.map((transaction) => (
+              {transactionsData.map((transaction) => (
                 <TransactionCard key={transaction.id} transaction={transaction} />
               ))}
             </div>
