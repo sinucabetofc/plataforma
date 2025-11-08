@@ -198,6 +198,31 @@ class WalletController {
   }
 
   /**
+   * GET /api/wallet/transactions
+   * Lista transações do usuário
+   */
+  async getTransactions(req, res) {
+    try {
+      const userId = req.user.id;
+      const limit = parseInt(req.query.limit) || 50;
+      const offset = parseInt(req.query.offset) || 0;
+
+      // Buscar transações
+      const transactions = await walletService.getTransactions(userId, limit, offset);
+
+      return successResponse(res, 200, 'Transações obtidas com sucesso', transactions);
+    } catch (error) {
+      console.error('Erro no controller getTransactions:', error);
+
+      if (error.code === 'NOT_FOUND') {
+        return notFoundResponse(res, error.message);
+      }
+
+      return errorResponse(res, 500, 'Erro ao buscar transações');
+    }
+  }
+
+  /**
    * GET /api/wallet/transactions/:transactionId
    * Busca uma transação específica (para polling)
    */

@@ -101,6 +101,14 @@ router.post('/deposit', authenticateToken, depositLimiter, walletController.crea
 router.post('/withdraw', authenticateToken, withdrawLimiter, walletController.createWithdraw);
 
 /**
+ * GET /api/wallet/transactions
+ * Lista transações do usuário (histórico)
+ * Query params: limit, offset
+ * Retorna: Lista de transações ordenadas por data (mais recentes primeiro)
+ */
+router.get('/transactions', authenticateToken, walletLimiter, walletController.getTransactions);
+
+/**
  * GET /api/wallet/transactions/:transactionId
  * Busca uma transação específica (para polling de status)
  * Retorna: Dados da transação incluindo status atualizado

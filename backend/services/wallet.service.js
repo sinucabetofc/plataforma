@@ -582,6 +582,57 @@ class WalletService {
   }
 
   /**
+   * Lista transações do usuário
+   * @param {string} userId - ID do usuário
+   * @param {number} limit - Limite de transações
+   * @param {number} offset - Offset para paginação
+   * @returns {Promise<Array>} Lista de transações
+   */
+  async getTransactions(userId, limit = 50, offset = 0) {
+    try {
+      const { data: transactions, error } = await supabase
+        .from('transactions')
+        .select('id, user_id, type, amount, fee, net_amount, status, description, metadata, created_at, processed_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (error) {
+        throw {
+          code: 'DATABASE_ERROR',
+          message: 'Erro ao buscar transações',
+          details: error.message
+        };
+      }
+
+      // Converter valores de centavos para reais na resposta
+      return transactions.map(transaction => ({
+        id: transaction.id,
+        type: transaction.type,
+        amount: parseFloat(transaction.amount) / 100, // Centavos → Reais
+        fee: parseFloat(transaction.fee || 0) / 100, // Centavos → Reais
+        net_amount: parseFloat(transaction.net_amount || transaction.amount) / 100, // Centavos → Reais
+        status: transaction.status,
+        description: transaction.description,
+        metadata: transaction.metadata,
+        created_at: transaction.created_at,
+        processed_at: transaction.processed_at
+      }));
+    } catch (error) {
+      if (error.code) {
+        throw error;
+      }
+
+      console.error('Erro ao buscar transações:', error);
+      throw {
+        code: 'INTERNAL_ERROR',
+        message: 'Erro ao buscar transações',
+        details: error.message
+      };
+    }
+  }
+
+  /**
    * Busca uma transação específica
    * @param {string} transactionId - ID da transação
    * @param {string} userId - ID do usuário (para segurança)
@@ -603,12 +654,13 @@ class WalletService {
         };
       }
 
+      // Converter valores de centavos para reais na resposta
       return {
         id: transaction.id,
         type: transaction.type,
-        amount: parseFloat(transaction.amount),
-        fee: parseFloat(transaction.fee || 0),
-        net_amount: parseFloat(transaction.net_amount || transaction.amount),
+        amount: parseFloat(transaction.amount) / 100, // Centavos → Reais
+        fee: parseFloat(transaction.fee || 0) / 100, // Centavos → Reais
+        net_amount: parseFloat(transaction.net_amount || transaction.amount) / 100, // Centavos → Reais
         status: transaction.status,
         description: transaction.description,
         metadata: transaction.metadata,
