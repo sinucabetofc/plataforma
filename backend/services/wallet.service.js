@@ -150,6 +150,7 @@ class WalletService {
       const { data: transaction, error: transactionError } = await supabase
         .from('transactions')
         .insert({
+          wallet_id: wallet.id,
           user_id: userId,
           type: 'deposito',
           amount: amount,
