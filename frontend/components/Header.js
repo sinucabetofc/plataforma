@@ -20,6 +20,8 @@ export default function Header({ onOpenAuthModal }) {
   const [showBalanceMenu, setShowBalanceMenu] = useState(false);
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [pixData, setPixData] = useState(null);
+  const [transactionId, setTransactionId] = useState(null);
   const balanceMenuRef = useRef(null);
   const userMenuRef = useRef(null);
 
@@ -62,16 +64,11 @@ export default function Header({ onOpenAuthModal }) {
       return result.data;
     },
     onSuccess: (data) => {
-      toast.success('Depósito iniciado! Aguardando pagamento...');
-      setShowDepositModal(false);
-      refetchWallet();
-      // Abrir QR Code do Pix (integração Woovi)
-      if (data.data?.pix_qrcode || data.pix_qrcode) {
-        const pixUrl = data.data?.pix_url || data.pix_url;
-        if (pixUrl) {
-          window.open(pixUrl, '_blank');
-        }
-      }
+      toast.success('QR Code gerado! Aguardando pagamento...');
+      // NÃO fechar modal - exibir QR Code
+      setPixData(data.pix);
+      setTransactionId(data.transaction_id);
+      // Manter modal aberto para exibir QR Code
     },
     onError: (error) => {
       toast.error(error.message || 'Erro ao criar depósito');
@@ -84,6 +81,12 @@ export default function Header({ onOpenAuthModal }) {
       return;
     }
     depositMutation.mutate(amount);
+  };
+
+  const handlePaymentSuccess = () => {
+    refetchWallet();
+    setPixData(null);
+    setTransactionId(null);
   };
 
   const formatCurrency = (value) => {
@@ -353,9 +356,16 @@ export default function Header({ onOpenAuthModal }) {
       {/* Modal de Depósito */}
       <DepositModal
         isOpen={showDepositModal}
-        onClose={() => setShowDepositModal(false)}
+        onClose={() => {
+          setShowDepositModal(false);
+          setPixData(null);
+          setTransactionId(null);
+        }}
         onDeposit={handleDeposit}
         isLoading={depositMutation.isPending}
+        pixData={pixData}
+        transactionId={transactionId}
+        onPaymentSuccess={handlePaymentSuccess}
       />
     </header>
   );

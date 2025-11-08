@@ -16,12 +16,14 @@ import api from '../../utils/api';
 import { 
   formatDate, 
   formatTime, 
-  formatMoney, 
+  formatMoney,
+  formatCurrency, 
   formatMatchStatus,
   formatPercent 
 } from '../../utils/formatters';
 import AuthModal from '../../components/AuthModal';
 import DepositModal from '../../components/DepositModal';
+import ConfirmModal from '../../components/ConfirmModal';
 import AnimatedScore from '../../components/AnimatedScore';
 import ScoreNotification from '../../components/ScoreNotification';
 import { Trophy } from 'lucide-react';
@@ -85,12 +87,15 @@ function YoutubeErrorFallback({ youtubeUrl, onRetry }) {
 export default function PartidaDetalhesPage() {
   const router = useRouter();
   const { id } = router.query;
+  const { user, authenticated } = useAuth();
   
   const [match, setMatch] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showDepositModal, setShowDepositModal] = useState(false);
+  const [pixData, setPixData] = useState(null);
+  const [transactionId, setTransactionId] = useState(null);
   const [youtubeError, setYoutubeError] = useState(false);
 
   useEffect(() => {
@@ -364,7 +369,7 @@ export default function PartidaDetalhesPage() {
             </h3>
             <div className="space-y-4">
               {match.series?.map((serie) => (
-                <SerieCard key={serie.id} serie={serie} match={match} />
+                <SerieCard key={serie.id} serie={serie} match={match} currentUserId={user?.id} />
               ))}
             </div>
           </div>
@@ -380,10 +385,28 @@ export default function PartidaDetalhesPage() {
       {/* Modal de Depósito */}
       <DepositModal 
         isOpen={showDepositModal}
-        onClose={() => setShowDepositModal(false)}
+        onClose={() => {
+          setShowDepositModal(false);
+          setPixData(null);
+          setTransactionId(null);
+        }}
         onDeposit={async (amount) => {
-          // Lógica de depósito
-          await api.wallet.deposit({ amount });
+          try {
+            const result = await api.wallet.deposit({ amount });
+            if (result.success) {
+              toast.success('QR Code gerado! Aguardando pagamento...');
+              setPixData(result.data.pix);
+              setTransactionId(result.data.transaction_id);
+            }
+          } catch (error) {
+            toast.error('Erro ao criar depósito');
+          }
+        }}
+        pixData={pixData}
+        transactionId={transactionId}
+        onPaymentSuccess={() => {
+          setPixData(null);
+          setTransactionId(null);
           window.location.reload();
         }}
       />
@@ -394,16 +417,18 @@ export default function PartidaDetalhesPage() {
 // Componente de Aposta Individual (reutilizável e responsivo)
 function BetItem({ bet, isWinner, onCancel, canCancel = false }) {
   const [cancelling, setCancelling] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
-  const handleCancel = async () => {
-    if (!confirm('Tem certeza que deseja cancelar esta aposta? O valor será reembolsado.')) {
-      return;
-    }
-    
+  const handleCancelClick = () => {
+    setShowCancelModal(true);
+  };
+
+  const handleConfirmCancel = async () => {
     try {
       setCancelling(true);
       await onCancel(bet.id);
       toast.success('Aposta cancelada com sucesso!');
+      setShowCancelModal(false);
     } catch (err) {
       console.error('Erro ao cancelar aposta:', err);
       toast.error(err.message || 'Erro ao cancelar aposta');
@@ -523,20 +548,33 @@ function BetItem({ bet, isWinner, onCancel, canCancel = false }) {
         {/* Botão Cancelar Aposta - só aparece para apostas pendentes */}
         {canCancel && bet.status === 'pendente' && (
           <button
-            onClick={handleCancel}
+            onClick={handleCancelClick}
             disabled={cancelling}
             className="mt-2 w-full py-2 px-3 bg-red-600/20 hover:bg-red-600/30 border border-red-600/50 text-red-400 text-xs font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {cancelling ? '⏳ Cancelando...' : '🚫 Cancelar Aposta'}
           </button>
         )}
+
+        {/* Modal de Confirmação */}
+        <ConfirmModal
+          isOpen={showCancelModal}
+          onClose={() => setShowCancelModal(false)}
+          onConfirm={handleConfirmCancel}
+          title="Cancelar Aposta"
+          message={`Tem certeza que deseja cancelar esta aposta de ${formatCurrency(bet.amount)}? O valor será reembolsado para sua carteira.`}
+          confirmText="Sim, Cancelar"
+          cancelText="Não, Manter"
+          variant="danger"
+          isLoading={cancelling}
+        />
       </div>
     </div>
   );
 }
 
 // Componente de Card de Série (apenas visualização)
-function SerieCard({ serie, match }) {
+function SerieCard({ serie, match, currentUserId }) {
   const [betsData, setBetsData] = useState(null);
   const [loadingBets, setLoadingBets] = useState(false);
 
@@ -566,6 +604,8 @@ function SerieCard({ serie, match }) {
     // Recarregar apostas após cancelamento
     const response = await api.bets.getBySerie(serie.id);
     setBetsData(response);
+    // Forçar atualização da página para sincronizar saldo
+    window.location.reload();
   };
 
   const getStatusInfo = () => {
@@ -789,20 +829,25 @@ function SerieCard({ serie, match }) {
                     .filter(p => p.player.id === match.player1.id)
                     .flatMap(p => p.bets)
                     .filter(bet => bet.status !== 'cancelada' && bet.status !== 'reembolsada') // Ocultar apostas canceladas/reembolsadas
-                    .map((bet, index) => (
-                      <BetItem 
-                        key={bet.id}
-                        bet={{ 
-                          id: bet.id,
-                          label: `Aposta #${index + 1}`, 
-                          amount: bet.amount / 100, // Convertendo centavos para reais
-                          status: bet.status 
-                        }} 
-                        isWinner={serie.status === 'encerrada' && winnerIsPlayer1}
-                        onCancel={handleCancelBet}
-                        canCancel={serie.status === 'liberada' || serie.status === 'em_andamento'}
-                      />
-                    ))
+                    .map((bet, index) => {
+                      // Debug: verificar se user_id está chegando
+                      const canCancel = (serie.status === 'liberada' || serie.status === 'em_andamento') && bet.user_id === currentUserId;
+                      
+                      return (
+                        <BetItem 
+                          key={bet.id}
+                          bet={{ 
+                            id: bet.id,
+                            label: `Aposta #${index + 1}`, 
+                            amount: bet.amount / 100, // Convertendo centavos para reais
+                            status: bet.status 
+                          }} 
+                          isWinner={serie.status === 'encerrada' && winnerIsPlayer1}
+                          onCancel={handleCancelBet}
+                          canCancel={canCancel}
+                        />
+                      );
+                    })
                 ) : (
                   <div className="text-center py-4 bg-[#1a1a1a]/50 rounded-lg border border-dashed border-gray-700">
                     <p className="text-xs text-gray-500">Nenhuma aposta ainda</p>
@@ -861,20 +906,25 @@ function SerieCard({ serie, match }) {
                     .filter(p => p.player.id === match.player2.id)
                     .flatMap(p => p.bets)
                     .filter(bet => bet.status !== 'cancelada' && bet.status !== 'reembolsada') // Ocultar apostas canceladas/reembolsadas
-                    .map((bet, index) => (
-                      <BetItem 
-                        key={bet.id}
-                        bet={{ 
-                          id: bet.id,
-                          label: `Aposta #${index + 1}`, 
-                          amount: bet.amount / 100, // Convertendo centavos para reais
-                          status: bet.status 
-                        }} 
-                        isWinner={serie.status === 'encerrada' && !winnerIsPlayer1 && hasWinner}
-                        onCancel={handleCancelBet}
-                        canCancel={serie.status === 'liberada' || serie.status === 'em_andamento'}
-                      />
-                    ))
+                    .map((bet, index) => {
+                      // Debug: verificar se user_id está chegando
+                      const canCancel = (serie.status === 'liberada' || serie.status === 'em_andamento') && bet.user_id === currentUserId;
+                      
+                      return (
+                        <BetItem 
+                          key={bet.id}
+                          bet={{ 
+                            id: bet.id,
+                            label: `Aposta #${index + 1}`, 
+                            amount: bet.amount / 100, // Convertendo centavos para reais
+                            status: bet.status 
+                          }} 
+                          isWinner={serie.status === 'encerrada' && !winnerIsPlayer1 && hasWinner}
+                          onCancel={handleCancelBet}
+                          canCancel={canCancel}
+                        />
+                      );
+                    })
                 ) : (
                   <div className="text-center py-4 bg-[#1a1a1a]/50 rounded-lg border border-dashed border-gray-700">
                     <p className="text-xs text-gray-500 flex items-center justify-center gap-1">
@@ -959,6 +1009,10 @@ function BettingSection({ serie, match, onOpenLoginModal, onOpenDepositModal }) 
 
     const amountInCents = parseInt(parseFloat(amount) * 100);
     
+    // 🔍 DEBUG: Verificar valor sendo enviado
+    console.log('🎯 [FRONTEND] Valor digitado:', amount);
+    console.log('🎯 [FRONTEND] Valor em centavos:', amountInCents);
+    
     if (amountInCents < 1000) {
       toast.error('Valor mínimo de aposta: R$ 10,00');
       return;
@@ -971,11 +1025,16 @@ function BettingSection({ serie, match, onOpenLoginModal, onOpenDepositModal }) 
 
     try {
       setLoading(true);
-      await api.bets.create({
+      
+      const betPayload = {
         serie_id: serie.id,
         chosen_player_id: selectedPlayer,
         amount: amountInCents
-      });
+      };
+      
+      console.log('🎯 [FRONTEND] Enviando para API:', betPayload);
+      
+      await api.bets.create(betPayload);
       toast.success('🎉 Aposta realizada com sucesso!');
       
       // Aguardar 1.5s para mostrar o toast antes de recarregar
