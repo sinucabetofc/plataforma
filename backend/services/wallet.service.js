@@ -140,12 +140,16 @@ class WalletService {
       // 3. Gerar correlationID único para rastreamento
       const correlationID = `DEPOSIT-${userId}-${Date.now()}-${uuidv4().substring(0, 8)}`;
 
-      // 4. Gerar QR Code Pix via API Woovi
+      // 4. Gerar QR Code Pix via API Woovi com dados do cliente
       const pixData = await this.generatePixQRCode({
-        name: `Depósito - ${user.name}`,
         correlationID,
         value: Math.round(amount * 100), // Converter para centavos
-        comment: description || `Depósito na carteira SinucaBet`
+        comment: description || `Depósito na carteira SinucaBet`,
+        customer: {
+          name: user.name,
+          email: user.email,
+          ...(user.cpf && { taxID: user.cpf })
+        }
       });
 
       // 5. Criar transação pendente no banco
@@ -233,23 +237,36 @@ class WalletService {
         throw new Error('WOOVI_APP_ID não configurado nas variáveis de ambiente');
       }
 
+      const requestBody = {
+        correlationID: data.correlationID,
+        value: data.value,
+        comment: data.comment,
+      };
+
+      // Adicionar dados do cliente se fornecidos
+      if (data.customer) {
+        requestBody.customer = {
+          name: data.customer.name,
+          email: data.customer.email,
+          ...(data.customer.taxID && { taxID: data.customer.taxID })
+        };
+      }
+
+      // Tags adicionais
+      requestBody.additionalInfo = [
+        {
+          key: 'Plataforma',
+          value: 'SinucaBet'
+        },
+        {
+          key: 'Tipo',
+          value: 'Depósito'
+        }
+      ];
+
       const response = await axios.post(
         `${WOOVI_API_URL}/charge`,
-        {
-          correlationID: data.correlationID,
-          value: data.value,
-          comment: data.comment,
-          additionalInfo: [
-            {
-              key: 'Plataforma',
-              value: 'SinucaBet'
-            },
-            {
-              key: 'Tipo',
-              value: 'Depósito'
-            }
-          ]
-        },
+        requestBody,
         {
           headers: {
             'Authorization': WOOVI_APP_ID,
