@@ -2,7 +2,14 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// Garantir que API_URL não tenha /api no final (será adicionado nas rotas)
+const getApiUrl = () => {
+  const url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  // Remover /api do final se existir
+  return url.replace(/\/api\/?$/, '');
+};
+
+const API_URL = getApiUrl();
 
 const useInfluencerStore = create(
   persist(
