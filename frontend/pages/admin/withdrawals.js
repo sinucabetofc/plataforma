@@ -56,12 +56,12 @@ export default function AdminWithdrawals() {
 
     try {
       await rejectWithdrawalMutation.mutateAsync({
-        withdrawalId: selectedWithdrawal.id,
+      withdrawalId: selectedWithdrawal.id,
         withdrawal_type: selectedWithdrawal.type,
         reason: rejectionReason
-      });
-      setShowRejectModal(false);
-      setSelectedWithdrawal(null);
+    });
+    setShowRejectModal(false);
+    setSelectedWithdrawal(null);
       setRejectionReason('');
     } catch (error) {
       // Erro já tratado no hook
@@ -77,8 +77,8 @@ export default function AdminWithdrawals() {
     };
 
     const badge = badges[status] || badges.pending;
-
-    return (
+        
+        return (
       <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium ${badge.className}`}>
         {badge.icon}
         {badge.label}
@@ -125,13 +125,13 @@ export default function AdminWithdrawals() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-admin-text-primary mb-2">
+          <h1 className="text-3xl font-bold text-admin-text-primary mb-2">
           Gerenciar Saques
-        </h1>
-        <p className="text-admin-text-secondary">
+          </h1>
+          <p className="text-admin-text-secondary">
           Aprovar ou rejeitar solicitações de saque de parceiros e apostadores
-        </p>
-      </div>
+          </p>
+        </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -376,9 +376,9 @@ export default function AdminWithdrawals() {
                 {approveWithdrawalMutation.isPending ? 'Aprovando...' : 'Confirmar Aprovação'}
               </button>
             </div>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* Reject Modal */}
       {showRejectModal && selectedWithdrawal && (
@@ -410,9 +410,9 @@ export default function AdminWithdrawals() {
                     R$ {parseFloat(selectedWithdrawal.amount).toFixed(2).replace('.', ',')}
                   </span>
                 </div>
-              </div>
+      </div>
 
-              <textarea
+            <textarea
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
                 placeholder="Ex: Saldo insuficiente, dados incorretos, etc."

@@ -268,15 +268,15 @@ export default function TransactionCard({ transaction }) {
     <div className={`rounded-xl border-2 ${config.borderColor} ${config.bgGradient} bg-[#1a1a1a] overflow-hidden transition-all hover:scale-[1.01] hover:shadow-lg`}>
       {/* Conteúdo Principal */}
       <div className="p-4">
-        <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-4">
           {/* Ícone e Informações */}
-          <div className="flex flex-1 items-start gap-3">
+        <div className="flex flex-1 items-start gap-3">
             <div className="mt-1 flex-shrink-0">{config.icon}</div>
             <div className="flex-1 min-w-0">
               <h4 className="text-lg font-bold text-white mb-1">
                 {config.typeLabel}
-              </h4>
-              {description && (
+            </h4>
+            {description && (
                 <p className="text-sm text-texto-secundario mb-2">
                   {description}
                 </p>
@@ -286,12 +286,12 @@ export default function TransactionCard({ transaction }) {
                 <p className="text-xs text-purple-400 mb-1">
                   📍 Série {metadata.serie_number || metadata.serie_id}
                 </p>
-              )}
+            )}
               <p className="text-xs text-texto-desabilitado">
-                {formatDate(created_at)}
+              {formatDate(created_at)}
               </p>
-            </div>
           </div>
+        </div>
 
           {/* Valor e Status */}
           <div className="flex flex-col items-end gap-2 flex-shrink-0">
@@ -299,17 +299,17 @@ export default function TransactionCard({ transaction }) {
             <p className={`text-2xl font-bold ${config.amountColor}`}>
               {config.amountPrefix && <span>{config.amountPrefix} </span>}
               {formatCurrency(Math.abs(amount))}
-            </p>
+          </p>
             
             {/* Badge de Status */}
             <div className={`flex items-center gap-1.5 rounded-full border px-3 py-1 ${statusBadge.bg} ${statusBadge.text} ${statusBadge.border}`}>
-              {statusBadge.icon}
+            {statusBadge.icon}
               <span className="text-xs font-semibold">
-                {statusBadge.label}
-              </span>
-            </div>
+              {statusBadge.label}
+            </span>
           </div>
         </div>
+      </div>
 
         {/* Taxa (se houver) */}
         {fee > 0 && (

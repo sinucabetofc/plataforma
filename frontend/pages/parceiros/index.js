@@ -31,7 +31,7 @@ export default function ParceirosIndex() {
         const isAuth = stored ? JSON.parse(stored)?.state?.isAuthenticated : false;
         
         console.log('🔍 [PARCEIROS] Verificando autenticação:', isAuth);
-        
+    
         // Redirecionar baseado na autenticação
         if (!isAuth) {
           console.log('➡️  [PARCEIROS] Redirecionando para login...');
@@ -56,12 +56,12 @@ export default function ParceirosIndex() {
   // Não renderizar nada no servidor (SSR)
   if (!mounted) {
     return null;
-  }
+      }
 
   return (
     <div className="min-h-screen bg-admin-black flex items-center justify-center">
       <div className="text-center">
-        <Loader size="lg" />
+      <Loader size="lg" />
         <p className="mt-4 text-sm text-gray-400">Redirecionando...</p>
       </div>
     </div>

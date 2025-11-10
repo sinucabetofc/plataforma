@@ -54,15 +54,15 @@ export default function ParceirosJogos() {
       <div className="admin-card">
         <div className="flex flex-col gap-4">
           {/* Search */}
-          <div className="relative">
+            <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-admin-text-muted pointer-events-none" size={18} />
-            <input
-              type="text"
-              placeholder="Buscar jogador..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              <input
+                type="text"
+                placeholder="Buscar jogador..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-12 pr-4 py-3 bg-admin-bg border border-admin-border rounded-lg text-admin-text-primary placeholder:text-admin-text-muted focus:border-admin-primary focus:outline-none focus:ring-2 focus:ring-admin-primary/20"
-            />
+              />
           </div>
 
           {/* Status Filter - Scroll horizontal no mobile */}
@@ -134,8 +134,8 @@ export default function ParceirosJogos() {
           {/* Versão Desktop - Tabela */}
           <div className="hidden md:block admin-card overflow-x-auto">
             <table className="admin-table w-full">
-              <thead>
-                <tr>
+            <thead>
+              <tr>
                   <th className="whitespace-nowrap">JOGADOR A</th>
                   <th className="whitespace-nowrap">JOGADOR B</th>
                   <th className="whitespace-nowrap">TIPO DE JOGO</th>
@@ -143,49 +143,49 @@ export default function ParceirosJogos() {
                   <th className="whitespace-nowrap">STATUS</th>
                   <th className="whitespace-nowrap">CRIADO EM</th>
                   <th className="whitespace-nowrap">AÇÕES</th>
-                </tr>
-              </thead>
-              <tbody>
-                {matches.map((match) => (
-                  <tr key={match.id}>
-                    <td className="text-admin-text-primary font-medium">
-                      {match.player1?.nickname || match.player1?.name || 'Jogador 1'}
-                    </td>
-                    <td className="text-admin-text-primary font-medium">
-                      {match.player2?.nickname || match.player2?.name || 'Jogador 2'}
-                    </td>
-                    <td className="text-admin-text-secondary">
-                      {match.game_rules?.game_type === 'LISA' ? 'Bolas Lisas' : 'Bolas Numeradas'}
-                    </td>
-                    <td className="text-admin-text-secondary text-center">
-                      {match.total_series || 3}
-                    </td>
-                    <td className="text-center">
-                      {getStatusBadge(match.status)}
-                    </td>
+              </tr>
+            </thead>
+            <tbody>
+              {matches.map((match) => (
+                <tr key={match.id}>
+                  <td className="text-admin-text-primary font-medium">
+                    {match.player1?.nickname || match.player1?.name || 'Jogador 1'}
+                  </td>
+                  <td className="text-admin-text-primary font-medium">
+                    {match.player2?.nickname || match.player2?.name || 'Jogador 2'}
+                  </td>
+                  <td className="text-admin-text-secondary">
+                    {match.game_rules?.game_type === 'LISA' ? 'Bolas Lisas' : 'Bolas Numeradas'}
+                  </td>
+                  <td className="text-admin-text-secondary text-center">
+                    {match.total_series || 3}
+                  </td>
+                  <td className="text-center">
+                    {getStatusBadge(match.status)}
+                  </td>
                     <td className="text-admin-text-secondary whitespace-nowrap">
-                      {new Date(match.scheduled_at).toLocaleString('pt-BR', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </td>
-                    <td className="text-center">
-                      <button
-                        onClick={() => router.push(`/parceiros/jogos/${match.id}`)}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-[#27E502] text-admin-black font-medium rounded-lg hover:bg-[#1fc600] transition-colors"
-                      >
-                        <Eye size={16} />
-                        Detalhes
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    {new Date(match.scheduled_at).toLocaleString('pt-BR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </td>
+                  <td className="text-center">
+                    <button
+                      onClick={() => router.push(`/parceiros/jogos/${match.id}`)}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-[#27E502] text-admin-black font-medium rounded-lg hover:bg-[#1fc600] transition-colors"
+                    >
+                      <Eye size={16} />
+                      Detalhes
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
           {/* Versão Mobile - Cards */}
           <div className="md:hidden space-y-4">

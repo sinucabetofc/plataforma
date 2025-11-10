@@ -20,8 +20,8 @@ export default function AdminIndex() {
       router.replace('/admin/dashboard');
     } else {
       // Se não tem token, vai para login
-      router.replace('/admin/login');
-    }
+        router.replace('/admin/login');
+      }
   }, [router]);
 
   return (
