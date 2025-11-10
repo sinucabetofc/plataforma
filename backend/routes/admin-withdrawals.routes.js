@@ -8,13 +8,14 @@
 const express = require('express');
 const router = express.Router();
 const withdrawalsService = require('../services/influencer-withdrawals.service');
-const { authenticateUser, requireAdmin } = require('../middlewares/auth.middleware');
+const { authenticateToken } = require('../middlewares/auth.middleware');
+const { isAdmin } = require('../middlewares/admin.middleware');
 
 /**
  * GET /api/admin/withdrawals
  * Listar todos os saques (Admin)
  */
-router.get('/', authenticateUser, requireAdmin, async (req, res) => {
+router.get('/', authenticateToken, isAdmin, async (req, res) => {
   try {
     const filters = {
       status: req.query.status,
@@ -39,7 +40,7 @@ router.get('/', authenticateUser, requireAdmin, async (req, res) => {
  * GET /api/admin/withdrawals/stats
  * Estatísticas de saques (Admin)
  */
-router.get('/stats', authenticateUser, requireAdmin, async (req, res) => {
+router.get('/stats', authenticateToken, isAdmin, async (req, res) => {
   try {
     const result = await withdrawalsService.getWithdrawalsStats();
     res.json(result);
@@ -56,7 +57,7 @@ router.get('/stats', authenticateUser, requireAdmin, async (req, res) => {
  * GET /api/admin/withdrawals/:id
  * Buscar saque específico (Admin)
  */
-router.get('/:id', authenticateUser, requireAdmin, async (req, res) => {
+router.get('/:id', authenticateToken, isAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const result = await withdrawalsService.getWithdrawalById(id, req.user.id, 'admin');
@@ -74,7 +75,7 @@ router.get('/:id', authenticateUser, requireAdmin, async (req, res) => {
  * PATCH /api/admin/withdrawals/:id/approve
  * Aprovar saque (Admin)
  */
-router.patch('/:id/approve', authenticateUser, requireAdmin, async (req, res) => {
+router.patch('/:id/approve', authenticateToken, isAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { notes } = req.body;
@@ -94,7 +95,7 @@ router.patch('/:id/approve', authenticateUser, requireAdmin, async (req, res) =>
  * PATCH /api/admin/withdrawals/:id/reject
  * Rejeitar saque (Admin)
  */
-router.patch('/:id/reject', authenticateUser, requireAdmin, async (req, res) => {
+router.patch('/:id/reject', authenticateToken, isAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { reason } = req.body;
