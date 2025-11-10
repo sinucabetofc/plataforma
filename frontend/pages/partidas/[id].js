@@ -415,7 +415,7 @@ export default function PartidaDetalhesPage() {
 }
 
 // Componente de Aposta Individual (reutilizável e responsivo)
-function BetItem({ bet, isWinner, onCancel, canCancel = false }) {
+function BetItem({ bet, isWinner, onCancel, canCancel = false, playerName = '' }) {
   const [cancelling, setCancelling] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
 
@@ -437,55 +437,51 @@ function BetItem({ bet, isWinner, onCancel, canCancel = false }) {
     }
   };
 
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+    }).format(value || 0);
+  };
+
   const getStatusConfig = (status) => {
     switch (status) {
       case 'pendente':
         return {
           icon: '⏳',
-          label: 'Aguardando Emparceiramento',
+          label: 'AGUARDANDO',
           borderColor: 'border-yellow-500/50',
           bgColor: 'bg-yellow-900/10',
-          badgeBg: 'bg-yellow-600/20',
-          badgeBorder: 'border-yellow-600/40',
-          badgeText: 'text-yellow-400',
           messageColor: 'text-yellow-400',
           message: '⏰ Aguardando emparceiramento com aposta oposta'
         };
       case 'aceita':
         return {
-          icon: '✅',
-          label: 'Aceita',
-          borderColor: 'border-blue-500/50',
-          bgColor: 'bg-blue-900/10',
-          badgeBg: 'bg-blue-600/20',
-          badgeBorder: 'border-blue-600/40',
-          badgeText: 'text-blue-400',
+          icon: '🤝',
+          label: 'CASADA',
+          borderColor: 'border-blue-500',
+          bgColor: 'bg-blue-900/20',
           messageColor: 'text-blue-400',
-          message: '🎮 Aposta aceita - Série em andamento'
+          message: '🤝 Aposta casada com sucesso! Aguarde o resultado da série'
         };
       case 'ganha':
         return {
-          icon: '🏆',
-          label: 'Ganha',
-          borderColor: 'border-green-500/50',
-          bgColor: 'bg-green-900/10',
-          badgeBg: 'bg-green-600/20',
-          badgeBorder: 'border-green-600/40',
-          badgeText: 'text-green-400',
-          messageColor: 'text-green-400',
-          message: '🎉 Parabéns! Você ganhou!'
+          icon: '🎉',
+          label: 'GANHOU',
+          borderColor: 'border-verde-neon',
+          bgColor: 'bg-verde-neon/10',
+          messageColor: 'text-verde-neon',
+          message: `🎉 Parabéns! Você ganhou ${formatCurrency(bet.amount * 2)} apostando R$ ${bet.amount.toFixed(2)}!`
         };
       case 'perdida':
         return {
           icon: '😢',
-          label: 'Perdida',
-          borderColor: 'border-red-500/50',
-          bgColor: 'bg-red-900/10',
-          badgeBg: 'bg-red-600/20',
-          badgeBorder: 'border-red-600/40',
-          badgeText: 'text-red-400',
+          label: 'PERDEU',
+          borderColor: 'border-red-500',
+          bgColor: 'bg-red-900/20',
           messageColor: 'text-red-400',
-          message: '💔 Não foi desta vez'
+          message: `💔 Infelizmente você perdeu R$ ${bet.amount.toFixed(2)} nesta aposta`
         };
       case 'cancelada':
         return {
@@ -493,9 +489,6 @@ function BetItem({ bet, isWinner, onCancel, canCancel = false }) {
           label: 'Cancelada',
           borderColor: 'border-gray-500/50',
           bgColor: 'bg-gray-900/10',
-          badgeBg: 'bg-gray-600/20',
-          badgeBorder: 'border-gray-600/40',
-          badgeText: 'text-gray-400',
           messageColor: 'text-gray-400',
           message: '❌ Aposta cancelada'
         };
@@ -505,9 +498,6 @@ function BetItem({ bet, isWinner, onCancel, canCancel = false }) {
           label: 'Reembolsada',
           borderColor: 'border-purple-500/50',
           bgColor: 'bg-purple-900/10',
-          badgeBg: 'bg-purple-600/20',
-          badgeBorder: 'border-purple-600/40',
-          badgeText: 'text-purple-400',
           messageColor: 'text-purple-400',
           message: '💵 Valor reembolsado'
         };
@@ -517,9 +507,6 @@ function BetItem({ bet, isWinner, onCancel, canCancel = false }) {
           label: 'Desconhecido',
           borderColor: 'border-gray-500/50',
           bgColor: 'bg-gray-900/10',
-          badgeBg: 'bg-gray-600/20',
-          badgeBorder: 'border-gray-600/40',
-          badgeText: 'text-gray-400',
           messageColor: 'text-gray-400',
           message: 'Status desconhecido'
         };
@@ -528,17 +515,67 @@ function BetItem({ bet, isWinner, onCancel, canCancel = false }) {
 
   const config = getStatusConfig(bet.status || 'pendente');
 
+  // Para apostas ganhas/perdidas, mostrar visual especial focado no resultado
+  if (bet.status === 'ganha' || bet.status === 'perdida') {
+    return (
+      <div className={`rounded-lg overflow-hidden border-2 transition-all ${config.borderColor} ${config.bgColor}`}>
+        <div className="p-4">
+          {/* Resultado Principal */}
+          <div className="text-center mb-3">
+            <div className="text-4xl mb-2">{config.icon}</div>
+            <p className={`text-lg font-bold ${config.messageColor} mb-1`}>
+              {bet.status === 'ganha' ? 'VOCÊ GANHOU!' : 'VOCÊ PERDEU'}
+            </p>
+            {playerName && (
+              <p className="text-xs text-gray-400 mb-2">
+                Apostou em: <span className="text-white font-semibold">{playerName}</span>
+              </p>
+            )}
+          </div>
+
+          {/* Valor */}
+          <div className={`p-3 rounded-lg ${
+            bet.status === 'ganha' 
+              ? 'bg-verde-neon/10 border border-verde-neon/30' 
+              : 'bg-red-900/20 border border-red-500/30'
+          }`}>
+            <p className="text-center">
+              <span className={`text-2xl font-bold ${
+                bet.status === 'ganha' ? 'text-verde-neon' : 'text-red-400'
+              }`}>
+                {bet.status === 'ganha' ? '+' : '-'} R$ {bet.amount.toFixed(2)}
+              </span>
+            </p>
+            {bet.status === 'ganha' && (
+              <p className="text-center text-xs text-verde-accent mt-1">
+                Ganho: {formatCurrency(bet.amount * 2)}
+              </p>
+            )}
+          </div>
+
+          {/* Mensagem */}
+          <p className={`text-xs ${config.messageColor} text-center mt-3`}>
+            {config.message}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Para outros status, mostrar formato normal
   return (
     <div className={`rounded-lg overflow-hidden border-2 transition-all ${config.borderColor} ${config.bgColor}`}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between px-3 py-2 gap-2">
         <div className="flex items-center gap-2 flex-1 flex-wrap">
           <span className="text-base">{config.icon}</span>
           <span className="text-xs font-medium text-gray-300">{bet.label}</span>
-          <span className={`px-2 py-0.5 ${config.badgeBg} border ${config.badgeBorder} rounded-full text-[10px] font-bold ${config.badgeText} uppercase whitespace-nowrap`}>
-            {config.label}
-          </span>
+          {bet.isMyBet && (
+            <span className="px-2 py-0.5 bg-verde-neon/20 border border-verde-neon/40 rounded-full text-[10px] font-bold text-verde-neon uppercase">
+              Minha aposta
+            </span>
+          )}
         </div>
-        <span className="text-sm font-bold text-white ml-6 sm:ml-0">R$ {bet.amount.toFixed(2)}</span>
+        <span className="text-sm font-bold text-white">R$ {bet.amount.toFixed(2)}</span>
       </div>
       <div className="px-3 pb-2">
         <p className={`text-[10px] ${config.messageColor} flex items-center gap-1`}>
@@ -769,173 +806,175 @@ function SerieCard({ serie, match, currentUserId }) {
         </div>
       )}
 
-      {/* Apostas da Série - Mostra quando liberada, em andamento ou encerrada */}
+      {/* Apostas da Série */}
       {(serie.status === 'liberada' || serie.status === 'em_andamento' || serie.status === 'encerrada') && (
         <div className="p-4 border-t border-gray-800 bg-[#0a0a0a]">
           <div className="flex items-center gap-2 mb-4">
             <div className="text-lg">💰</div>
-            <h5 className="text-base font-bold text-white">Apostas da Série {serie.serie_number}</h5>
+            <h5 className="text-base font-bold text-white">
+              {serie.status === 'encerrada' ? 'Suas Apostas' : 'Apostas da Série'} - Série {serie.serie_number}
+            </h5>
           </div>
           
-          {/* Grid de Apostas por Jogador */}
-          <div className="space-y-3">
-            {/* Apostas no Jogador 1 */}
-            <div className={`border rounded-lg overflow-hidden ${
-              serie.status === 'encerrada' && winnerIsPlayer1
-                ? 'border-yellow-500/50 bg-gradient-to-br from-yellow-900/20 to-transparent'
-                : 'border-green-700/30 bg-gradient-to-br from-green-900/10 to-transparent'
-            }`}>
-              {/* Header do Jogador 1 */}
-              <div className={`border-b px-3 py-2 ${
-                serie.status === 'encerrada' && winnerIsPlayer1
-                  ? 'bg-yellow-900/30 border-yellow-700/30'
-                  : 'bg-green-900/20 border-green-700/30'
-              }`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${
-                      serie.status === 'encerrada' && winnerIsPlayer1 ? 'bg-yellow-500' : 'bg-green-500'
-                    }`}></div>
-                    <p className={`text-sm font-bold ${
-                      serie.status === 'encerrada' && winnerIsPlayer1 ? 'text-yellow-400' : 'text-green-400'
-                    }`}>
-                      {match.player1.nickname || match.player1.name}
-                      {serie.status === 'encerrada' && winnerIsPlayer1 && (
-                        <span className="ml-1 text-yellow-500">🏆</span>
-                      )}
-                    </p>
-                  </div>
-                  <p className={`text-xs font-bold ${
-                    serie.status === 'encerrada' && winnerIsPlayer1 ? 'text-yellow-300' : 'text-green-300'
-                  }`}>
-                    Total: R$ {betsData && betsData.by_player && Object.values(betsData.by_player).find(p => p.player.id === match.player1.id)
-                      ? (Object.values(betsData.by_player).find(p => p.player.id === match.player1.id).total_amount / 100).toFixed(2)
-                      : '0,00'}
-                  </p>
-                </div>
-              </div>
-              
-              {/* Lista de Apostas */}
-              <div className="p-3 space-y-2">
-                {loadingBets ? (
-                  <div className="text-center py-3 text-xs text-gray-400">
-                    Carregando apostas...
-                  </div>
-                ) : betsData && betsData.by_player && Object.values(betsData.by_player).some(p => 
-                    p.player.id === match.player1.id && 
-                    p.bets.some(bet => bet.status !== 'cancelada' && bet.status !== 'reembolsada')
-                  ) ? (
-                  Object.values(betsData.by_player)
-                    .filter(p => p.player.id === match.player1.id)
-                    .flatMap(p => p.bets)
-                    .filter(bet => bet.status !== 'cancelada' && bet.status !== 'reembolsada') // Ocultar apostas canceladas/reembolsadas
-                    .map((bet, index) => {
-                      // Debug: verificar se user_id está chegando
-                      const canCancel = (serie.status === 'liberada' || serie.status === 'em_andamento') && bet.user_id === currentUserId;
-                      
-                      return (
-                        <BetItem 
-                          key={bet.id}
-                          bet={{ 
-                            id: bet.id,
-                            label: `Aposta #${index + 1}`, 
-                            amount: bet.amount / 100, // Convertendo centavos para reais
-                            status: bet.status 
-                          }} 
-                          isWinner={serie.status === 'encerrada' && winnerIsPlayer1}
-                          onCancel={handleCancelBet}
-                          canCancel={canCancel}
-                        />
-                      );
-                    })
-                ) : (
-                  <div className="text-center py-4 bg-[#1a1a1a]/50 rounded-lg border border-dashed border-gray-700">
-                    <p className="text-xs text-gray-500">Nenhuma aposta ainda</p>
-                  </div>
-                )}
-              </div>
+          {loadingBets ? (
+            <div className="text-center py-6 text-gray-400">
+              <div className="text-4xl mb-2">⏳</div>
+              <p className="text-sm">Carregando apostas...</p>
             </div>
+          ) : betsData && betsData.all_bets ? (
+            (() => {
+              // Se série ENCERRADA: mostrar apenas apostas do usuário com resultado
+              if (serie.status === 'encerrada' && currentUserId) {
+                const userBets = betsData.all_bets.filter(bet => 
+                  bet.user_id === currentUserId && 
+                  bet.status !== 'cancelada' && 
+                  bet.status !== 'reembolsada'
+                );
 
-            {/* Apostas no Jogador 2 */}
-            <div className={`border rounded-lg overflow-hidden ${
-              serie.status === 'encerrada' && !winnerIsPlayer1 && hasWinner
-                ? 'border-yellow-500/50 bg-gradient-to-br from-yellow-900/20 to-transparent'
-                : 'border-blue-700/30 bg-gradient-to-br from-blue-900/10 to-transparent'
-            }`}>
-              {/* Header do Jogador 2 */}
-              <div className={`border-b px-3 py-2 ${
-                serie.status === 'encerrada' && !winnerIsPlayer1 && hasWinner
-                  ? 'bg-yellow-900/30 border-yellow-700/30'
-                  : 'bg-blue-900/20 border-blue-700/30'
-              }`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${
-                      serie.status === 'encerrada' && !winnerIsPlayer1 && hasWinner ? 'bg-yellow-500' : 'bg-blue-500'
-                    }`}></div>
-                    <p className={`text-sm font-bold ${
-                      serie.status === 'encerrada' && !winnerIsPlayer1 && hasWinner ? 'text-yellow-400' : 'text-blue-400'
-                    }`}>
-                      {match.player2.nickname || match.player2.name}
-                      {serie.status === 'encerrada' && !winnerIsPlayer1 && hasWinner && (
-                        <span className="ml-1 text-yellow-500">🏆</span>
-                      )}
-                    </p>
-                  </div>
-                  <p className={`text-xs font-bold ${
-                    serie.status === 'encerrada' && !winnerIsPlayer1 && hasWinner ? 'text-yellow-300' : 'text-blue-300'
-                  }`}>
-                    Total: R$ {betsData && betsData.by_player && Object.values(betsData.by_player).find(p => p.player.id === match.player2.id)
-                      ? (Object.values(betsData.by_player).find(p => p.player.id === match.player2.id).total_amount / 100).toFixed(2)
-                      : '0,00'}
-                  </p>
-                </div>
-              </div>
-              
-              {/* Lista de Apostas */}
-              <div className="p-3 space-y-2">
-                {loadingBets ? (
-                  <div className="text-center py-3 text-xs text-gray-400">
-                    Carregando apostas...
-                  </div>
-                ) : betsData && betsData.by_player && Object.values(betsData.by_player).some(p => 
-                    p.player.id === match.player2.id && 
-                    p.bets.some(bet => bet.status !== 'cancelada' && bet.status !== 'reembolsada')
-                  ) ? (
-                  Object.values(betsData.by_player)
-                    .filter(p => p.player.id === match.player2.id)
-                    .flatMap(p => p.bets)
-                    .filter(bet => bet.status !== 'cancelada' && bet.status !== 'reembolsada') // Ocultar apostas canceladas/reembolsadas
-                    .map((bet, index) => {
-                      // Debug: verificar se user_id está chegando
-                      const canCancel = (serie.status === 'liberada' || serie.status === 'em_andamento') && bet.user_id === currentUserId;
+                if (userBets.length === 0) {
+                  return (
+                    <div className="text-center py-6 bg-[#1a1a1a]/50 rounded-lg border border-dashed border-gray-700">
+                      <p className="text-sm text-gray-500">Você não apostou nesta série</p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-3">
+                    {userBets.map((bet, index) => {
+                      const playerName = bet.chosen_player?.nickname || bet.chosen_player?.name || 'Jogador';
                       
                       return (
                         <BetItem 
                           key={bet.id}
                           bet={{ 
                             id: bet.id,
-                            label: `Aposta #${index + 1}`, 
-                            amount: bet.amount / 100, // Convertendo centavos para reais
+                            label: `Sua Aposta #${index + 1}`, 
+                            amount: bet.amount / 100,
                             status: bet.status 
                           }} 
-                          isWinner={serie.status === 'encerrada' && !winnerIsPlayer1 && hasWinner}
+                          isWinner={bet.status === 'ganha'}
                           onCancel={handleCancelBet}
-                          canCancel={canCancel}
+                          canCancel={false}
+                          playerName={playerName}
                         />
                       );
-                    })
-                ) : (
-                  <div className="text-center py-4 bg-[#1a1a1a]/50 rounded-lg border border-dashed border-gray-700">
-                    <p className="text-xs text-gray-500 flex items-center justify-center gap-1">
-                      <span>💤</span>
-                      <span>Nenhuma aposta ainda</span>
-                    </p>
+                    })}
                   </div>
-                )}
-              </div>
+                );
+              }
+
+              // Se série LIBERADA/EM_ANDAMENTO: mostrar TODAS as apostas (para facilitar emparceiramento)
+              return (
+                <div className="space-y-3">
+                  {/* Apostas no Jogador 1 */}
+                  <div className="border border-green-700/30 bg-gradient-to-br from-green-900/10 to-transparent rounded-lg overflow-hidden">
+                    <div className="border-b px-3 py-2 bg-green-900/20 border-green-700/30">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                        <p className="text-sm font-bold text-green-400">
+                          {match.player1.nickname || match.player1.name}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="p-3 space-y-2">
+                      {betsData.by_player && Object.values(betsData.by_player).some(p => 
+                          p.player.id === match.player1.id && 
+                          p.bets.some(bet => bet.status !== 'cancelada' && bet.status !== 'reembolsada')
+                        ) ? (
+                        Object.values(betsData.by_player)
+                          .filter(p => p.player.id === match.player1.id)
+                          .flatMap(p => p.bets)
+                          .filter(bet => bet.status !== 'cancelada' && bet.status !== 'reembolsada')
+                          .map((bet, index) => {
+                            const canCancel = bet.user_id === currentUserId;
+                            const playerName = match.player1.nickname || match.player1.name;
+                            
+                            return (
+                              <BetItem 
+                                key={bet.id}
+                                bet={{ 
+                                  id: bet.id,
+                                  label: `Aposta #${index + 1}`, 
+                                  amount: bet.amount / 100,
+                                  status: bet.status,
+                                  isMyBet: bet.user_id === currentUserId
+                                }} 
+                                isWinner={false}
+                                onCancel={handleCancelBet}
+                                canCancel={canCancel}
+                                playerName={playerName}
+                              />
+                            );
+                          })
+                      ) : (
+                        <div className="text-center py-4 bg-[#1a1a1a]/50 rounded-lg border border-dashed border-gray-700">
+                          <p className="text-xs text-gray-500">Nenhuma aposta ainda</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Apostas no Jogador 2 */}
+                  <div className="border border-blue-700/30 bg-gradient-to-br from-blue-900/10 to-transparent rounded-lg overflow-hidden">
+                    <div className="border-b px-3 py-2 bg-blue-900/20 border-blue-700/30">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                        <p className="text-sm font-bold text-blue-400">
+                          {match.player2.nickname || match.player2.name}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="p-3 space-y-2">
+                      {betsData.by_player && Object.values(betsData.by_player).some(p => 
+                          p.player.id === match.player2.id && 
+                          p.bets.some(bet => bet.status !== 'cancelada' && bet.status !== 'reembolsada')
+                        ) ? (
+                        Object.values(betsData.by_player)
+                          .filter(p => p.player.id === match.player2.id)
+                          .flatMap(p => p.bets)
+                          .filter(bet => bet.status !== 'cancelada' && bet.status !== 'reembolsada')
+                          .map((bet, index) => {
+                            const canCancel = bet.user_id === currentUserId;
+                            const playerName = match.player2.nickname || match.player2.name;
+                            
+                            return (
+                              <BetItem 
+                                key={bet.id}
+                                bet={{ 
+                                  id: bet.id,
+                                  label: `Aposta #${index + 1}`, 
+                                  amount: bet.amount / 100,
+                                  status: bet.status,
+                                  isMyBet: bet.user_id === currentUserId
+                                }} 
+                                isWinner={false}
+                                onCancel={handleCancelBet}
+                                canCancel={canCancel}
+                                playerName={playerName}
+                              />
+                            );
+                          })
+                      ) : (
+                        <div className="text-center py-4 bg-[#1a1a1a]/50 rounded-lg border border-dashed border-gray-700">
+                          <p className="text-xs text-gray-500 flex items-center justify-center gap-1">
+                            <span>💤</span>
+                            <span>Nenhuma aposta ainda</span>
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()
+          ) : (
+            <div className="text-center py-6 bg-[#1a1a1a]/50 rounded-lg border border-dashed border-gray-700">
+              <p className="text-sm text-gray-500">Carregando...</p>
             </div>
-          </div>
+          )}
         </div>
       )}
 

@@ -15,6 +15,7 @@ const STATUS_COLORS = {
   won: 'status-success',
   finished: 'status-success',
   finalizada: 'status-success',
+  encerrada: 'status-success', // Série encerrada
   ganha: 'status-success', // Aposta ganha
   em_andamento: 'status-success', // Partida ao vivo
   
@@ -23,7 +24,7 @@ const STATUS_COLORS = {
   open: 'status-warning',
   awaiting: 'status-warning',
   in_progress: 'status-warning',
-  pendente: 'status-warning', // Aposta pendente
+  pendente: 'status-warning', // Aposta pendente / Série pendente
   
   // Status vermelho (erro/bloqueado/perdeu)
   inactive: 'status-error',
@@ -38,6 +39,7 @@ const STATUS_COLORS = {
   
   // Status azul (info/agendada/casada)
   agendada: 'status-info', // Partida agendada
+  liberada: 'status-info', // Série liberada para apostas
   refund: 'status-info',
   matched: 'status-info', // Aposta casada/pareada
   casada: 'status-info', // Aposta casada

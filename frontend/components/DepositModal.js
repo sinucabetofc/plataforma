@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, CreditCard, QrCode, Flame, Copy, CheckCircle, ExternalLink } from 'lucide-react';
+import { X, CreditCard, QrCode, Flame, Copy, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import Cookies from 'js-cookie';
@@ -110,13 +110,12 @@ export default function DepositModal({
       if (response.data.data.status === 'completed') {
         stopPolling();
         setStep(3);
-        toast.success('Pagamento confirmado!');
         
         // Notificar parent component
         if (onPaymentSuccess) {
           setTimeout(() => {
             onPaymentSuccess();
-          }, 2000);
+          }, 3000);
         }
       }
     } catch (err) {
@@ -367,24 +366,19 @@ export default function DepositModal({
                 {/* Botão Copiar Código */}
                 <button
                   onClick={handleCopyCode}
-                  className="w-full mb-2 px-4 py-2.5 bg-cinza-claro hover:bg-cinza-medio border border-cinza-borda rounded-lg text-sm font-medium text-texto-principal transition-all hover:border-verde-neon/50 flex items-center justify-center gap-2"
+                  className="w-full mb-3 px-4 py-3 bg-cinza-claro hover:bg-cinza-medio border border-cinza-borda rounded-lg text-sm font-medium text-texto-principal transition-all hover:border-verde-neon/50 flex items-center justify-center gap-2"
                 >
-                  <Copy size={16} />
+                  <Copy size={18} />
                   Copiar Código PIX
                 </button>
 
-                {/* Botão Abrir no App */}
-                {pixData.paymentLink && (
-                  <a
-                    href={pixData.paymentLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block w-full mb-3 px-4 py-2.5 bg-verde-neon hover:bg-verde-neon/90 text-cinza-escuro text-center rounded-lg font-bold transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
+                {/* Botão Cancelar */}
+                <button
+                  onClick={handleClose}
+                  className="w-full mb-4 px-4 py-3 border-2 border-cinza-borda rounded-lg hover:bg-cinza-claro hover:border-texto-secundario transition-all text-base font-medium text-texto-normal"
                   >
-                    <ExternalLink size={16} />
-                    Abrir no App do Banco
-                  </a>
-                )}
+                  Cancelar
+                </button>
 
                 {/* Status de Aguardando */}
                 <div className="text-center py-2 mb-3">
@@ -394,8 +388,8 @@ export default function DepositModal({
                   </div>
                 </div>
 
-                {/* Instruções - Mais Compactas */}
-                <div className="bg-cinza-claro border border-cinza-borda rounded-lg p-3 mb-3">
+                {/* Instruções - Compactas */}
+                <div className="bg-cinza-claro border border-cinza-borda rounded-lg p-3">
                   <p className="text-xs text-texto-secundario leading-relaxed">
                     <strong className="text-texto-normal">Como pagar:</strong><br />
                     1. Abra o app do seu banco<br />
@@ -406,14 +400,6 @@ export default function DepositModal({
                     💰 Seu saldo será atualizado automaticamente
                   </p>
                 </div>
-
-                {/* Botão Cancelar - Mais Visível */}
-                <button
-                  onClick={handleClose}
-                  className="w-full px-4 py-3 border-2 border-cinza-borda rounded-lg hover:bg-cinza-claro hover:border-texto-secundario transition text-base font-medium text-texto-normal"
-                >
-                  Cancelar
-                </button>
               </>
             )}
 
@@ -457,3 +443,4 @@ export default function DepositModal({
     </>
   );
 }
+

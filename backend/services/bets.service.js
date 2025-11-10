@@ -504,27 +504,39 @@ class BetsService {
       console.log('  - Saldo real:', walletAfter?.balance / 100, 'reais');
       console.log('  - Diferença:', (walletAfter?.balance - wallet.balance) / 100, 'reais');
 
-      // 3. Criar transação de reembolso
+      // 3. Criar transação de reembolso com metadados completos
       console.log('Criando transação de reembolso...');
       const { error: transactionError } = await supabase
         .from('transactions')
         .insert({
           wallet_id: wallet.id,
-          user_id: userId, // ← ADICIONADO para rastreamento
+          user_id: userId,
           bet_id: betId,
           type: 'reembolso',
           amount: bet.amount,
           balance_before: wallet.balance,
           balance_after: wallet.balance + bet.amount,
-          description: `Reembolso de aposta cancelada - Série ${bet.serie_id}`,
-          status: 'completed' // ← ADICIONADO para consistência
+          fee: 0,
+          net_amount: bet.amount,
+          description: `Reembolso de aposta cancelada - Série ${bet.serie.serie_number}`,
+          status: 'completed',
+          metadata: {
+            serie_id: bet.serie_id,
+            serie_number: bet.serie.serie_number,
+            serie_status: bet.serie.status,
+            chosen_player_id: bet.chosen_player_id,
+            chosen_player_name: bet.chosen_player?.name,
+            match_id: bet.serie.match_id,
+            cancelled_at: new Date().toISOString(),
+            reason: 'Aposta cancelada pelo usuário'
+          }
         });
 
       if (transactionError) {
         console.error('❌ Erro ao criar transação de reembolso:', transactionError);
         // Não falhar por erro na transação, apenas logar
       } else {
-        console.log('✅ Transação de reembolso criada');
+        console.log('✅ Transação de reembolso criada com metadados completos');
       }
 
       // 4. Atualizar status da aposta para cancelada

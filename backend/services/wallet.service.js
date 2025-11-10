@@ -317,6 +317,8 @@ class WalletService {
    */
   async confirmDeposit(correlationID, paymentData) {
     try {
+      console.log('🔍 [CONFIRM_DEPOSIT] Buscando transação com correlationID:', correlationID);
+      
       // 1. Buscar transação pelo correlationID
       const { data: transaction, error: transactionError } = await supabase
         .from('transactions')
@@ -325,7 +327,12 @@ class WalletService {
         .eq('type', 'deposito')
         .single();
 
-      if (transactionError || !transaction) {
+      if (transactionError) {
+        console.error('❌ [CONFIRM_DEPOSIT] Erro ao buscar transação:', transactionError);
+      }
+
+      if (!transaction) {
+        console.error('❌ [CONFIRM_DEPOSIT] Transação não encontrada para correlationID:', correlationID);
         throw {
           code: 'NOT_FOUND',
           message: 'Transação não encontrada',
@@ -333,9 +340,16 @@ class WalletService {
         };
       }
 
+      console.log('✅ [CONFIRM_DEPOSIT] Transação encontrada:', {
+        id: transaction.id,
+        user_id: transaction.user_id,
+        status: transaction.status,
+        amount: transaction.amount
+      });
+
       // 2. Verificar se a transação já foi processada
       if (transaction.status === 'completed') {
-        console.warn('Transação já foi processada:', correlationID);
+        console.warn('⚠️  [CONFIRM_DEPOSIT] Transação já foi processada:', correlationID);
         return {
           message: 'Transação já processada',
           transaction_id: transaction.id
@@ -376,7 +390,9 @@ class WalletService {
       }
 
       // 4. Atualizar status da transação e balance_after
-      const { error: updateTransactionError } = await supabase
+      console.log('📝 [CONFIRM_DEPOSIT] Atualizando status da transação para completed...');
+      
+      const { data: updatedTransaction, error: updateTransactionError } = await supabase
         .from('transactions')
         .update({
           status: 'completed',
@@ -388,15 +404,20 @@ class WalletService {
             confirmed_at: new Date().toISOString()
           }
         })
-        .eq('id', transaction.id);
+        .eq('id', transaction.id)
+        .select('id, status');
 
       if (updateTransactionError) {
+        console.error('❌ [CONFIRM_DEPOSIT] Erro ao atualizar transação:', updateTransactionError);
         throw {
           code: 'DATABASE_ERROR',
           message: 'Erro ao atualizar transação',
           details: updateTransactionError.message
         };
       }
+
+      console.log('✅ [CONFIRM_DEPOSIT] Transação atualizada:', updatedTransaction);
+      console.log('✅ [CONFIRM_DEPOSIT] Novo saldo:', newBalance / 100, 'reais');
 
       return {
         transaction_id: transaction.id,

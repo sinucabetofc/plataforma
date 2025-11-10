@@ -587,6 +587,10 @@ export const createWithdraw = wallet.withdraw;
 export const getTransactions = wallet.getTransactions;
 export const getUserBets = bets.getUserBets;
 
+// Aliases para compatibilidade com páginas antigas
+export const getGame = matches.getById;
+export const createBet = bets.create;
+
 // ============================================================
 // ADMIN
 // ============================================================

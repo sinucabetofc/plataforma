@@ -11,29 +11,66 @@ import Loader from '../../components/admin/Loader';
 
 export default function ParceirosIndex() {
   const router = useRouter();
-  const { isAuthenticated } = useInfluencerStore();
-  const [redirecting, setRedirecting] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (redirecting) return; // Evitar múltiplos redirecionamentos
-    
-    setRedirecting(true);
-    
-    // Pequeno delay para evitar conflitos
-    setTimeout(() => {
-      // Se não está autenticado, vai para login
-      if (!isAuthenticated) {
-        router.replace('/parceiros/login');
-      } else {
-        // Se está autenticado, vai para dashboard
-        router.replace('/parceiros/dashboard');
-      }
-    }, 100);
+    setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    
+    // Verificar autenticação apenas no cliente
+    const checkAuth = () => {
+      try {
+        // Acessar localStorage diretamente
+        const stored = typeof window !== 'undefined' 
+          ? localStorage.getItem('influencer-auth-storage') 
+          : null;
+        
+        const isAuth = stored ? JSON.parse(stored)?.state?.isAuthenticated : false;
+        
+        console.log('🔍 [PARCEIROS] Verificando autenticação:', isAuth);
+        
+        // Redirecionar baseado na autenticação
+        if (!isAuth) {
+          console.log('➡️  [PARCEIROS] Redirecionando para login...');
+          router.replace('/parceiros/login');
+        } else {
+          console.log('➡️  [PARCEIROS] Redirecionando para dashboard...');
+          router.replace('/parceiros/dashboard');
+        }
+      } catch (error) {
+        console.error('❌ [PARCEIROS] Erro ao verificar autenticação:', error);
+        // Em caso de erro, redirecionar para login
+        router.replace('/parceiros/login');
+      }
+    };
+
+    // Pequeno delay para garantir que store está hidratado
+    const timer = setTimeout(checkAuth, 150);
+    
+    return () => clearTimeout(timer);
+  }, [mounted, router]);
+
+  // Não renderizar nada no servidor (SSR)
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-admin-black flex items-center justify-center">
-      <Loader size="lg" />
+      <div className="text-center">
+        <Loader size="lg" />
+        <p className="mt-4 text-sm text-gray-400">Redirecionando...</p>
+      </div>
     </div>
   );
+}
+
+// Forçar renderização no cliente
+export async function getServerSideProps() {
+  return {
+    props: {},
+  };
 }

@@ -219,6 +219,10 @@ class MatchesService {
             status: match.status,
             youtube_url: match.youtube_url,
             stream_active: match.stream_active,
+            // IDs dos jogadores no nível raiz
+            player1_id: match.player1_id,
+            player2_id: match.player2_id,
+            // Objetos completos dos jogadores
             player1: {
               id: match.player1.id,
               name: match.player1.name,
@@ -321,6 +325,10 @@ class MatchesService {
         status: match.status,
         youtube_url: match.youtube_url,
         stream_active: match.stream_active,
+        // IDs dos jogadores no nível raiz (para facilitar acesso no frontend)
+        player1_id: match.player1_id,
+        player2_id: match.player2_id,
+        // Objetos completos dos jogadores
         player1: {
           id: match.player1.id,
           name: match.player1.name,

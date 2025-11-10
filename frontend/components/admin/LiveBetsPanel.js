@@ -28,14 +28,21 @@ export default function LiveBetsPanel({ matchId, match }) {
         // Buscar apostas de todas as séries
         const promises = match.series.map(serie => 
           get(`/bets/serie/${serie.id}`)
-            .then(r => ({
-              ...r,
-              bets: (r.data?.bets || []).map(bet => ({
-                ...bet,
-                serie_number: serie.serie_number
-              }))
-            }))
-            .catch(() => ({ bets: [] }))
+            .then(r => {
+              // Backend retorna all_bets, não bets
+              const betsArray = r.data?.all_bets || [];
+              return {
+                ...r,
+                bets: betsArray.map(bet => ({
+                  ...bet,
+                  serie_number: serie.serie_number
+                }))
+              };
+            })
+            .catch((err) => {
+              console.error(`Erro ao buscar apostas da série ${serie.id}:`, err);
+              return { bets: [] };
+            })
         );
         
         const results = await Promise.all(promises);
@@ -141,10 +148,11 @@ export default function LiveBetsPanel({ matchId, match }) {
                       R$ {(bet.amount / 100).toFixed(2)}
                     </p>
                     <p className="text-xs text-gray-500 uppercase">
-                      {bet.status === 'pending' ? 'Aguardando' : 
-                       bet.status === 'matched' ? 'Casada' : 
-                       bet.status === 'won' ? 'Ganhou' : 
-                       bet.status === 'lost' ? 'Perdeu' : bet.status}
+                      {bet.status === 'pendente' ? 'Aguardando' : 
+                       bet.status === 'aceita' ? 'Casada' : 
+                       bet.status === 'ganha' ? 'Ganhou' : 
+                       bet.status === 'perdida' ? 'Perdeu' : 
+                       bet.status === 'cancelada' ? 'Cancelada' : bet.status}
                     </p>
                   </div>
                 </div>

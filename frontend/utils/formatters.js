@@ -415,6 +415,10 @@ export function formatStatus(status) {
     cancelled: 'Cancelada',
     cancelada: 'Cancelada',
     
+    // Séries
+    liberada: 'Apostas Abertas',
+    encerrada: 'Encerrada',
+    
     // Transações
     pending: 'Pendente',
     completed: 'Concluída',
