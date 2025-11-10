@@ -5,18 +5,26 @@
  */
 
 import { useState } from 'react';
-import { DollarSign, Clock, CheckCircle, TrendingUp } from 'lucide-react';
+import { DollarSign, Clock, CheckCircle, TrendingUp, XCircle, Ban } from 'lucide-react';
 import CardInfo from '../../../components/admin/CardInfo';
 import WithdrawalModal from '../../../components/parceiros/WithdrawalModal';
 import toast from 'react-hot-toast';
+import { useInfluencerWithdrawals, useRequestWithdrawal, useCancelWithdrawal } from '../../../hooks/useInfluencerWithdrawals';
+import { useInfluencerDashboard } from '../../../hooks/useInfluencerMatches';
+import Loader from '../../../components/admin/Loader';
 
 export default function ParceirosSaques() {
-  const [withdrawals] = useState([]);
   const [amount, setAmount] = useState('');
   const [showModal, setShowModal] = useState(false);
   
-  // TODO: Buscar saldo real da API
-  const availableBalance = 150.00; // Exemplo
+  // Buscar dados da API
+  const { data: dashboardData, isLoading: loadingDashboard } = useInfluencerDashboard();
+  const { data: withdrawalsData, isLoading: loadingWithdrawals } = useInfluencerWithdrawals();
+  const requestWithdrawalMutation = useRequestWithdrawal();
+  const cancelWithdrawalMutation = useCancelWithdrawal();
+  
+  const availableBalance = dashboardData?.commission?.balance || 0;
+  const withdrawals = withdrawalsData?.withdrawals || [];
 
   const formatCurrency = (value) => {
     // Remove tudo exceto números
@@ -53,42 +61,102 @@ export default function ParceirosSaques() {
 
   const handleConfirmWithdrawal = async () => {
     try {
-      // TODO: Chamar API para criar saque
-      toast.success('Saque solicitado com sucesso!');
+      const numericValue = parseFloat(amount.replace('.', '').replace(',', '.'));
+      
+      if (numericValue < 50) {
+        toast.error('Valor mínimo é R$ 50,00');
+        return;
+      }
+      
+      if (numericValue > availableBalance) {
+        toast.error('Saldo insuficiente');
+        return;
+      }
+      
+      await requestWithdrawalMutation.mutateAsync({
+        amount: numericValue
+      });
+      
       setShowModal(false);
       setAmount('');
     } catch (error) {
-      toast.error('Erro ao solicitar saque');
+      // Erro já tratado no hook
+      console.error('Erro ao solicitar saque:', error);
     }
   };
 
   const handleWithdrawAll = async () => {
     try {
-      // TODO: Chamar API para sacar tudo disponível
-      toast.success(`Saque de R$ ${availableBalance.toFixed(2).replace('.', ',')} solicitado!`);
+      if (availableBalance < 50) {
+        toast.error('Saldo mínimo para saque é R$ 50,00');
+        return;
+      }
+      
+      await requestWithdrawalMutation.mutateAsync({
+        amount: availableBalance
+      });
+      
       setShowModal(false);
       setAmount('');
     } catch (error) {
-      toast.error('Erro ao solicitar saque');
+      // Erro já tratado no hook
+      console.error('Erro ao solicitar saque:', error);
+    }
+  };
+  
+  const handleCancelWithdrawal = async (withdrawalId) => {
+    if (!confirm('Tem certeza que deseja cancelar este saque?')) {
+      return;
+    }
+    
+    try {
+      await cancelWithdrawalMutation.mutateAsync(withdrawalId);
+    } catch (error) {
+      // Erro já tratado no hook
+      console.error('Erro ao cancelar saque:', error);
     }
   };
 
   const getStatusBadge = (status) => {
     const badges = {
-      pendente: { className: 'status-badge-info', label: 'Pendente' },
-      processando: { className: 'status-badge-warning', label: 'Processando' },
-      aprovado: { className: 'status-badge-success', label: 'Aprovado' },
-      rejeitado: { className: 'status-badge-error', label: 'Rejeitado' }
+      pending: { className: 'status-badge-warning', label: 'Pendente', icon: <Clock size={16} /> },
+      approved: { className: 'status-badge-success', label: 'Aprovado', icon: <CheckCircle size={16} /> },
+      rejected: { className: 'status-badge-error', label: 'Rejeitado', icon: <XCircle size={16} /> },
+      cancelled: { className: 'bg-gray-600 text-white', label: 'Cancelado', icon: <Ban size={16} /> }
     };
 
-    const badge = badges[status] || badges.pendente;
+    const badge = badges[status] || badges.pending;
 
     return (
-      <span className={`px-3 py-1.5 rounded-lg text-sm font-medium ${badge.className}`}>
+      <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium ${badge.className}`}>
+        {badge.icon}
         {badge.label}
       </span>
     );
   };
+  
+  // Calcular estatísticas
+  const stats = {
+    totalWithdrawn: withdrawals
+      .filter(w => w.status === 'approved')
+      .reduce((sum, w) => sum + parseFloat(w.amount || 0), 0),
+    pending: withdrawals
+      .filter(w => w.status === 'pending')
+      .reduce((sum, w) => sum + parseFloat(w.amount || 0), 0),
+    thisMonth: withdrawals
+      .filter(w => {
+        const date = new Date(w.requested_at);
+        const now = new Date();
+        return w.status === 'approved' && 
+               date.getMonth() === now.getMonth() && 
+               date.getFullYear() === now.getFullYear();
+      })
+      .reduce((sum, w) => sum + parseFloat(w.amount || 0), 0)
+  };
+  
+  if (loadingDashboard || loadingWithdrawals) {
+    return <Loader />;
+  }
 
   return (
     <div className="space-y-6">
@@ -115,7 +183,7 @@ export default function ParceirosSaques() {
 
         <CardInfo
           title="Total Sacado"
-          value={0}
+          value={stats.totalWithdrawn}
           isCurrency
           icon={<TrendingUp size={24} />}
           trend="Histórico"
@@ -123,7 +191,7 @@ export default function ParceirosSaques() {
 
         <CardInfo
           title="Pendentes"
-          value={0}
+          value={stats.pending}
           isCurrency
           icon={<Clock size={24} />}
           trend="Em análise"
@@ -132,7 +200,7 @@ export default function ParceirosSaques() {
 
         <CardInfo
           title="Este Mês"
-          value={0}
+          value={stats.thisMonth}
           isCurrency
           icon={<CheckCircle size={24} />}
           trend="Aprovados"
@@ -197,18 +265,68 @@ export default function ParceirosSaques() {
             {withdrawals.map((withdrawal) => (
               <div
                 key={withdrawal.id}
-                className="p-4 bg-admin-gray-light rounded-lg border border-admin-gray-dark"
+                className="p-4 bg-admin-bg rounded-lg border-2 border-admin-border hover:border-admin-primary/30 transition-all"
               >
-                <div className="flex items-start justify-between mb-2">
+                <div className="flex items-center justify-between mb-3">
                   {getStatusBadge(withdrawal.status)}
-                  <span className="text-lg font-bold text-status-warning">
-                    R$ {withdrawal.amount.toFixed(2)}
+                  <span className="text-2xl font-bold text-[#27E502]">
+                    R$ {parseFloat(withdrawal.amount).toFixed(2).replace('.', ',')}
                   </span>
                 </div>
                 
-                <div className="text-xs text-admin-text-muted">
-                  Solicitado em: {new Date(withdrawal.created_at).toLocaleString('pt-BR')}
+                <div className="space-y-2 text-sm text-admin-text-muted">
+                  <div className="flex justify-between">
+                    <span>Solicitado em:</span>
+                    <span className="text-admin-text-primary">
+                      {new Date(withdrawal.requested_at).toLocaleString('pt-BR')}
+                    </span>
+                  </div>
+                  
+                  {withdrawal.approved_at && (
+                    <div className="flex justify-between">
+                      <span>Aprovado em:</span>
+                      <span className="text-green-600">
+                        {new Date(withdrawal.approved_at).toLocaleString('pt-BR')}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {withdrawal.rejected_at && (
+                    <div className="flex justify-between">
+                      <span>Rejeitado em:</span>
+                      <span className="text-red-600">
+                        {new Date(withdrawal.rejected_at).toLocaleString('pt-BR')}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {withdrawal.rejection_reason && (
+                    <div className="mt-2 p-2 bg-red-900/20 border border-red-500/30 rounded text-red-400">
+                      <strong>Motivo:</strong> {withdrawal.rejection_reason}
+                    </div>
+                  )}
+                  
+                  <div className="flex justify-between">
+                    <span>Chave PIX:</span>
+                    <span className="text-admin-text-primary font-mono text-xs">
+                      {withdrawal.pix_key}
+                    </span>
+                  </div>
                 </div>
+                
+                {/* Botão de cancelar (somente para pendentes) */}
+                {withdrawal.status === 'pending' && (
+                  <div className="mt-4 pt-4 border-t border-admin-border">
+                    <button
+                      onClick={() => handleCancelWithdrawal(withdrawal.id)}
+                      className="btn btn-secondary w-full flex items-center justify-center gap-2"
+                      disabled={cancelWithdrawalMutation.isPending}
+                    >
+                      <Ban size={18} />
+                      Cancelar Saque
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
