@@ -43,6 +43,9 @@ export default function ParceirosGameDetails() {
   const match = data?.match;
   const bets = data?.bets || [];
   const series = match?.series || [];
+  
+  // Buscar série em andamento para exibir o placar atual
+  const currentSerie = series.find(s => s.status === 'em_andamento') || series[series.length - 1];
 
   const handleAction = async (action, payload) => {
     try {
@@ -184,9 +187,9 @@ export default function ParceirosGameDetails() {
           <h3 className="text-xl font-bold text-admin-text-primary mb-1">
             {match.player1?.nickname || match.player1?.name || 'Jogador 1'}
           </h3>
-          {(match.status === 'em_andamento' || match.status === 'finalizada') && (
+          {(match.status === 'em_andamento' || match.status === 'finalizada') && currentSerie && (
             <p className="text-5xl font-bold text-[#27E502] mt-4">
-              {match.player1_score || 0}
+              {currentSerie.player1_score || 0}
             </p>
           )}
         </div>
@@ -239,9 +242,9 @@ export default function ParceirosGameDetails() {
           <h3 className="text-xl font-bold text-admin-text-primary mb-1">
             {match.player2?.nickname || match.player2?.name || 'Jogador 2'}
           </h3>
-          {(match.status === 'em_andamento' || match.status === 'finalizada') && (
+          {(match.status === 'em_andamento' || match.status === 'finalizada') && currentSerie && (
             <p className="text-5xl font-bold text-[#27E502] mt-4">
-              {match.player2_score || 0}
+              {currentSerie.player2_score || 0}
             </p>
           )}
         </div>
