@@ -1,82 +1,92 @@
 /**
  * ============================================================
- * useWithdrawals Hooks - Gerenciamento de Saques
+ * useWithdrawals Hook (Admin)
  * ============================================================
+ * Hook para admin gerenciar saques dos parceiros
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { get, patch } from '../../utils/api';
 import toast from 'react-hot-toast';
-import useAdminStore from '../../store/adminStore';
 
-// Listar saques
+/**
+ * Listar todos os saques (Admin)
+ */
 export function useWithdrawals(filters = {}) {
   return useQuery({
-    queryKey: ['withdrawals', filters],
+    queryKey: ['admin-withdrawals', filters],
     queryFn: async () => {
-      const params = new URLSearchParams(filters).toString();
-      const response = await get(`/admin/withdrawals?${params}`);
+      const params = new URLSearchParams();
+      if (filters.status) params.append('status', filters.status);
+      if (filters.influencer_id) params.append('influencer_id', filters.influencer_id);
+      if (filters.limit) params.append('limit', filters.limit);
+      if (filters.offset) params.append('offset', filters.offset);
+
+      const response = await get(`/admin/withdrawals?${params.toString()}`);
       return response.data;
     },
-    refetchInterval: 30000, // Atualiza a cada 30 segundos
+    keepPreviousData: true,
+    refetchInterval: 30000 // Atualizar a cada 30 segundos
   });
 }
 
-// Buscar saque específico
-export function useWithdrawal(withdrawalId) {
-  return useQuery({
-    queryKey: ['withdrawals', withdrawalId],
-    queryFn: async () => {
-      const response = await get(`/admin/withdrawals/${withdrawalId}`);
-      return response.data;
-    },
-    enabled: !!withdrawalId,
-  });
-}
-
-// Aprovar saque
+/**
+ * Aprovar saque (Admin)
+ */
 export function useApproveWithdrawal() {
   const queryClient = useQueryClient();
-  const { decrementPendingWithdrawals } = useAdminStore();
 
   return useMutation({
-    mutationFn: async (withdrawalId) => {
-      const response = await patch(`/admin/withdrawals/${withdrawalId}/approve`);
+    mutationFn: async ({ withdrawalId, notes }) => {
+      const response = await patch(`/admin/withdrawals/${withdrawalId}/approve`, { notes });
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['withdrawals'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-      decrementPendingWithdrawals();
+      queryClient.invalidateQueries({ queryKey: ['admin-withdrawals'] });
       toast.success('Saque aprovado com sucesso!');
     },
     onError: (error) => {
+      const message = error.message || 'Erro ao aprovar saque';
+      toast.error(message);
       console.error('Erro ao aprovar saque:', error);
-    },
+    }
   });
 }
 
-// Recusar saque
+/**
+ * Rejeitar saque (Admin)
+ */
 export function useRejectWithdrawal() {
   const queryClient = useQueryClient();
-  const { decrementPendingWithdrawals } = useAdminStore();
 
   return useMutation({
     mutationFn: async ({ withdrawalId, reason }) => {
-      const response = await patch(`/admin/withdrawals/${withdrawalId}/reject`, {
-        reason,
-      });
+      const response = await patch(`/admin/withdrawals/${withdrawalId}/reject`, { reason });
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['withdrawals'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-      decrementPendingWithdrawals();
-      toast.success('Saque recusado com sucesso!');
+      queryClient.invalidateQueries({ queryKey: ['admin-withdrawals'] });
+      toast.success('Saque rejeitado');
     },
     onError: (error) => {
-      console.error('Erro ao recusar saque:', error);
+      const message = error.message || 'Erro ao rejeitar saque';
+      toast.error(message);
+      console.error('Erro ao rejeitar saque:', error);
+    }
+  });
+}
+
+/**
+ * Estatísticas de saques (Admin)
+ */
+export function useWithdrawalsStats() {
+  return useQuery({
+    queryKey: ['withdrawals-stats'],
+    queryFn: async () => {
+      const response = await get('/admin/withdrawals/stats');
+      return response.data;
     },
+    staleTime: 60000 // 1 minuto
   });
 }
 
