@@ -5,7 +5,18 @@
  * Funções para comunicação com o backend
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+// Normalizar API_BASE_URL para garantir que termina com /api
+const getApiBaseUrl = () => {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  // Se já termina com /api, retorna como está
+  if (baseUrl.endsWith('/api')) {
+    return baseUrl;
+  }
+  // Se não, adiciona /api no final
+  return `${baseUrl}/api`;
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 /**
  * Classe para erros de API

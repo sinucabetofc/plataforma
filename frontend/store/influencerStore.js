@@ -2,11 +2,15 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import axios from 'axios';
 
-// Garantir que API_URL não tenha /api no final (será adicionado nas rotas)
+// Normalizar API_URL para garantir que termina com /api
 const getApiUrl = () => {
-  const url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-  // Remover /api do final se existir
-  return url.replace(/\/api\/?$/, '');
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  // Se já termina com /api, retorna como está
+  if (baseUrl.endsWith('/api')) {
+    return baseUrl;
+  }
+  // Se não, adiciona /api no final
+  return `${baseUrl}/api`;
 };
 
 const API_URL = getApiUrl();
@@ -27,7 +31,7 @@ const useInfluencerStore = create(
         set({ isLoading: true, error: null });
 
         try {
-          const response = await axios.post(`${API_URL}/api/influencers/auth/login`, {
+          const response = await axios.post(`${API_URL}/influencers/auth/login`, {
             email,
             password
           });
@@ -83,7 +87,7 @@ const useInfluencerStore = create(
         set({ isLoading: true, error: null });
 
         try {
-          const response = await axios.get(`${API_URL}/api/influencers/auth/me`, {
+          const response = await axios.get(`${API_URL}/influencers/auth/me`, {
             headers: {
               Authorization: `Bearer ${token}`
             }
@@ -129,7 +133,7 @@ const useInfluencerStore = create(
 
         try {
           const response = await axios.patch(
-            `${API_URL}/api/influencers/auth/profile`,
+            `${API_URL}/influencers/auth/profile`,
             data,
             {
               headers: {

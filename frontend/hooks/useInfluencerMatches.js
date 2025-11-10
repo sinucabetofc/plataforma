@@ -2,11 +2,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import useInfluencerStore from '../store/influencerStore';
 
-// Garantir que API_URL não tenha /api no final (será adicionado nas rotas)
+// Normalizar API_URL para garantir que termina com /api
 const getApiUrl = () => {
-  const url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-  // Remover /api do final se existir
-  return url.replace(/\/api\/?$/, '');
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  // Se já termina com /api, retorna como está
+  if (baseUrl.endsWith('/api')) {
+    return baseUrl;
+  }
+  // Se não, adiciona /api no final
+  return `${baseUrl}/api`;
 };
 
 const API_URL = getApiUrl();
@@ -33,7 +37,7 @@ export const useInfluencerDashboard = () => {
     queryKey: ['influencer-dashboard'],
     queryFn: async () => {
       const response = await axios.get(
-        `${API_URL}/api/influencers/dashboard`,
+        `${API_URL}/influencers/dashboard`,
         authHeaders
       );
       return response.data.data;
@@ -58,7 +62,7 @@ export const useInfluencerMatches = (filters = {}) => {
       if (filters.offset) params.append('offset', filters.offset);
 
       const response = await axios.get(
-        `${API_URL}/api/influencers/matches?${params.toString()}`,
+        `${API_URL}/influencers/matches?${params.toString()}`,
         authHeaders
       );
       return response.data;
@@ -79,7 +83,7 @@ export const useInfluencerMatch = (id) => {
     queryKey: ['influencer-match', id],
     queryFn: async () => {
       const response = await axios.get(
-        `${API_URL}/api/influencers/matches/${id}`,
+        `${API_URL}/influencers/matches/${id}`,
         authHeaders
       );
       return response.data.data;
@@ -100,7 +104,7 @@ export const useStartMatch = () => {
   return useMutation({
     mutationFn: async (matchId) => {
       const response = await axios.patch(
-        `${API_URL}/api/influencers/matches/${matchId}/start`,
+        `${API_URL}/influencers/matches/${matchId}/start`,
         {},
         authHeaders
       );
@@ -124,7 +128,7 @@ export const useUpdateScore = () => {
   return useMutation({
     mutationFn: async ({ matchId, player1_score, player2_score }) => {
       const response = await axios.patch(
-        `${API_URL}/api/influencers/matches/${matchId}/score`,
+        `${API_URL}/influencers/matches/${matchId}/score`,
         { player1_score, player2_score },
         authHeaders
       );
@@ -147,7 +151,7 @@ export const useStartSeries = () => {
   return useMutation({
     mutationFn: async (seriesId) => {
       const response = await axios.patch(
-        `${API_URL}/api/influencers/series/${seriesId}/start`,
+        `${API_URL}/influencers/series/${seriesId}/start`,
         {},
         authHeaders
       );
@@ -170,7 +174,7 @@ export const useEnableBetting = () => {
   return useMutation({
     mutationFn: async (seriesId) => {
       const response = await axios.patch(
-        `${API_URL}/api/influencers/series/${seriesId}/enable-betting`,
+        `${API_URL}/influencers/series/${seriesId}/enable-betting`,
         {},
         authHeaders
       );
