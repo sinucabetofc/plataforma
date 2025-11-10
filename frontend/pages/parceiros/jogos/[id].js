@@ -8,12 +8,12 @@ import { useRouter } from 'next/router';
 import { useEffect } from 'react';
 import toast from 'react-hot-toast';
 import GameControlPanel from '../../../components/parceiros/GameControlPanel';
+import LiveScoreManager from '../../../components/parceiros/LiveScoreManager';
 import BetsHistory from '../../../components/parceiros/BetsHistory';
 import Loader from '../../../components/admin/Loader';
 import { 
   useInfluencerMatch,
   useStartMatch,
-  useUpdateScore,
   useStartSeries,
   useEnableBetting
 } from '../../../hooks/useInfluencerMatches';
@@ -35,8 +35,8 @@ export default function ParceirosGameDetails() {
     
     return () => clearInterval(interval);
   }, [id, refetch]);
+  
   const startMatchMutation = useStartMatch();
-  const updateScoreMutation = useUpdateScore();
   const startSeriesMutation = useStartSeries();
   const enableBettingMutation = useEnableBetting();
 
@@ -52,19 +52,6 @@ export default function ParceirosGameDetails() {
           toast.success('Partida iniciada com sucesso!', {
             duration: 3000,
             position: 'top-center'
-          });
-          await refetch();
-          break;
-
-        case 'update-score':
-          await updateScoreMutation.mutateAsync({
-            matchId: id,
-            ...payload
-          });
-          toast.success('Placar atualizado com sucesso!', {
-            duration: 3000,
-            position: 'top-center',
-            icon: '🎯'
           });
           await refetch();
           break;
@@ -102,7 +89,6 @@ export default function ParceirosGameDetails() {
 
   const isActionLoading = 
     startMatchMutation.isLoading || 
-    updateScoreMutation.isLoading ||
     startSeriesMutation.isLoading ||
     enableBettingMutation.isLoading;
 
@@ -284,6 +270,14 @@ export default function ParceirosGameDetails() {
             </a>
           </div>
         </div>
+      )}
+
+      {/* Live Score Manager (se houver série em andamento) */}
+      {series.find(s => s.status === 'em_andamento') && (
+        <LiveScoreManager 
+          serie={series.find(s => s.status === 'em_andamento')} 
+          match={match}
+        />
       )}
 
       {/* Game Controls and Bets */}

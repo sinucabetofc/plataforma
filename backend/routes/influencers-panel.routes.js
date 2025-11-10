@@ -91,6 +91,13 @@ router.patch('/matches/:id/score', actionLimiter, influencersPanelController.upd
 router.patch('/series/:id/start', actionLimiter, influencersPanelController.startSeries);
 
 /**
+ * PATCH /api/influencers/series/:id/score
+ * Atualizar placar da série
+ * Body: { player1_score, player2_score }
+ */
+router.patch('/series/:id/score', actionLimiter, influencersPanelController.updateSerieScore);
+
+/**
  * PATCH /api/influencers/series/:id/enable-betting
  * Liberar apostas para série
  */

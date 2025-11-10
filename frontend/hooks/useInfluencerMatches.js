@@ -120,16 +120,16 @@ export const useStartMatch = () => {
 };
 
 /**
- * Hook para atualizar placar
+ * Hook para atualizar placar da série
  */
 export const useUpdateScore = () => {
   const authHeaders = useAuthHeaders();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ matchId, player1_score, player2_score }) => {
+    mutationFn: async ({ serieId, player1_score, player2_score }) => {
       const response = await axios.patch(
-        `${API_URL}/influencers/matches/${matchId}/score`,
+        `${API_URL}/influencers/series/${serieId}/score`,
         { player1_score, player2_score },
         authHeaders
       );
@@ -138,7 +138,7 @@ export const useUpdateScore = () => {
     onSuccess: (_, variables) => {
       // Invalidar todas as queries relacionadas
       queryClient.invalidateQueries({ queryKey: ['influencer-matches'] });
-      queryClient.invalidateQueries({ queryKey: ['influencer-match', variables.matchId] });
+      queryClient.invalidateQueries({ queryKey: ['influencer-match'] });
       queryClient.invalidateQueries({ queryKey: ['influencer-dashboard'] });
       
       // Notificação de sucesso

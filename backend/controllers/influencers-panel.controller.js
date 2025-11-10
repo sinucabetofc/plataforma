@@ -547,6 +547,103 @@ const enableBetting = async (req, res) => {
   }
 };
 
+/**
+ * PATCH /api/influencers/series/:id/score
+ * Atualizar placar da série
+ */
+const updateSerieScore = async (req, res) => {
+  try {
+    const { id: influencerId } = req.influencer;
+    const { id: serieId } = req.params;
+    const { player1_score, player2_score } = req.body;
+
+    console.log(`📊 [INFLUENCER PANEL] Atualizando placar da série ${serieId}`);
+
+    // Validações
+    if (player1_score === undefined && player2_score === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: 'Informe pelo menos um placar'
+      });
+    }
+
+    // Buscar série e verificar se pertence ao influencer
+    const { data: serie, error: serieError } = await supabase
+      .from('series')
+      .select(`
+        *,
+        match:matches!match_id (
+          id,
+          influencer_id,
+          status
+        )
+      `)
+      .eq('id', serieId)
+      .single();
+
+    if (serieError || !serie) {
+      console.error('❌ [INFLUENCER PANEL] Série não encontrada:', serieError);
+      return res.status(404).json({
+        success: false,
+        message: 'Série não encontrada'
+      });
+    }
+
+    // Verificar se o influencer é dono da partida
+    if (serie.match.influencer_id !== influencerId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Você não tem permissão para atualizar esta série'
+      });
+    }
+
+    // Verificar se a série está em andamento
+    if (serie.status !== 'em_andamento') {
+      return res.status(400).json({
+        success: false,
+        message: 'Apenas séries em andamento podem ter o placar atualizado'
+      });
+    }
+
+    // Preparar dados de atualização
+    const updateData = {};
+    if (player1_score !== undefined) updateData.player1_score = parseInt(player1_score);
+    if (player2_score !== undefined) updateData.player2_score = parseInt(player2_score);
+
+    // Atualizar placar
+    const { data: updated, error } = await supabase
+      .from('series')
+      .update(updateData)
+      .eq('id', serieId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ [INFLUENCER PANEL] Erro ao atualizar placar:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao atualizar placar',
+        error: error.message
+      });
+    }
+
+    console.log('✅ [INFLUENCER PANEL] Placar atualizado:', updated.id);
+
+    res.json({
+      success: true,
+      message: 'Placar atualizado com sucesso',
+      data: updated
+    });
+  } catch (error) {
+    console.error('❌ [INFLUENCER PANEL] Erro inesperado:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao atualizar placar',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getDashboard,
   listMatches,
@@ -554,6 +651,7 @@ module.exports = {
   startMatch,
   updateScore,
   startSeries,
+  updateSerieScore,
   enableBetting
 };
 
