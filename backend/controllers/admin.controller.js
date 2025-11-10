@@ -7,6 +7,7 @@
 const { supabase } = require('../config/supabase.config');
 const { successResponse, errorResponse, notFoundResponse } = require('../utils/response.util');
 const matchesService = require('../services/matches.service');
+const fakeStatsService = require('../services/fake-stats.service');
 
 class AdminController {
   /**
@@ -157,17 +158,50 @@ class AdminController {
       const completedInfluencerTotal = completedInfluencerWithdrawals.reduce((sum, w) => sum + parseFloat(w.amount || 0), 0);
       const completedWithdrawalsTotal = completedUserTotal + completedInfluencerTotal;
 
-      // 6. Lucro da plataforma (APENAS VALORES REAIS)
-      // - Taxa de 8% dos saques de apostadores
-      // - NÃO inclui saldo fake (usado apenas para testes)
-      const withdrawalFees = completedUserWithdrawals.reduce((sum, w) => sum + parseFloat(w.fee || 0), 0) / 100;
+      // 6. Separar saques FAKE vs REAL
+      // Buscar todos os saques (apostadores)
+      const allUserWithdrawals = transactionsData?.filter(t => t.type === 'saque') || [];
+      
+      // Identificar saques fake (origem: admin_credit, saldo fake)
+      const fakeWithdrawals = allUserWithdrawals.filter(w => w.metadata?.is_fake_balance === true);
+      const realWithdrawals = allUserWithdrawals.filter(w => !w.metadata?.is_fake_balance);
+      
+      const totalFakeWithdrawn = fakeWithdrawals.reduce((sum, w) => sum + parseFloat(w.amount || 0), 0) / 100;
+      const totalRealWithdrawn = realWithdrawals.reduce((sum, w) => sum + parseFloat(w.amount || 0), 0) / 100;
+
+      // Saques por período (APENAS REAIS)
+      const todayRealWithdrawals = realWithdrawals.filter(w => {
+        return w.status === 'completed' && new Date(w.created_at) >= startOfToday;
+      });
+      const todayWithdrawnTotal = todayRealWithdrawals.reduce((sum, w) => sum + parseFloat(w.amount || 0), 0) / 100;
+
+      // Últimos 7 dias
+      const last7DaysDate = new Date();
+      last7DaysDate.setDate(last7DaysDate.getDate() - 7);
+      const last7DaysWithdrawals = realWithdrawals.filter(w => {
+        return w.status === 'completed' && new Date(w.created_at) >= last7DaysDate;
+      });
+      const last7DaysWithdrawnTotal = last7DaysWithdrawals.reduce((sum, w) => sum + parseFloat(w.amount || 0), 0) / 100;
+
+      // Este mês
+      const monthWithdrawals = realWithdrawals.filter(w => {
+        return w.status === 'completed' && new Date(w.created_at) >= firstDayOfMonth;
+      });
+      const monthWithdrawnTotal = monthWithdrawals.reduce((sum, w) => sum + parseFloat(w.amount || 0), 0) / 100;
+
+      // 7. Lucro da plataforma (APENAS VALORES REAIS)
+      // - Taxa de 8% dos saques REAIS de apostadores
+      // - NÃO inclui saldo fake
+      const withdrawalFees = realWithdrawals
+        .filter(w => w.status === 'completed')
+        .reduce((sum, w) => sum + parseFloat(w.fee || 0), 0) / 100;
       
       // Buscar transações de lucro já contabilizadas
       const lucroTransactions = transactionsData?.filter(t => t.type === 'lucro' && t.status === 'completed') || [];
       const totalLucroInCents = lucroTransactions.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
       const totalLucro = totalLucroInCents / 100;
       
-      // Lucro total = taxas de saque + outras transações de lucro
+      // Lucro total = taxas de saque REAIS + outras transações de lucro
       const platformProfit = withdrawalFees + totalLucro;
 
       // 7. Gráficos - Últimos 7 dias
@@ -270,6 +304,17 @@ class AdminController {
           },
           completed: {
             total: completedWithdrawalsTotal
+          },
+          fake: {
+            total: totalFakeWithdrawn,
+            count: fakeWithdrawals.length
+          },
+          real: {
+            total: totalRealWithdrawn,
+            today: todayWithdrawnTotal,
+            last7Days: last7DaysWithdrawnTotal,
+            month: monthWithdrawnTotal,
+            count: realWithdrawals.filter(w => w.status === 'completed').length
           }
         },
         wallets: {
@@ -1331,6 +1376,25 @@ class AdminController {
       }
 
       return errorResponse(res, 500, error.message || 'Erro ao cancelar aposta');
+    }
+  }
+
+  /**
+   * GET /api/admin/fake-stats
+   * Retorna estatísticas de saldo fake (apenas para debug/testes)
+   */
+  async getFakeStats(req, res) {
+    try {
+      // Verificar se o usuário é admin
+      if (req.user.role !== 'admin') {
+        return errorResponse(res, 403, 'Acesso negado. Apenas administradores.');
+      }
+
+      const result = await fakeStatsService.getFakeStats();
+      return successResponse(res, 200, 'Estatísticas fake obtidas com sucesso', result.data);
+    } catch (error) {
+      console.error('Erro ao buscar estatísticas fake:', error);
+      return errorResponse(res, 500, 'Erro ao buscar estatísticas fake');
     }
   }
 }

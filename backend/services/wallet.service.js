@@ -468,7 +468,7 @@ class WalletService {
       // 2. Buscar carteira e verificar saldo
       const { data: wallet, error: walletError } = await supabase
         .from('wallet')
-        .select('id, balance, blocked_balance, total_withdrawn')
+        .select('id, balance, blocked_balance, total_withdrawn, total_deposited')
         .eq('user_id', userId)
         .single();
 
@@ -483,6 +483,16 @@ class WalletService {
       const amountInCents = Math.round(amount * 100); // R$ 50 = 5000 centavos
       const feeInCents = Math.round(amountInCents * 0.08); // 8% do valor
       const totalAmountInCents = amountInCents + feeInCents;
+
+      // Identificar se o saque é de saldo fake ou real
+      const totalDeposited = parseFloat(wallet.total_deposited) || 0;
+      const totalWithdrawn = parseFloat(wallet.total_withdrawn) || 0;
+      const realBalance = totalDeposited - totalWithdrawn; // Saldo real disponível
+      const currentBalance = parseFloat(wallet.balance) || 0;
+      const fakeBalance = Math.max(0, currentBalance - realBalance); // Saldo fake
+      
+      // Se o valor do saque é maior que o saldo real, parte ou tudo é fake
+      const isFakeBalance = totalAmountInCents > realBalance;
       const netAmountInCents = amountInCents;
 
       // 4. Verificar saldo disponível

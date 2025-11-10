@@ -60,6 +60,11 @@ const menuItems = [
     href: '/admin/transactions',
     icon: FileText,
   },
+  {
+    name: 'Estatísticas Fake',
+    href: '/admin/fake-stats',
+    icon: AlertTriangle,
+  },
 ];
 
 export default function Sidebar() {

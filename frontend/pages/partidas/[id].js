@@ -577,7 +577,7 @@ function BetItem({ bet, isWinner, onCancel, canCancel = false, playerName = '' }
           {bet.isMyBet && (
             <span className="px-2 py-0.5 bg-verde-neon/20 border border-verde-neon/40 rounded-full text-[10px] font-bold text-verde-neon uppercase">
               Minha aposta
-            </span>
+          </span>
           )}
         </div>
         <span className="text-sm font-bold text-white">R$ {bet.amount.toFixed(2)}</span>
@@ -871,108 +871,108 @@ function SerieCard({ serie, match, currentUserId }) {
 
               // Se série LIBERADA/EM_ANDAMENTO: mostrar TODAS as apostas (para facilitar emparceiramento)
               return (
-                <div className="space-y-3">
-                  {/* Apostas no Jogador 1 */}
+          <div className="space-y-3">
+            {/* Apostas no Jogador 1 */}
                   <div className="border border-green-700/30 bg-gradient-to-br from-green-900/10 to-transparent rounded-lg overflow-hidden">
                     <div className="border-b px-3 py-2 bg-green-900/20 border-green-700/30">
-                      <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-green-500"></div>
                         <p className="text-sm font-bold text-green-400">
-                          {match.player1.nickname || match.player1.name}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="p-3 space-y-2">
+                      {match.player1.nickname || match.player1.name}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="p-3 space-y-2">
                       {betsData.by_player && Object.values(betsData.by_player).some(p => 
-                          p.player.id === match.player1.id && 
-                          p.bets.some(bet => bet.status !== 'cancelada' && bet.status !== 'reembolsada')
-                        ) ? (
-                        Object.values(betsData.by_player)
-                          .filter(p => p.player.id === match.player1.id)
-                          .flatMap(p => p.bets)
+                    p.player.id === match.player1.id && 
+                    p.bets.some(bet => bet.status !== 'cancelada' && bet.status !== 'reembolsada')
+                  ) ? (
+                  Object.values(betsData.by_player)
+                    .filter(p => p.player.id === match.player1.id)
+                    .flatMap(p => p.bets)
                           .filter(bet => bet.status !== 'cancelada' && bet.status !== 'reembolsada')
-                          .map((bet, index) => {
+                    .map((bet, index) => {
                             const canCancel = bet.user_id === currentUserId;
                             const playerName = match.player1.nickname || match.player1.name;
-                            
-                            return (
-                              <BetItem 
-                                key={bet.id}
-                                bet={{ 
-                                  id: bet.id,
-                                  label: `Aposta #${index + 1}`, 
+                      
+                      return (
+                        <BetItem 
+                          key={bet.id}
+                          bet={{ 
+                            id: bet.id,
+                            label: `Aposta #${index + 1}`, 
                                   amount: bet.amount / 100,
                                   status: bet.status,
                                   isMyBet: bet.user_id === currentUserId
-                                }} 
+                          }} 
                                 isWinner={false}
-                                onCancel={handleCancelBet}
-                                canCancel={canCancel}
+                          onCancel={handleCancelBet}
+                          canCancel={canCancel}
                                 playerName={playerName}
-                              />
-                            );
-                          })
-                      ) : (
-                        <div className="text-center py-4 bg-[#1a1a1a]/50 rounded-lg border border-dashed border-gray-700">
-                          <p className="text-xs text-gray-500">Nenhuma aposta ainda</p>
-                        </div>
-                      )}
-                    </div>
+                        />
+                      );
+                    })
+                ) : (
+                  <div className="text-center py-4 bg-[#1a1a1a]/50 rounded-lg border border-dashed border-gray-700">
+                    <p className="text-xs text-gray-500">Nenhuma aposta ainda</p>
                   </div>
+                )}
+              </div>
+            </div>
 
-                  {/* Apostas no Jogador 2 */}
+            {/* Apostas no Jogador 2 */}
                   <div className="border border-blue-700/30 bg-gradient-to-br from-blue-900/10 to-transparent rounded-lg overflow-hidden">
                     <div className="border-b px-3 py-2 bg-blue-900/20 border-blue-700/30">
-                      <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-blue-500"></div>
                         <p className="text-sm font-bold text-blue-400">
-                          {match.player2.nickname || match.player2.name}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="p-3 space-y-2">
+                      {match.player2.nickname || match.player2.name}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="p-3 space-y-2">
                       {betsData.by_player && Object.values(betsData.by_player).some(p => 
-                          p.player.id === match.player2.id && 
-                          p.bets.some(bet => bet.status !== 'cancelada' && bet.status !== 'reembolsada')
-                        ) ? (
-                        Object.values(betsData.by_player)
-                          .filter(p => p.player.id === match.player2.id)
-                          .flatMap(p => p.bets)
+                    p.player.id === match.player2.id && 
+                    p.bets.some(bet => bet.status !== 'cancelada' && bet.status !== 'reembolsada')
+                  ) ? (
+                  Object.values(betsData.by_player)
+                    .filter(p => p.player.id === match.player2.id)
+                    .flatMap(p => p.bets)
                           .filter(bet => bet.status !== 'cancelada' && bet.status !== 'reembolsada')
-                          .map((bet, index) => {
+                    .map((bet, index) => {
                             const canCancel = bet.user_id === currentUserId;
                             const playerName = match.player2.nickname || match.player2.name;
-                            
-                            return (
-                              <BetItem 
-                                key={bet.id}
-                                bet={{ 
-                                  id: bet.id,
-                                  label: `Aposta #${index + 1}`, 
+                      
+                      return (
+                        <BetItem 
+                          key={bet.id}
+                          bet={{ 
+                            id: bet.id,
+                            label: `Aposta #${index + 1}`, 
                                   amount: bet.amount / 100,
                                   status: bet.status,
                                   isMyBet: bet.user_id === currentUserId
-                                }} 
+                          }} 
                                 isWinner={false}
-                                onCancel={handleCancelBet}
-                                canCancel={canCancel}
+                          onCancel={handleCancelBet}
+                          canCancel={canCancel}
                                 playerName={playerName}
-                              />
-                            );
-                          })
-                      ) : (
-                        <div className="text-center py-4 bg-[#1a1a1a]/50 rounded-lg border border-dashed border-gray-700">
-                          <p className="text-xs text-gray-500 flex items-center justify-center gap-1">
-                            <span>💤</span>
-                            <span>Nenhuma aposta ainda</span>
-                          </p>
-                        </div>
-                      )}
-                    </div>
+                        />
+                      );
+                    })
+                ) : (
+                  <div className="text-center py-4 bg-[#1a1a1a]/50 rounded-lg border border-dashed border-gray-700">
+                    <p className="text-xs text-gray-500 flex items-center justify-center gap-1">
+                      <span>💤</span>
+                      <span>Nenhuma aposta ainda</span>
+                    </p>
                   </div>
-                </div>
+                )}
+              </div>
+            </div>
+          </div>
               );
             })()
           ) : (

@@ -32,11 +32,11 @@ export default function LiveBetsPanel({ matchId, match }) {
               // Backend retorna all_bets, não bets
               const betsArray = r.data?.all_bets || [];
               return {
-                ...r,
+              ...r,
                 bets: betsArray.map(bet => ({
-                  ...bet,
-                  serie_number: serie.serie_number
-                }))
+                ...bet,
+                serie_number: serie.serie_number
+              }))
               };
             })
             .catch((err) => {

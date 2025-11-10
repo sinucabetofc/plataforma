@@ -19,6 +19,14 @@ router.get('/dashboard/stats', authenticateToken, (req, res) => {
 });
 
 /**
+ * GET /api/admin/fake-stats
+ * Estatísticas de saldo fake (debug/testes)
+ */
+router.get('/fake-stats', authenticateToken, (req, res) => {
+  adminController.getFakeStats(req, res);
+});
+
+/**
  * @route   GET /api/admin/users
  * @desc    Lista todos os usuários com filtros e paginação
  * @access  Private (Admin only)
