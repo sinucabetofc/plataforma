@@ -1,239 +1,401 @@
 /**
  * ============================================================
- * Withdrawals Page - Página de Saques
+ * Admin - Gerenciar Saques dos Parceiros
  * ============================================================
  */
 
 import { useState } from 'react';
+import { DollarSign, Clock, CheckCircle, XCircle, User, Phone, Key, Ban } from 'lucide-react';
+import CardInfo from '../../components/admin/CardInfo';
+import Loader from '../../components/admin/Loader';
+import toast from 'react-hot-toast';
 import { useWithdrawals, useApproveWithdrawal, useRejectWithdrawal } from '../../hooks/admin/useWithdrawals';
-import useAdminStore from '../../store/adminStore';
-import Table from '../../components/admin/Table';
-import StatusBadge from '../../components/admin/StatusBadge';
-import { formatCurrency, formatDate, formatPixKey } from '../../utils/formatters';
-import { DollarSign, Check, X } from 'lucide-react';
 
-export default function Withdrawals() {
-  const { filters, setWithdrawalsFilters } = useAdminStore();
-  const withdrawalsFilters = filters.withdrawals;
-  
+export default function AdminWithdrawals() {
+  const [filter, setFilter] = useState('pending');
   const [selectedWithdrawal, setSelectedWithdrawal] = useState(null);
-  const [rejectReason, setRejectReason] = useState('');
+  const [showApproveModal, setShowApproveModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
 
-  const { data, isLoading } = useWithdrawals(withdrawalsFilters);
-  const approveWithdrawal = useApproveWithdrawal();
-  const rejectWithdrawal = useRejectWithdrawal();
+  // Hooks
+  const { data, isLoading } = useWithdrawals({ status: filter === 'all' ? '' : filter });
+  const approveWithdrawalMutation = useApproveWithdrawal();
+  const rejectWithdrawalMutation = useRejectWithdrawal();
 
-  const handleApprove = async (withdrawal) => {
-    if (!confirm(`Confirmar aprovação do saque de ${formatCurrency(withdrawal.amount)}?`)) {
-      return;
-    }
+  const withdrawals = data?.withdrawals || [];
 
-    await approveWithdrawal.mutateAsync(withdrawal.id);
+  const handleApprove = (withdrawal) => {
+    setSelectedWithdrawal(withdrawal);
+    setShowApproveModal(true);
   };
 
-  const handleRejectClick = (withdrawal) => {
+  const handleReject = (withdrawal) => {
     setSelectedWithdrawal(withdrawal);
     setShowRejectModal(true);
   };
 
-  const handleRejectSubmit = async () => {
-    if (!rejectReason.trim()) {
-      alert('Informe o motivo da recusa');
+  const confirmApprove = async () => {
+    try {
+      await approveWithdrawalMutation.mutateAsync({
+        withdrawalId: selectedWithdrawal.id
+      });
+      setShowApproveModal(false);
+      setSelectedWithdrawal(null);
+    } catch (error) {
+      // Erro já tratado no hook
+    }
+  };
+
+  const confirmReject = async () => {
+    if (!rejectionReason.trim()) {
+      toast.error('Informe o motivo da rejeição');
       return;
     }
 
-    await rejectWithdrawal.mutateAsync({
-      withdrawalId: selectedWithdrawal.id,
-      reason: rejectReason,
-    });
-
-    setShowRejectModal(false);
-    setSelectedWithdrawal(null);
-    setRejectReason('');
+    try {
+      await rejectWithdrawalMutation.mutateAsync({
+        withdrawalId: selectedWithdrawal.id,
+        reason: rejectionReason
+      });
+      setShowRejectModal(false);
+      setSelectedWithdrawal(null);
+      setRejectionReason('');
+    } catch (error) {
+      // Erro já tratado no hook
+    }
   };
 
-  const columns = [
-    {
-      key: 'user',
-      label: 'Usuário',
-      render: (user) => (
-        <div>
-          <p className="font-medium">{user?.name}</p>
-          <p className="text-xs text-admin-text-muted">{user?.email}</p>
-        </div>
-      ),
-    },
-    {
-      key: 'amount',
-      label: 'Valor Bruto',
-      render: (value) => formatCurrency(value),
-    },
-    {
-      key: 'fee',
-      label: 'Taxa (8%)',
-      render: (value) => (
-        <span className="text-status-warning">{formatCurrency(value)}</span>
-      ),
-    },
-    {
-      key: 'netAmount',
-      label: 'Valor Líquido',
-      render: (value) => (
-        <span className="text-admin-green font-medium">{formatCurrency(value)}</span>
-      ),
-    },
-    {
-      key: 'user',
-      label: 'Chave PIX',
-      render: (user) => formatPixKey(user?.pix_key, user?.pix_type),
-    },
-    {
-      key: 'status',
-      label: 'Status',
-      render: (status) => <StatusBadge status={status} />,
-    },
-    {
-      key: 'created_at',
-      label: 'Data',
-      render: (value) => formatDate(value, 'dd/MM/yyyy HH:mm'),
-    },
-    {
-      key: 'actions',
-      label: 'Ações',
-      render: (_, row) => {
-        if (row.status !== 'pending') return '-';
-        
-        return (
-          <div className="flex gap-2">
-            <button
-              onClick={() => handleApprove(row)}
-              className="btn btn-primary btn-sm px-3 py-1 text-xs"
-              disabled={approveWithdrawal.isPending}
-              title="Aprovar"
-            >
-              <Check size={14} />
-            </button>
-            <button
-              onClick={() => handleRejectClick(row)}
-              className="btn btn-danger btn-sm px-3 py-1 text-xs"
-              disabled={rejectWithdrawal.isPending}
-              title="Recusar"
-            >
-              <X size={14} />
-            </button>
-          </div>
-        );
-      },
-    },
-  ];
+  const getStatusBadge = (status) => {
+    const badges = {
+      pending: { className: 'status-badge-warning', label: 'Pendente', icon: <Clock size={16} /> },
+      approved: { className: 'status-badge-success', label: 'Aprovado', icon: <CheckCircle size={16} /> },
+      rejected: { className: 'status-badge-error', label: 'Rejeitado', icon: <XCircle size={16} /> },
+      cancelled: { className: 'bg-gray-600 text-white', label: 'Cancelado', icon: <Ban size={16} /> }
+    };
+
+    const badge = badges[status] || badges.pending;
+
+    return (
+      <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium ${badge.className}`}>
+        {badge.icon}
+        {badge.label}
+      </span>
+    );
+  };
+
+  // Calcular estatísticas
+  const stats = {
+    total: withdrawals.length,
+    pending: withdrawals.filter(w => w.status === 'pending').length,
+    pendingAmount: withdrawals
+      .filter(w => w.status === 'pending')
+      .reduce((sum, w) => sum + parseFloat(w.amount || 0), 0),
+    approved: withdrawals.filter(w => w.status === 'approved').length,
+    rejected: withdrawals.filter(w => w.status === 'rejected').length
+  };
+
+  if (isLoading) {
+    return <Loader />;
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold text-admin-text-primary mb-2">
-            Saques
-          </h1>
-          <p className="text-admin-text-secondary">
-            Aprovar ou recusar solicitações de saque
-          </p>
-        </div>
-        <div className="flex-shrink-0 flex items-center gap-2">
-          <DollarSign className="text-admin-green" size={24} />
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold text-admin-text-primary mb-2">
+          Saques dos Parceiros
+        </h1>
+        <p className="text-admin-text-secondary">
+          Aprovar ou rejeitar solicitações de saque
+        </p>
       </div>
 
-      {/* Filtros */}
-      <div className="admin-card">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-admin-text-secondary mb-2">
-              Status
-            </label>
-            <select
-              className="select"
-              value={withdrawalsFilters.status || ''}
-              onChange={(e) => setWithdrawalsFilters({ status: e.target.value || null, page: 1 })}
-            >
-              <option value="">Todos</option>
-              <option value="pending">Pendente</option>
-              <option value="completed">Aprovado</option>
-              <option value="failed">Recusado</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabela */}
-      <div className="admin-card">
-        <Table
-          columns={columns}
-          data={data?.withdrawals || []}
-          loading={isLoading}
-          emptyMessage="Nenhum saque encontrado"
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <CardInfo
+          title="Total de Saques"
+          value={stats.total}
+          icon={<DollarSign size={24} />}
+          trend="Geral"
         />
 
-        {/* Paginação */}
-        {data?.pagination && data.pagination.totalPages > 1 && (
-          <div className="mt-4 flex items-center justify-between">
-            <p className="text-sm text-admin-text-muted">
-              Página {data.pagination.page} de {data.pagination.totalPages} ({data.pagination.total} itens)
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setWithdrawalsFilters({ page: withdrawalsFilters.page - 1 })}
-                disabled={withdrawalsFilters.page === 1}
-                className="btn btn-secondary btn-sm"
-              >
-                Anterior
-              </button>
-              <button
-                onClick={() => setWithdrawalsFilters({ page: withdrawalsFilters.page + 1 })}
-                disabled={withdrawalsFilters.page >= data.pagination.totalPages}
-                className="btn btn-secondary btn-sm"
-              >
-                Próxima
-              </button>
-            </div>
+        <CardInfo
+          title="Pendentes"
+          value={stats.pending}
+          icon={<Clock size={24} />}
+          trend={`R$ ${stats.pendingAmount.toFixed(2)}`}
+          className="border-status-warning"
+        />
+
+        <CardInfo
+          title="Aprovados"
+          value={stats.approved}
+          icon={<CheckCircle size={24} />}
+          trend="Pagos"
+          className="border-status-success"
+        />
+
+        <CardInfo
+          title="Rejeitados"
+          value={stats.rejected}
+          icon={<XCircle size={24} />}
+          trend="Recusados"
+          className="border-status-error"
+        />
+      </div>
+
+      {/* Filters */}
+      <div className="admin-card">
+        <div className="flex gap-2 flex-wrap">
+          {[
+            { value: 'pending', label: 'Pendentes' },
+            { value: 'approved', label: 'Aprovados' },
+            { value: 'rejected', label: 'Rejeitados' },
+            { value: 'cancelled', label: 'Cancelados' },
+            { value: 'all', label: 'Todos' }
+          ].map((f) => (
+            <button
+              key={f.value}
+              onClick={() => setFilter(f.value)}
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                filter === f.value
+                  ? 'bg-[#27E502] text-cinza-escuro'
+                  : 'bg-admin-border text-admin-text-primary hover:bg-admin-border/70'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Withdrawals List */}
+      <div className="space-y-4">
+        {withdrawals.length === 0 ? (
+          <div className="admin-card text-center py-12">
+            <DollarSign className="mx-auto mb-4 text-admin-text-muted" size={48} />
+            <p className="text-admin-text-muted">Nenhum saque encontrado</p>
           </div>
+        ) : (
+          withdrawals.map((withdrawal) => (
+            <div
+              key={withdrawal.id}
+              className="admin-card hover:border-admin-primary/50 transition-all"
+            >
+              <div className="flex items-start justify-between mb-4">
+                {getStatusBadge(withdrawal.status)}
+                <span className="text-3xl font-bold text-[#27E502]">
+                  R$ {parseFloat(withdrawal.amount).toFixed(2).replace('.', ',')}
+                </span>
+              </div>
+
+              {/* Influencer Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 p-4 bg-admin-bg rounded-lg">
+                <div className="flex items-center gap-2 text-sm">
+                  <User size={16} className="text-admin-text-muted" />
+                  <span className="text-admin-text-muted">Parceiro:</span>
+                  <span className="text-admin-text-primary font-semibold">
+                    {withdrawal.influencer?.name}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 text-sm">
+                  <Phone size={16} className="text-admin-text-muted" />
+                  <span className="text-admin-text-muted">Telefone:</span>
+                  <span className="text-admin-text-primary font-mono">
+                    {withdrawal.influencer?.phone}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 text-sm col-span-2">
+                  <Key size={16} className="text-admin-text-muted" />
+                  <span className="text-admin-text-muted">Chave PIX ({withdrawal.pix_type}):</span>
+                  <span className="text-admin-text-primary font-mono text-xs">
+                    {withdrawal.pix_key}
+                  </span>
+                </div>
+              </div>
+
+              {/* Dates */}
+              <div className="space-y-2 text-sm text-admin-text-muted mb-4">
+                <div className="flex justify-between">
+                  <span>Solicitado em:</span>
+                  <span className="text-admin-text-primary">
+                    {new Date(withdrawal.requested_at).toLocaleString('pt-BR')}
+                  </span>
+                </div>
+
+                {withdrawal.approved_at && (
+                  <div className="flex justify-between">
+                    <span>Aprovado em:</span>
+                    <span className="text-green-600">
+                      {new Date(withdrawal.approved_at).toLocaleString('pt-BR')}
+                    </span>
+                  </div>
+                )}
+
+                {withdrawal.rejected_at && (
+                  <div className="flex justify-between">
+                    <span>Rejeitado em:</span>
+                    <span className="text-red-600">
+                      {new Date(withdrawal.rejected_at).toLocaleString('pt-BR')}
+                    </span>
+                  </div>
+                )}
+
+                {withdrawal.rejection_reason && (
+                  <div className="mt-2 p-3 bg-red-900/20 border border-red-500/30 rounded text-red-400">
+                    <strong>Motivo da Rejeição:</strong> {withdrawal.rejection_reason}
+                  </div>
+                )}
+              </div>
+
+              {/* Actions (only for pending) */}
+              {withdrawal.status === 'pending' && (
+                <div className="flex gap-3 pt-4 border-t border-admin-border">
+                  <button
+                    onClick={() => handleApprove(withdrawal)}
+                    className="btn btn-success flex-1 flex items-center justify-center gap-2"
+                    disabled={approveWithdrawalMutation.isPending}
+                  >
+                    <CheckCircle size={18} />
+                    Aprovar Saque
+                  </button>
+
+                  <button
+                    onClick={() => handleReject(withdrawal)}
+                    className="btn btn-danger flex-1 flex items-center justify-center gap-2"
+                    disabled={rejectWithdrawalMutation.isPending}
+                  >
+                    <XCircle size={18} />
+                    Rejeitar
+                  </button>
+                </div>
+              )}
+            </div>
+          ))
         )}
       </div>
 
-      {/* Modal de Rejeição */}
-      {showRejectModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-admin-gray-medium border border-admin-gray-light rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold mb-4">Recusar Saque</h3>
-            <p className="text-admin-text-secondary mb-4">
-              Informe o motivo da recusa do saque de{' '}
-              <span className="text-admin-green font-bold">
-                {formatCurrency(selectedWithdrawal?.amount)}
-              </span>
-            </p>
-            <textarea
-              className="input min-h-[100px] mb-4"
-              placeholder="Ex: Dados bancários incorretos, documentação pendente..."
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-            />
+      {/* Approve Modal */}
+      {showApproveModal && selectedWithdrawal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="admin-card max-w-lg w-full">
+            <h3 className="text-2xl font-bold text-admin-text-primary mb-4">
+              Confirmar Aprovação
+            </h3>
+
+            <div className="space-y-4 mb-6">
+              <p className="text-admin-text-secondary">
+                Tem certeza que deseja aprovar este saque?
+              </p>
+
+              <div className="p-4 bg-admin-bg rounded-lg border border-admin-border">
+                <div className="flex justify-between mb-2">
+                  <span className="text-admin-text-muted">Parceiro:</span>
+                  <span className="text-admin-text-primary font-semibold">
+                    {selectedWithdrawal.influencer?.name}
+                  </span>
+                </div>
+                <div className="flex justify-between mb-2">
+                  <span className="text-admin-text-muted">Valor:</span>
+                  <span className="text-2xl font-bold text-[#27E502]">
+                    R$ {parseFloat(selectedWithdrawal.amount).toFixed(2).replace('.', ',')}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-admin-text-muted">Chave PIX:</span>
+                  <span className="text-admin-text-primary font-mono text-sm">
+                    {selectedWithdrawal.pix_key}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-3 bg-yellow-900/20 border border-yellow-500/30 rounded text-yellow-400 text-sm">
+                ⚠️ Ao aprovar, o valor será deduzido do saldo do parceiro automaticamente.
+                Certifique-se de que o PIX foi realizado antes de aprovar.
+              </div>
+            </div>
+
             <div className="flex gap-3">
               <button
                 onClick={() => {
-                  setShowRejectModal(false);
-                  setRejectReason('');
+                  setShowApproveModal(false);
+                  setSelectedWithdrawal(null);
                 }}
                 className="btn btn-secondary flex-1"
+                disabled={approveWithdrawalMutation.isPending}
               >
                 Cancelar
               </button>
               <button
-                onClick={handleRejectSubmit}
-                className="btn btn-danger flex-1"
-                disabled={rejectWithdrawal.isPending}
+                onClick={confirmApprove}
+                className="btn btn-success flex-1"
+                disabled={approveWithdrawalMutation.isPending}
               >
-                {rejectWithdrawal.isPending ? 'Processando...' : 'Recusar Saque'}
+                {approveWithdrawalMutation.isPending ? 'Aprovando...' : 'Confirmar Aprovação'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reject Modal */}
+      {showRejectModal && selectedWithdrawal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="admin-card max-w-lg w-full">
+            <h3 className="text-2xl font-bold text-admin-text-primary mb-4">
+              Rejeitar Saque
+            </h3>
+
+            <div className="space-y-4 mb-6">
+              <p className="text-admin-text-secondary">
+                Informe o motivo da rejeição:
+              </p>
+
+              <div className="p-4 bg-admin-bg rounded-lg border border-admin-border mb-4">
+                <div className="flex justify-between mb-2">
+                  <span className="text-admin-text-muted">Parceiro:</span>
+                  <span className="text-admin-text-primary font-semibold">
+                    {selectedWithdrawal.influencer?.name}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-admin-text-muted">Valor:</span>
+                  <span className="text-xl font-bold text-red-400">
+                    R$ {parseFloat(selectedWithdrawal.amount).toFixed(2).replace('.', ',')}
+                  </span>
+                </div>
+              </div>
+
+              <textarea
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="Ex: Saldo insuficiente, dados incorretos, etc."
+                className="admin-input min-h-[100px]"
+                required
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowRejectModal(false);
+                  setSelectedWithdrawal(null);
+                  setRejectionReason('');
+                }}
+                className="btn btn-secondary flex-1"
+                disabled={rejectWithdrawalMutation.isPending}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmReject}
+                className="btn btn-danger flex-1"
+                disabled={rejectWithdrawalMutation.isPending}
+              >
+                {rejectWithdrawalMutation.isPending ? 'Rejeitando...' : 'Confirmar Rejeição'}
               </button>
             </div>
           </div>
@@ -242,4 +404,3 @@ export default function Withdrawals() {
     </div>
   );
 }
-
