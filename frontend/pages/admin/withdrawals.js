@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react';
-import { DollarSign, Clock, CheckCircle, XCircle, User, Phone, Key, Ban } from 'lucide-react';
+import { DollarSign, Clock, CheckCircle, XCircle, User, Phone, Key, Ban, Users, Star } from 'lucide-react';
 import CardInfo from '../../components/admin/CardInfo';
 import Loader from '../../components/admin/Loader';
 import toast from 'react-hot-toast';
@@ -38,7 +38,8 @@ export default function AdminWithdrawals() {
   const confirmApprove = async () => {
     try {
       await approveWithdrawalMutation.mutateAsync({
-        withdrawalId: selectedWithdrawal.id
+        withdrawalId: selectedWithdrawal.id,
+        withdrawal_type: selectedWithdrawal.type
       });
       setShowApproveModal(false);
       setSelectedWithdrawal(null);
@@ -56,6 +57,7 @@ export default function AdminWithdrawals() {
     try {
       await rejectWithdrawalMutation.mutateAsync({
         withdrawalId: selectedWithdrawal.id,
+        withdrawal_type: selectedWithdrawal.type,
         reason: rejectionReason
       });
       setShowRejectModal(false);
@@ -84,9 +86,29 @@ export default function AdminWithdrawals() {
     );
   };
 
+  const getTypeBadge = (type) => {
+    if (type === 'influencer') {
+      return (
+        <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-purple-600/20 text-purple-400 border border-purple-500/30">
+          <Star size={16} />
+          Parceiro
+        </span>
+      );
+    } else {
+      return (
+        <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-600/20 text-blue-400 border border-blue-500/30">
+          <Users size={16} />
+          Apostador
+        </span>
+      );
+    }
+  };
+
   // Calcular estatísticas
   const stats = {
     total: withdrawals.length,
+    influencers: withdrawals.filter(w => w.type === 'influencer').length,
+    users: withdrawals.filter(w => w.type === 'user').length,
     pending: withdrawals.filter(w => w.status === 'pending').length,
     pendingAmount: withdrawals
       .filter(w => w.status === 'pending')
@@ -121,27 +143,27 @@ export default function AdminWithdrawals() {
         />
 
         <CardInfo
+          title="Parceiros"
+          value={stats.influencers}
+          icon={<Star size={24} />}
+          trend="Influencers"
+          className="border-purple-500/30"
+        />
+
+        <CardInfo
+          title="Apostadores"
+          value={stats.users}
+          icon={<Users size={24} />}
+          trend="Usuários"
+          className="border-blue-500/30"
+        />
+
+        <CardInfo
           title="Pendentes"
           value={stats.pending}
           icon={<Clock size={24} />}
           trend={`R$ ${stats.pendingAmount.toFixed(2)}`}
           className="border-status-warning"
-        />
-
-        <CardInfo
-          title="Aprovados"
-          value={stats.approved}
-          icon={<CheckCircle size={24} />}
-          trend="Pagos"
-          className="border-status-success"
-        />
-
-        <CardInfo
-          title="Rejeitados"
-          value={stats.rejected}
-          icon={<XCircle size={24} />}
-          trend="Recusados"
-          className="border-status-error"
         />
       </div>
 
@@ -184,19 +206,22 @@ export default function AdminWithdrawals() {
               className="admin-card hover:border-admin-primary/50 transition-all"
             >
               <div className="flex items-start justify-between mb-4">
-                {getStatusBadge(withdrawal.status)}
+                <div className="flex flex-wrap gap-2">
+                  {getTypeBadge(withdrawal.type)}
+                  {getStatusBadge(withdrawal.status)}
+                </div>
                 <span className="text-3xl font-bold text-[#27E502]">
                   R$ {parseFloat(withdrawal.amount).toFixed(2).replace('.', ',')}
                 </span>
               </div>
 
-              {/* Influencer Info */}
+              {/* Requester Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 p-4 bg-admin-bg rounded-lg">
                 <div className="flex items-center gap-2 text-sm">
                   <User size={16} className="text-admin-text-muted" />
-                  <span className="text-admin-text-muted">Parceiro:</span>
+                  <span className="text-admin-text-muted">{withdrawal.requester?.type}:</span>
                   <span className="text-admin-text-primary font-semibold">
-                    {withdrawal.influencer?.name}
+                    {withdrawal.requester?.name}
                   </span>
                 </div>
 
@@ -204,9 +229,19 @@ export default function AdminWithdrawals() {
                   <Phone size={16} className="text-admin-text-muted" />
                   <span className="text-admin-text-muted">Telefone:</span>
                   <span className="text-admin-text-primary font-mono">
-                    {withdrawal.influencer?.phone}
+                    {withdrawal.requester?.phone}
                   </span>
                 </div>
+
+                {/* CPF (apenas para apostadores) */}
+                {withdrawal.type === 'user' && withdrawal.requester?.cpf && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-admin-text-muted">CPF:</span>
+                    <span className="text-admin-text-primary font-mono">
+                      {withdrawal.requester.cpf}
+                    </span>
+                  </div>
+                )}
 
                 <div className="flex items-center gap-2 text-sm col-span-2">
                   <Key size={16} className="text-admin-text-muted" />
@@ -293,9 +328,13 @@ export default function AdminWithdrawals() {
 
               <div className="p-4 bg-admin-bg rounded-lg border border-admin-border">
                 <div className="flex justify-between mb-2">
-                  <span className="text-admin-text-muted">Parceiro:</span>
+                  <span className="text-admin-text-muted">Tipo:</span>
+                  {getTypeBadge(selectedWithdrawal.type)}
+                </div>
+                <div className="flex justify-between mb-2">
+                  <span className="text-admin-text-muted">{selectedWithdrawal.requester?.type}:</span>
                   <span className="text-admin-text-primary font-semibold">
-                    {selectedWithdrawal.influencer?.name}
+                    {selectedWithdrawal.requester?.name}
                   </span>
                 </div>
                 <div className="flex justify-between mb-2">
@@ -356,9 +395,13 @@ export default function AdminWithdrawals() {
 
               <div className="p-4 bg-admin-bg rounded-lg border border-admin-border mb-4">
                 <div className="flex justify-between mb-2">
-                  <span className="text-admin-text-muted">Parceiro:</span>
+                  <span className="text-admin-text-muted">Tipo:</span>
+                  {getTypeBadge(selectedWithdrawal.type)}
+                </div>
+                <div className="flex justify-between mb-2">
+                  <span className="text-admin-text-muted">{selectedWithdrawal.requester?.type}:</span>
                   <span className="text-admin-text-primary font-semibold">
-                    {selectedWithdrawal.influencer?.name}
+                    {selectedWithdrawal.requester?.name}
                   </span>
                 </div>
                 <div className="flex justify-between">

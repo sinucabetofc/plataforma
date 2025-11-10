@@ -7,7 +7,7 @@
 
 const express = require('express');
 const router = express.Router();
-const withdrawalsService = require('../services/influencer-withdrawals.service');
+const adminWithdrawalsService = require('../services/admin-withdrawals.service');
 const { authenticateToken } = require('../middlewares/auth.middleware');
 const { isAdmin } = require('../middlewares/admin.middleware');
 
@@ -19,12 +19,11 @@ router.get('/', authenticateToken, isAdmin, async (req, res) => {
   try {
     const filters = {
       status: req.query.status,
-      influencer_id: req.query.influencer_id,
       limit: req.query.limit,
       offset: req.query.offset
     };
 
-    const result = await withdrawalsService.listWithdrawals(req.user.id, 'admin', filters);
+    const result = await adminWithdrawalsService.getAllWithdrawals(filters);
 
     res.json(result);
   } catch (error) {
@@ -78,9 +77,9 @@ router.get('/:id', authenticateToken, isAdmin, async (req, res) => {
 router.patch('/:id/approve', authenticateToken, isAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { notes } = req.body;
+    const { withdrawal_type } = req.body; // 'influencer' ou 'user'
     
-    const result = await withdrawalsService.approveWithdrawal(id, req.user.id, notes);
+    const result = await adminWithdrawalsService.approveWithdrawal(id, withdrawal_type, req.user.id);
     res.json(result);
   } catch (error) {
     console.error('Erro ao aprovar saque:', error);
@@ -98,7 +97,7 @@ router.patch('/:id/approve', authenticateToken, isAdmin, async (req, res) => {
 router.patch('/:id/reject', authenticateToken, isAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { reason } = req.body;
+    const { reason, withdrawal_type } = req.body; // 'influencer' ou 'user'
 
     if (!reason) {
       return res.status(400).json({
@@ -107,7 +106,7 @@ router.patch('/:id/reject', authenticateToken, isAdmin, async (req, res) => {
       });
     }
     
-    const result = await withdrawalsService.rejectWithdrawal(id, req.user.id, reason);
+    const result = await adminWithdrawalsService.rejectWithdrawal(id, withdrawal_type, req.user.id, reason);
     res.json(result);
   } catch (error) {
     console.error('Erro ao rejeitar saque:', error);

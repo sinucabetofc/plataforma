@@ -37,8 +37,8 @@ export function useApproveWithdrawal() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ withdrawalId, notes }) => {
-      const response = await patch(`/admin/withdrawals/${withdrawalId}/approve`, { notes });
+    mutationFn: async ({ withdrawalId, withdrawal_type }) => {
+      const response = await patch(`/admin/withdrawals/${withdrawalId}/approve`, { withdrawal_type });
       return response.data;
     },
     onSuccess: () => {
@@ -60,8 +60,8 @@ export function useRejectWithdrawal() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ withdrawalId, reason }) => {
-      const response = await patch(`/admin/withdrawals/${withdrawalId}/reject`, { reason });
+    mutationFn: async ({ withdrawalId, withdrawal_type, reason }) => {
+      const response = await patch(`/admin/withdrawals/${withdrawalId}/reject`, { withdrawal_type, reason });
       return response.data;
     },
     onSuccess: () => {
