@@ -157,9 +157,18 @@ class AdminController {
       const completedInfluencerTotal = completedInfluencerWithdrawals.reduce((sum, w) => sum + parseFloat(w.amount || 0), 0);
       const completedWithdrawalsTotal = completedUserTotal + completedInfluencerTotal;
 
-      // 6. Lucro da plataforma (taxa de 8% dos saques de apostadores + comissões)
+      // 6. Lucro da plataforma (APENAS VALORES REAIS)
+      // - Taxa de 8% dos saques de apostadores
+      // - NÃO inclui saldo fake (usado apenas para testes)
       const withdrawalFees = completedUserWithdrawals.reduce((sum, w) => sum + parseFloat(w.fee || 0), 0) / 100;
-      const platformProfit = withdrawalFees; // Por enquanto só taxas de saque
+      
+      // Buscar transações de lucro já contabilizadas
+      const lucroTransactions = transactionsData?.filter(t => t.type === 'lucro' && t.status === 'completed') || [];
+      const totalLucroInCents = lucroTransactions.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+      const totalLucro = totalLucroInCents / 100;
+      
+      // Lucro total = taxas de saque + outras transações de lucro
+      const platformProfit = withdrawalFees + totalLucro;
 
       // 7. Gráficos - Últimos 7 dias
       const last7Days = [];
