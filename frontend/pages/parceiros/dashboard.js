@@ -119,55 +119,55 @@ export default function ParceirosDashboard() {
       <div className="admin-card">
         {/* Header */}
         <div className="mb-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
             <h3 className="text-lg font-semibold text-admin-text-primary">Meus Jogos</h3>
             <button
               onClick={() => router.push('/parceiros/jogos')}
-              className="text-sm text-[#27E502] hover:text-[#27E502]/80"
+              className="text-sm text-[#27E502] hover:text-[#27E502]/80 whitespace-nowrap flex-shrink-0"
             >
               Ver todos →
             </button>
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="flex gap-2 mb-4">
+        {/* Filters - Scroll horizontal no mobile */}
+        <div className="flex gap-2 mb-4 overflow-x-auto pb-2 -mx-4 px-4">
             <button
               onClick={() => setFilterStatus('all')}
-              className={`px-4 py-2 rounded-lg transition-colors font-medium ${
+              className={`px-4 py-2 rounded-lg transition-colors font-medium whitespace-nowrap flex-shrink-0 ${
                 filterStatus === 'all'
                   ? 'bg-[#27E502] text-white'
-                  : 'bg-admin-gray-light text-admin-text-secondary hover:bg-admin-gray-dark'
+                  : 'bg-admin-bg text-admin-text-secondary hover:bg-admin-border'
               }`}
             >
               Todos
             </button>
             <button
               onClick={() => setFilterStatus('agendada')}
-              className={`px-4 py-2 rounded-lg transition-colors font-medium ${
+              className={`px-4 py-2 rounded-lg transition-colors font-medium whitespace-nowrap flex-shrink-0 ${
                 filterStatus === 'agendada'
                   ? 'bg-[#27E502] text-white'
-                  : 'bg-admin-gray-light text-admin-text-secondary hover:bg-admin-gray-dark'
+                  : 'bg-admin-bg text-admin-text-secondary hover:bg-admin-border'
               }`}
             >
               Agendados
             </button>
             <button
               onClick={() => setFilterStatus('em_andamento')}
-              className={`px-4 py-2 rounded-lg transition-colors font-medium ${
+              className={`px-4 py-2 rounded-lg transition-colors font-medium whitespace-nowrap flex-shrink-0 ${
                 filterStatus === 'em_andamento'
                   ? 'bg-[#27E502] text-white'
-                  : 'bg-admin-gray-light text-admin-text-secondary hover:bg-admin-gray-dark'
+                  : 'bg-admin-bg text-admin-text-secondary hover:bg-admin-border'
               }`}
             >
               Ao Vivo
             </button>
             <button
               onClick={() => setFilterStatus('finalizada')}
-              className={`px-4 py-2 rounded-lg transition-colors font-medium ${
+              className={`px-4 py-2 rounded-lg transition-colors font-medium whitespace-nowrap flex-shrink-0 ${
                 filterStatus === 'finalizada'
                   ? 'bg-[#27E502] text-white'
-                  : 'bg-admin-gray-light text-admin-text-secondary hover:bg-admin-gray-dark'
+                  : 'bg-admin-bg text-admin-text-secondary hover:bg-admin-border'
               }`}
             >
               Finalizados
