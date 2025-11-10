@@ -138,8 +138,20 @@ export default function TransactionCard({ transaction }) {
       };
     }
 
-    // SAQUE (vermelho, -)
+    // SAQUE
     if (type === 'saque' || type === 'withdraw') {
+      // Se foi aprovado/pago, mostra em verde
+      if (status === 'completed') {
+        return {
+          icon: <ArrowUpCircle size={20} className="text-verde-neon" />,
+          typeLabel: 'Saque',
+          amountPrefix: '-',
+          amountColor: 'text-verde-neon',
+          borderColor: 'border-verde-neon/30',
+          bgGradient: 'bg-gradient-to-r from-verde-neon/5 to-transparent',
+        };
+      }
+      // Se está pendente ou rejeitado, mostra em vermelho/amarelo
       return {
         icon: <ArrowUpCircle size={20} className="text-red-400" />,
         typeLabel: 'Saque',
@@ -183,6 +195,17 @@ export default function TransactionCard({ transaction }) {
         border: 'border-blue-500/40',
         icon: <Clock size={14} />,
         label: 'Aguardando',
+      };
+    }
+
+    // Para SAQUES com status completed, mostrar "Pago" em verde
+    if ((type === 'saque' || type === 'withdraw') && status === 'completed') {
+      return {
+        bg: 'bg-verde-neon/20',
+        text: 'text-verde-neon',
+        border: 'border-verde-neon/40',
+        icon: <Check size={14} />,
+        label: 'Pago',
       };
     }
 
