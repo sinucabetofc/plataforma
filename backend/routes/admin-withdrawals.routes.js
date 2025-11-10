@@ -8,7 +8,7 @@
 const express = require('express');
 const router = express.Router();
 const withdrawalsService = require('../services/influencer-withdrawals.service');
-const { authenticateUser, requireAdmin } = require('../middleware/auth.middleware');
+const { authenticateUser, requireAdmin } = require('../middlewares/auth.middleware');
 
 /**
  * GET /api/admin/withdrawals
