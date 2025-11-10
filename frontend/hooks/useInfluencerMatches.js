@@ -2,7 +2,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import useInfluencerStore from '../store/influencerStore';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// Garantir que API_URL não tenha /api no final (será adicionado nas rotas)
+const getApiUrl = () => {
+  const url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  // Remover /api do final se existir
+  return url.replace(/\/api\/?$/, '');
+};
+
+const API_URL = getApiUrl();
 
 /**
  * Hook para obter cabeçalhos de autenticação
