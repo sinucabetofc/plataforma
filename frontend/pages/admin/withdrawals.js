@@ -126,10 +126,10 @@ export default function AdminWithdrawals() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-admin-text-primary mb-2">
-          Saques dos Parceiros
+          Gerenciar Saques
         </h1>
         <p className="text-admin-text-secondary">
-          Aprovar ou rejeitar solicitações de saque
+          Aprovar ou rejeitar solicitações de saque de parceiros e apostadores
         </p>
       </div>
 
