@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 import useInfluencerStore from '../store/influencerStore';
 
 // Normalizar API_URL para garantir que termina com /api
@@ -135,8 +136,25 @@ export const useUpdateScore = () => {
       return response.data;
     },
     onSuccess: (_, variables) => {
+      // Invalidar todas as queries relacionadas
       queryClient.invalidateQueries({ queryKey: ['influencer-matches'] });
       queryClient.invalidateQueries({ queryKey: ['influencer-match', variables.matchId] });
+      queryClient.invalidateQueries({ queryKey: ['influencer-dashboard'] });
+      
+      // Notificação de sucesso
+      toast.success('Placar atualizado com sucesso!', {
+        duration: 3000,
+        position: 'top-center',
+        icon: '🎯'
+      });
+    },
+    onError: (error) => {
+      const message = error.response?.data?.message || 'Erro ao atualizar placar';
+      toast.error(message, {
+        duration: 4000,
+        position: 'top-center'
+      });
+      console.error('Erro ao atualizar placar:', error);
     }
   });
 };
