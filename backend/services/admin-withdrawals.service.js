@@ -125,8 +125,8 @@ async function getAllWithdrawals(filters = {}) {
         pix_type: w.metadata?.pix_type || w.user?.pix_type,
         status: statusMap[w.status] || w.status,
         requested_at: w.created_at,
-        approved_at: w.status === 'completed' ? w.updated_at : null,
-        rejected_at: w.status === 'failed' ? w.updated_at : null,
+        approved_at: w.metadata?.approved_at || (w.status === 'completed' ? w.processed_at : null),
+        rejected_at: w.metadata?.rejected_at || (w.status === 'failed' ? w.processed_at : null),
         rejection_reason: w.metadata?.rejection_reason,
         notes: w.description,
         // Dados do solicitante

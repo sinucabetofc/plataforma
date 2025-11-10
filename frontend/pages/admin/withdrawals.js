@@ -12,7 +12,7 @@ import toast from 'react-hot-toast';
 import { useWithdrawals, useApproveWithdrawal, useRejectWithdrawal } from '../../hooks/admin/useWithdrawals';
 
 export default function AdminWithdrawals() {
-  const [filter, setFilter] = useState('pending');
+  const [filter, setFilter] = useState('all'); // Mostrar todos por padrão
   const [selectedWithdrawal, setSelectedWithdrawal] = useState(null);
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
@@ -171,11 +171,11 @@ export default function AdminWithdrawals() {
       <div className="admin-card">
         <div className="flex gap-2 flex-wrap">
           {[
+            { value: 'all', label: 'Todos' },
             { value: 'pending', label: 'Pendentes' },
             { value: 'approved', label: 'Aprovados' },
             { value: 'rejected', label: 'Rejeitados' },
-            { value: 'cancelled', label: 'Cancelados' },
-            { value: 'all', label: 'Todos' }
+            { value: 'cancelled', label: 'Cancelados' }
           ].map((f) => (
             <button
               key={f.value}
