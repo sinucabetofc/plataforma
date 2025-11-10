@@ -30,6 +30,15 @@ export default function LiveScoreManager({ serie, match }) {
     const changed = 
       player1Score !== (serie.player1_score || 0) ||
       player2Score !== (serie.player2_score || 0);
+    
+    console.log('🔄 Verificando mudanças:', {
+      player1Score,
+      player2Score,
+      originalP1: serie.player1_score || 0,
+      originalP2: serie.player2_score || 0,
+      hasChanges: changed
+    });
+    
     setHasChanges(changed);
   }, [player1Score, player2Score, serie.player1_score, serie.player2_score]);
 
@@ -116,14 +125,22 @@ export default function LiveScoreManager({ serie, match }) {
             
             <div className="flex gap-2">
               <button
-                onClick={() => setPlayer1Score(Math.max(0, player1Score - 1))}
+                onClick={() => {
+                  const newScore = Math.max(0, player1Score - 1);
+                  console.log(`➖ Decrementando Jogador 1: ${player1Score} → ${newScore}`);
+                  setPlayer1Score(newScore);
+                }}
                 className="btn btn-secondary flex-1 flex items-center justify-center"
                 disabled={updateScore.isPending}
               >
                 <Minus size={20} />
               </button>
               <button
-                onClick={() => setPlayer1Score(player1Score + 1)}
+                onClick={() => {
+                  const newScore = player1Score + 1;
+                  console.log(`➕ Incrementando Jogador 1: ${player1Score} → ${newScore}`);
+                  setPlayer1Score(newScore);
+                }}
                 className="flex-1 flex items-center justify-center px-4 py-2 rounded-lg font-semibold text-white transition-all hover:brightness-110 shadow-lg"
                 style={{ backgroundColor: '#27E502' }}
                 disabled={updateScore.isPending}
@@ -169,14 +186,22 @@ export default function LiveScoreManager({ serie, match }) {
             
             <div className="flex gap-2">
               <button
-                onClick={() => setPlayer2Score(Math.max(0, player2Score - 1))}
+                onClick={() => {
+                  const newScore = Math.max(0, player2Score - 1);
+                  console.log(`➖ Decrementando Jogador 2: ${player2Score} → ${newScore}`);
+                  setPlayer2Score(newScore);
+                }}
                 className="btn btn-secondary flex-1 flex items-center justify-center"
                 disabled={updateScore.isPending}
               >
                 <Minus size={20} />
               </button>
               <button
-                onClick={() => setPlayer2Score(player2Score + 1)}
+                onClick={() => {
+                  const newScore = player2Score + 1;
+                  console.log(`➕ Incrementando Jogador 2: ${player2Score} → ${newScore}`);
+                  setPlayer2Score(newScore);
+                }}
                 className="flex-1 flex items-center justify-center px-4 py-2 rounded-lg font-semibold text-white transition-all hover:brightness-110 shadow-lg"
                 style={{ backgroundColor: '#27E502' }}
                 disabled={updateScore.isPending}
@@ -189,7 +214,7 @@ export default function LiveScoreManager({ serie, match }) {
       </div>
 
       {/* Botões de Ação */}
-      {hasChanges && (
+      {hasChanges ? (
         <div className="mt-6 flex gap-3">
           <button
             onClick={handleReset}
@@ -199,7 +224,10 @@ export default function LiveScoreManager({ serie, match }) {
             Resetar
           </button>
           <button
-            onClick={handleSave}
+            onClick={() => {
+              console.log('🔘 Botão Salvar Placar clicado!');
+              handleSave();
+            }}
             className="btn btn-success flex-1 flex items-center justify-center gap-2"
             disabled={updateScore.isPending}
           >
@@ -207,10 +235,7 @@ export default function LiveScoreManager({ serie, match }) {
             {updateScore.isPending ? 'Salvando...' : 'Salvar Placar'}
           </button>
         </div>
-      )}
-
-      {/* Indicador de salvamento automático */}
-      {!hasChanges && (
+      ) : (
         <div className="mt-4 text-center">
           <span className="text-sm text-green-600">
             ✓ Placar sincronizado
