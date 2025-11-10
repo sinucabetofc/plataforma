@@ -97,10 +97,26 @@ class AdminController {
         console.error('Erro ao buscar transações:', transactionsError);
       }
 
-      // Filtrar saques
-      const withdrawalsData = transactionsData?.filter(t => t.type === 'withdraw') || [];
-      const pendingWithdrawals = withdrawalsData.filter(w => w.status === 'pending');
-      const completedWithdrawals = withdrawalsData.filter(w => w.status === 'completed');
+      // Filtrar saques de APOSTADORES
+      const userWithdrawalsData = transactionsData?.filter(t => t.type === 'saque') || [];
+      const pendingUserWithdrawals = userWithdrawalsData.filter(w => w.status === 'pending');
+      const completedUserWithdrawals = userWithdrawalsData.filter(w => w.status === 'completed');
+
+      // Buscar saques de PARCEIROS
+      const { data: influencerWithdrawalsData, error: influencerWithdrawalsError } = await supabase
+        .from('influencer_withdrawals')
+        .select('id, amount, status, requested_at');
+
+      if (influencerWithdrawalsError) {
+        console.error('Erro ao buscar saques de parceiros:', influencerWithdrawalsError);
+      }
+
+      const pendingInfluencerWithdrawals = influencerWithdrawalsData?.filter(w => w.status === 'pending') || [];
+      const completedInfluencerWithdrawals = influencerWithdrawalsData?.filter(w => w.status === 'approved') || [];
+
+      // Combinar saques de apostadores e parceiros
+      const pendingWithdrawals = [...pendingUserWithdrawals, ...pendingInfluencerWithdrawals];
+      const completedWithdrawals = [...completedUserWithdrawals, ...completedInfluencerWithdrawals];
 
       // Depósitos do dia
       const todayDeposits = transactionsData?.filter(t => {
@@ -132,15 +148,18 @@ class AdminController {
       // Isso representa o quanto foi adicionado manualmente pelo admin
       const totalFakeBalance = totalPlayersBalance - totalRealDeposits;
 
-      // Somar em centavos e converter para reais
-      const pendingWithdrawalsTotalInCents = pendingWithdrawals.reduce((sum, w) => sum + parseFloat(w.amount || 0), 0) || 0;
-      const pendingWithdrawalsTotal = pendingWithdrawalsTotalInCents / 100;
+      // Calcular totais (apostadores em centavos, parceiros em reais)
+      const pendingUserTotal = pendingUserWithdrawals.reduce((sum, w) => sum + parseFloat(w.amount || 0), 0) / 100;
+      const pendingInfluencerTotal = pendingInfluencerWithdrawals.reduce((sum, w) => sum + parseFloat(w.amount || 0), 0);
+      const pendingWithdrawalsTotal = pendingUserTotal + pendingInfluencerTotal;
       
-      const completedWithdrawalsTotalInCents = completedWithdrawals.reduce((sum, w) => sum + parseFloat(w.amount || 0), 0) || 0;
-      const completedWithdrawalsTotal = completedWithdrawalsTotalInCents / 100;
+      const completedUserTotal = completedUserWithdrawals.reduce((sum, w) => sum + parseFloat(w.amount || 0), 0) / 100;
+      const completedInfluencerTotal = completedInfluencerWithdrawals.reduce((sum, w) => sum + parseFloat(w.amount || 0), 0);
+      const completedWithdrawalsTotal = completedUserTotal + completedInfluencerTotal;
 
-      // 6. Lucro da plataforma (8% dos saques completados)
-      const platformProfit = completedWithdrawalsTotal * 0.08;
+      // 6. Lucro da plataforma (taxa de 8% dos saques de apostadores + comissões)
+      const withdrawalFees = completedUserWithdrawals.reduce((sum, w) => sum + parseFloat(w.fee || 0), 0) / 100;
+      const platformProfit = withdrawalFees; // Por enquanto só taxas de saque
 
       // 7. Gráficos - Últimos 7 dias
       const last7Days = [];

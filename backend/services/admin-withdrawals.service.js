@@ -223,6 +223,32 @@ async function approveWithdrawal(withdrawalId, withdrawalType, adminId) {
         throw new Error(updateError.message);
       }
 
+      // Buscar transaction de taxa relacionada e registrar como lucro da plataforma
+      const feeAmount = parseFloat(transaction.fee) || 0;
+      
+      if (feeAmount > 0) {
+        // Atualizar transaction de taxa para 'lucro'
+        await supabase
+          .from('transactions')
+          .update({
+            type: 'lucro',
+            status: 'completed',
+            processed_at: new Date().toISOString(),
+            description: `Lucro da plataforma - Taxa de saque (8%)`,
+            metadata: {
+              ...transaction.metadata,
+              related_withdrawal_id: withdrawalId,
+              approved_at: new Date().toISOString(),
+              approved_by: adminId,
+              platform_profit: true
+            }
+          })
+          .eq('metadata->>related_transaction_id', withdrawalId)
+          .eq('type', 'taxa');
+
+        console.log(`💰 [ADMIN] Taxa de R$ ${(feeAmount / 100).toFixed(2)} contabilizada como lucro da plataforma`);
+      }
+
       console.log('✅ [ADMIN] Saque de usuário aprovado');
 
       return {
