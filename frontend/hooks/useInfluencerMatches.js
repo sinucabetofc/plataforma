@@ -128,11 +128,18 @@ export const useUpdateScore = () => {
 
   return useMutation({
     mutationFn: async ({ serieId, player1_score, player2_score }) => {
+      console.log('📡 Enviando atualização de placar:', {
+        url: `${API_URL}/influencers/series/${serieId}/score`,
+        data: { player1_score, player2_score }
+      });
+      
       const response = await axios.patch(
         `${API_URL}/influencers/series/${serieId}/score`,
         { player1_score, player2_score },
         authHeaders
       );
+      
+      console.log('✅ Resposta do backend:', response.data);
       return response.data;
     },
     onSuccess: (_, variables) => {

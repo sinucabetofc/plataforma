@@ -34,12 +34,24 @@ export default function LiveScoreManager({ serie, match }) {
   }, [player1Score, player2Score, serie.player1_score, serie.player2_score]);
 
   const handleSave = async () => {
-    await updateScore.mutateAsync({
-      serieId: serie.id,
-      player1_score: parseInt(player1Score),
-      player2_score: parseInt(player2Score),
-    });
-    setHasChanges(false);
+    try {
+      console.log('💾 Salvando placar da série:', {
+        serieId: serie.id,
+        player1_score: parseInt(player1Score),
+        player2_score: parseInt(player2Score)
+      });
+      
+      await updateScore.mutateAsync({
+        serieId: serie.id,
+        player1_score: parseInt(player1Score),
+        player2_score: parseInt(player2Score),
+      });
+      
+      setHasChanges(false);
+      console.log('✅ Placar salvo com sucesso!');
+    } catch (error) {
+      console.error('❌ Erro ao salvar placar:', error);
+    }
   };
 
   const handleReset = () => {
@@ -47,8 +59,18 @@ export default function LiveScoreManager({ serie, match }) {
     setPlayer2Score(serie.player2_score || 0);
   };
 
+  // Debug
+  console.log('🎯 LiveScoreManager - Série:', {
+    id: serie.id,
+    status: serie.status,
+    serie_number: serie.serie_number,
+    player1_score: serie.player1_score,
+    player2_score: serie.player2_score
+  });
+
   // Só mostrar se a série estiver em andamento
   if (serie.status !== 'em_andamento') {
+    console.log('⚠️ Série não está em andamento, ocultando LiveScoreManager');
     return null;
   }
 
