@@ -4,45 +4,33 @@
  * ============================================================
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { isAuthenticated } from '../../utils/auth';
-import Loader from '../../components/admin/Loader';
+import Cookies from 'js-cookie';
 
 export default function AdminIndex() {
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
+    // Verificar se tem token nos cookies
+    const token = Cookies.get('sinucabet_token');
     
-    // Verificar autenticação no lado do cliente
-    const checkAuth = () => {
-      if (typeof window === 'undefined') return;
-      
-      if (!isAuthenticated()) {
-        router.replace('/admin/login');
-      } else {
-        router.replace('/admin/dashboard');
-      }
-    };
-    
-    checkAuth();
-  }, [mounted, router]);
+    if (token) {
+      // Se tem token, vai para dashboard
+      router.replace('/admin/dashboard');
+    } else {
+      // Se não tem token, vai para login
+      router.replace('/admin/login');
+    }
+  }, [router]);
 
   return (
-    <div className="min-h-screen bg-admin-black flex items-center justify-center">
-      <Loader size="lg" />
+    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#27E502] mx-auto mb-4"></div>
+        <p className="text-gray-400">Carregando...</p>
+      </div>
     </div>
   );
-}
-
-// Forçar renderização no cliente
-export async function getServerSideProps() {
-  return { props: {} };
 }
 
