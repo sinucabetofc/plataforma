@@ -208,7 +208,12 @@ async function approveWithdrawal(withdrawalId, withdrawalType, adminId) {
         .from('transactions')
         .update({
           status: 'completed',
-          updated_at: new Date().toISOString()
+          processed_at: new Date().toISOString(),
+          metadata: {
+            ...transaction.metadata,
+            approved_at: new Date().toISOString(),
+            approved_by: adminId
+          }
         })
         .eq('id', withdrawalId)
         .select()
@@ -269,13 +274,13 @@ async function rejectWithdrawal(withdrawalId, withdrawalType, adminId, reason) {
         .from('transactions')
         .update({
           status: 'failed',
+          processed_at: new Date().toISOString(),
           metadata: {
             ...transaction.metadata,
             rejection_reason: reason,
             rejected_at: new Date().toISOString(),
             rejected_by: adminId
-          },
-          updated_at: new Date().toISOString()
+          }
         })
         .eq('id', withdrawalId)
         .select()
