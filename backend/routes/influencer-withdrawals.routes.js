@@ -8,7 +8,7 @@
 const express = require('express');
 const router = express.Router();
 const withdrawalsService = require('../services/influencer-withdrawals.service');
-const { authenticateInfluencer } = require('../middleware/auth.middleware');
+const { authenticateInfluencer } = require('../middlewares/influencer-auth.middleware');
 
 /**
  * POST /api/influencers/withdrawals
