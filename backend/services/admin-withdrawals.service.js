@@ -44,7 +44,7 @@ async function getAllWithdrawals(filters = {}) {
       console.error('❌ Erro ao buscar saques de influencers:', influencerError);
     }
 
-    // 2. Buscar saques de APOSTADORES (transactions com type='withdraw')
+    // 2. Buscar saques de APOSTADORES (transactions com type='saque')
     let userQuery = supabase
       .from('transactions')
       .select(`
@@ -59,7 +59,7 @@ async function getAllWithdrawals(filters = {}) {
           pix_type
         )
       `)
-      .eq('type', 'withdraw')
+      .eq('type', 'saque')
       .order('created_at', { ascending: false });
 
     // Filtrar por status se especificado
@@ -192,7 +192,7 @@ async function approveWithdrawal(withdrawalId, withdrawalType, adminId) {
         .from('transactions')
         .select('*, user:users!user_id(name, email)')
         .eq('id', withdrawalId)
-        .eq('type', 'withdraw')
+        .eq('type', 'saque')
         .single();
 
       if (fetchError || !transaction) {
@@ -253,7 +253,7 @@ async function rejectWithdrawal(withdrawalId, withdrawalType, adminId, reason) {
         .from('transactions')
         .select('*')
         .eq('id', withdrawalId)
-        .eq('type', 'withdraw')
+        .eq('type', 'saque')
         .single();
 
       if (fetchError || !transaction) {
