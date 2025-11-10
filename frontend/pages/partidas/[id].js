@@ -13,6 +13,7 @@ import { useRouter } from 'next/router';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../utils/api';
+import { getYouTubeEmbedUrl } from '../../utils/youtube';
 import { 
   formatDate, 
   formatTime, 
@@ -309,7 +310,11 @@ export default function PartidaDetalhesPage() {
                   <>
                     <div className="aspect-video relative bg-black">
                       <iframe
-                        src={`${match.youtube_url.replace('watch?v=', 'embed/')}?autoplay=1&mute=0&controls=1&modestbranding=1&rel=0`}
+                        src={getYouTubeEmbedUrl(match.youtube_url, { 
+                          autoplay: true, 
+                          mute: false, 
+                          controls: true 
+                        })}
                         className="w-full h-full"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
