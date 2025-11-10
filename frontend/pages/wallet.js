@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Head from 'next/head';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { getWallet, getTransactions, createDeposit, createWithdraw } from '../utils/api';
+import { getWallet, getTransactions, createDeposit, createWithdraw, getProfile } from '../utils/api';
 import { withAuth } from '../contexts/AuthContext';
 import Loader, { FullPageLoader } from '../components/Loader';
 import TransactionCard from '../components/TransactionCard';
@@ -37,6 +37,18 @@ function Wallet() {
     queryKey: ['wallet'],
     queryFn: async () => {
       const result = await getWallet();
+      if (result.success) {
+        return result.data;
+      }
+      throw new Error(result.message);
+    },
+  });
+
+  // Buscar perfil do usuário (para pegar chave PIX)
+  const { data: userProfile } = useQuery({
+    queryKey: ['user-profile'],
+    queryFn: async () => {
+      const result = await getProfile();
       if (result.success) {
         return result.data;
       }
@@ -95,15 +107,15 @@ function Wallet() {
 
   // Mutation para saque
   const withdrawMutation = useMutation({
-    mutationFn: async (amount) => {
-      const result = await createWithdraw(amount);
+    mutationFn: async ({ amount, pix_key }) => {
+      const result = await createWithdraw(amount, { pix_key });
       if (!result.success) {
         throw new Error(result.message);
       }
       return result.data;
     },
     onSuccess: () => {
-      toast.success('Saque solicitado com sucesso!');
+      toast.success('Saque solicitado com sucesso! Aguarde aprovação.');
       setWithdrawAmount('');
       setShowWithdrawModal(false);
       refetchWallet();
@@ -124,15 +136,28 @@ function Wallet() {
 
   const handleWithdraw = () => {
     const amount = parseFloat(withdrawAmount);
-    if (isNaN(amount) || amount < 10) {
-      toast.error('O valor mínimo para saque é R$ 10');
+    
+    // Validações
+    if (isNaN(amount) || amount < 20) {
+      toast.error('O valor mínimo para saque é R$ 20,00');
       return;
     }
     if (amount > walletData.available_balance) {
       toast.error('Saldo insuficiente');
       return;
     }
-    withdrawMutation.mutate(amount);
+    
+    // Verificar se usuário tem chave PIX
+    if (!userProfile?.pix_key) {
+      toast.error('Configure sua chave PIX no perfil antes de solicitar saque');
+      return;
+    }
+    
+    // Solicitar saque com chave PIX do usuário
+    withdrawMutation.mutate({ 
+      amount, 
+      pix_key: userProfile.pix_key 
+    });
   };
 
   const formatCurrency = (value) => {
