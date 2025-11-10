@@ -176,8 +176,12 @@ export function useUpdateScore() {
       return response.data;
     },
     onSuccess: (_, { serieId }) => {
+      // Invalidar cache das séries
       queryClient.invalidateQueries({ queryKey: ['series'] });
       queryClient.invalidateQueries({ queryKey: ['serie', serieId] });
+      // Invalidar cache das partidas (para atualizar placar ao retornar à página)
+      queryClient.invalidateQueries({ queryKey: ['matches'] });
+      toast.success('Placar atualizado com sucesso!');
     },
     onError: (error) => {
       toast.error(error.message || 'Erro ao atualizar placar');
@@ -231,5 +235,6 @@ export function useUpdateSerie() {
     },
   });
 }
+
 
 
