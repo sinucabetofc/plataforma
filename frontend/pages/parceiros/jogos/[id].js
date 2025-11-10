@@ -6,6 +6,7 @@
 
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
+import toast from 'react-hot-toast';
 import GameControlPanel from '../../../components/parceiros/GameControlPanel';
 import BetsHistory from '../../../components/parceiros/BetsHistory';
 import Loader from '../../../components/admin/Loader';
@@ -48,7 +49,10 @@ export default function ParceirosGameDetails() {
       switch (action) {
         case 'start-match':
           await startMatchMutation.mutateAsync(id);
-          alert('Partida iniciada com sucesso!');
+          toast.success('Partida iniciada com sucesso!', {
+            duration: 3000,
+            position: 'top-center'
+          });
           await refetch();
           break;
 
@@ -57,19 +61,30 @@ export default function ParceirosGameDetails() {
             matchId: id,
             ...payload
           });
-          alert('Placar atualizado com sucesso!');
+          toast.success('Placar atualizado com sucesso!', {
+            duration: 3000,
+            position: 'top-center',
+            icon: '🎯'
+          });
           await refetch();
           break;
 
         case 'start-series':
           await startSeriesMutation.mutateAsync(payload.seriesId);
-          alert('Série iniciada com sucesso!');
+          toast.success('Série iniciada com sucesso!', {
+            duration: 3000,
+            position: 'top-center'
+          });
           await refetch();
           break;
 
         case 'enable-betting':
           await enableBettingMutation.mutateAsync(payload.seriesId);
-          // Não mostra alert, apenas atualiza
+          toast.success('Apostas liberadas!', {
+            duration: 2000,
+            position: 'top-center',
+            icon: '💰'
+          });
           await refetch();
           break;
 
@@ -78,7 +93,10 @@ export default function ParceirosGameDetails() {
       }
     } catch (error) {
       console.error('Erro na ação:', error);
-      alert(error.response?.data?.message || 'Erro ao executar ação');
+      toast.error(error.response?.data?.message || 'Erro ao executar ação', {
+        duration: 4000,
+        position: 'top-center'
+      });
     }
   };
 
