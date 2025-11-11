@@ -144,12 +144,23 @@ class AdminService {
         console.error('❌ [DASHBOARD - LUCRO] Erro ao buscar saques:', withdrawalsTodayError);
       }
 
-      const totalWithdrawnToday = (completedWithdrawalsToday?.reduce(
-        (sum, w) => sum + parseFloat(w.amount), 
+      // Buscar taxas (lucro real da plataforma)
+      const { data: feesToday } = await supabase
+        .from('transactions')
+        .select('amount')
+        .eq('type', 'taxa')
+        .eq('status', 'completed')
+        .gte('created_at', today.toISOString());
+
+      const platformProfitToday = (feesToday?.reduce(
+        (sum, f) => sum + parseFloat(f.amount), 
         0
       ) || 0) / 100;
-
-      const platformProfitToday = totalWithdrawnToday * 0.08;
+      
+      const totalWithdrawnToday = (completedWithdrawalsToday?.reduce(
+        (sum, w) => sum + Math.abs(parseFloat(w.amount)), 
+        0
+      ) || 0) / 100;
       
       console.error('💵 [DASHBOARD - LUCRO] Total sacado HOJE: R$', totalWithdrawnToday.toFixed(2));
       console.error('💵 [DASHBOARD - LUCRO] 💰 Lucro HOJE (8%): R$', platformProfitToday.toFixed(2));
@@ -166,12 +177,22 @@ class AdminService {
 
       console.error('💵 [DASHBOARD - LUCRO] Saques SEMANA encontrados:', completedWithdrawalsWeek?.length || 0);
 
-      const totalWithdrawnWeek = (completedWithdrawalsWeek?.reduce(
-        (sum, w) => sum + parseFloat(w.amount), 
+      const { data: feesWeek } = await supabase
+        .from('transactions')
+        .select('amount')
+        .eq('type', 'taxa')
+        .eq('status', 'completed')
+        .gte('created_at', weekAgo.toISOString());
+
+      const platformProfitWeek = (feesWeek?.reduce(
+        (sum, f) => sum + parseFloat(f.amount), 
         0
       ) || 0) / 100;
 
-      const platformProfitWeek = totalWithdrawnWeek * 0.08;
+      const totalWithdrawnWeek = (completedWithdrawalsWeek?.reduce(
+        (sum, w) => sum + Math.abs(parseFloat(w.amount)), 
+        0
+      ) || 0) / 100;
       
       console.error('💵 [DASHBOARD - LUCRO] Total sacado SEMANA: R$', totalWithdrawnWeek.toFixed(2));
       console.error('💵 [DASHBOARD - LUCRO] Lucro SEMANA (8%): R$', platformProfitWeek.toFixed(2));
@@ -186,18 +207,39 @@ class AdminService {
 
       console.error('💵 [DASHBOARD - LUCRO] Saques MÊS encontrados:', completedWithdrawalsMonth?.length || 0);
 
-      const totalWithdrawnMonth = (completedWithdrawalsMonth?.reduce(
-        (sum, w) => sum + parseFloat(w.amount), 
+      const { data: feesMonth } = await supabase
+        .from('transactions')
+        .select('amount')
+        .eq('type', 'taxa')
+        .eq('status', 'completed')
+        .gte('created_at', startOfMonth.toISOString());
+
+      const platformProfitMonth = (feesMonth?.reduce(
+        (sum, f) => sum + parseFloat(f.amount), 
         0
       ) || 0) / 100;
 
-      const platformProfitMonth = totalWithdrawnMonth * 0.08;
+      const totalWithdrawnMonth = (completedWithdrawalsMonth?.reduce(
+        (sum, w) => sum + Math.abs(parseFloat(w.amount)), 
+        0
+      ) || 0) / 100;
       
       console.error('💵 [DASHBOARD - LUCRO] Total sacado MÊS: R$', totalWithdrawnMonth.toFixed(2));
       console.error('💵 [DASHBOARD - LUCRO] Lucro MÊS (8%): R$', platformProfitMonth.toFixed(2));
 
-      // 5.4 Saques aprovados TOTAL (APENAS apostadores)
-      // Usar coluna total_withdrawn das carteiras para maior eficiência
+      // 5.4 Lucro total da plataforma (todas as taxas)
+      const { data: feesTotal } = await supabase
+        .from('transactions')
+        .select('amount')
+        .eq('type', 'taxa')
+        .eq('status', 'completed');
+
+      const platformProfitTotal = (feesTotal?.reduce(
+        (sum, f) => sum + parseFloat(f.amount), 
+        0
+      ) || 0) / 100;
+
+      // Total sacado (para estatísticas)
       const { data: walletsWithdrawn } = await supabase
         .from('wallet')
         .select('total_withdrawn');
@@ -206,8 +248,6 @@ class AdminService {
         (sum, w) => sum + parseFloat(w.total_withdrawn || 0), 
         0
       ) || 0) / 100;
-
-      const platformProfitTotal = totalWithdrawnTotal * 0.08;
       
       console.error('\n💵 [DASHBOARD - LUCRO] Total sacado GERAL: R$', totalWithdrawnTotal.toFixed(2));
       console.error('💵 [DASHBOARD - LUCRO] Lucro TOTAL (8%): R$', platformProfitTotal.toFixed(2));
