@@ -652,15 +652,16 @@ class SeriesService {
       }
 
       // Buscar número da última série
-      const { data: lastSerie } = await supabase
+      const { data: existingSeries } = await supabase
         .from('series')
         .select('serie_number')
         .eq('match_id', matchId)
         .order('serie_number', { ascending: false })
-        .limit(1)
-        .single();
+        .limit(1);
 
-      const nextSerieNumber = lastSerie ? lastSerie.serie_number + 1 : 1;
+      const nextSerieNumber = existingSeries && existingSeries.length > 0 
+        ? existingSeries[0].serie_number + 1 
+        : 1;
 
       // Criar nova série
       const { data: newSerie, error: createError } = await supabase
