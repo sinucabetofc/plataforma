@@ -638,8 +638,8 @@ function BetItem({ bet, isWinner, onCancel, canCancel = false, playerName = '' }
           <span className="text-base">{config.icon}</span>
           <span className="text-xs font-medium text-gray-300">{bet.label}</span>
           {bet.isMyBet && (
-            <span className="px-2 py-0.5 bg-verde-neon/20 border border-verde-neon/40 rounded-full text-[10px] font-bold text-verde-neon uppercase">
-              Minha aposta
+            <span className="px-2.5 py-1 bg-verde-neon/30 border-2 border-verde-neon/60 rounded-full text-[10px] font-black text-verde-neon uppercase shadow-lg shadow-verde-neon/20">
+              ⭐ Minha aposta
           </span>
           )}
         </div>
