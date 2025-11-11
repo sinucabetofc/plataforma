@@ -87,6 +87,7 @@ const corsOptions = {
       'http://127.0.0.1:3001',
       'http://127.0.0.1:3002', // Admin panel
       'https://plataforma-hazel.vercel.app', // Frontend na Vercel
+      'https://sinuca-bet.vercel.app', // Frontend na Vercel (novo domínio)
       process.env.FRONTEND_URL, // URL configurável via env
     ].filter(Boolean); // Remove valores undefined/null
     
