@@ -148,51 +148,42 @@ export default function LiveBetsPanel({ matchId, match }) {
 
       <div className="p-6">
         {/* Estatísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
           {/* Card 1: Total de Apostas */}
-          <div className="group relative bg-gradient-to-br from-blue-600/15 via-blue-500/10 to-transparent border-2 border-blue-500/30 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:border-blue-500/50 transition-all duration-300 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-3 bg-blue-500/20 rounded-xl shadow-lg">
-                  <Users size={22} className="text-blue-400" />
-                </div>
-                <span className="text-sm text-gray-300 font-semibold tracking-wide">Total de Apostas</span>
+          <div className="bg-gray-900/80 border border-blue-500/30 rounded-lg p-3 hover:border-blue-500/50 transition-all">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-1.5 bg-blue-500/20 rounded-lg">
+                <Users size={16} className="text-blue-400" />
               </div>
-              <p className="text-5xl font-black text-blue-400 tracking-tight">{totalBets}</p>
+              <span className="text-xs text-gray-400 font-medium">Total de Apostas</span>
             </div>
+            <p className="text-2xl font-bold text-blue-400">{totalBets}</p>
           </div>
 
           {/* Card 2: Volume Total */}
-          <div className="group relative bg-gradient-to-br from-green-600/15 via-green-500/10 to-transparent border-2 border-green-500/30 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:border-green-500/50 transition-all duration-300 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-3 bg-green-500/20 rounded-xl shadow-lg">
-                  <DollarSign size={22} className="text-green-400" />
-                </div>
-                <span className="text-sm text-gray-300 font-semibold tracking-wide">Volume Total</span>
+          <div className="bg-gray-900/80 border border-green-500/30 rounded-lg p-3 hover:border-green-500/50 transition-all">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-1.5 bg-green-500/20 rounded-lg">
+                <DollarSign size={16} className="text-green-400" />
               </div>
-              <p className="text-5xl font-black text-green-400 tracking-tight">
-                R$ {(totalAmount / 100).toFixed(2)}
-              </p>
+              <span className="text-xs text-gray-400 font-medium">Volume Total</span>
             </div>
+            <p className="text-2xl font-bold text-green-400">
+              R$ {(totalAmount / 100).toFixed(2)}
+            </p>
           </div>
 
           {/* Card 3: Total Casado */}
-          <div className="group relative bg-gradient-to-br from-orange-600/15 via-orange-500/10 to-transparent border-2 border-orange-500/30 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:border-orange-500/50 transition-all duration-300 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-3 bg-orange-500/20 rounded-xl shadow-lg">
-                  <TrendingUp size={22} className="text-orange-400" />
-                </div>
-                <span className="text-sm text-gray-300 font-semibold tracking-wide">Total Casado</span>
+          <div className="bg-gray-900/80 border border-orange-500/30 rounded-lg p-3 hover:border-orange-500/50 transition-all">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-1.5 bg-orange-500/20 rounded-lg">
+                <TrendingUp size={16} className="text-orange-400" />
               </div>
-              <p className="text-5xl font-black text-orange-400 tracking-tight">
-                R$ {(totalMatched / 100).toFixed(2)}
-              </p>
+              <span className="text-xs text-gray-400 font-medium">Total Casado</span>
             </div>
+            <p className="text-2xl font-bold text-orange-400">
+              R$ {(totalMatched / 100).toFixed(2)}
+            </p>
           </div>
         </div>
 
