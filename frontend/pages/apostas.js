@@ -371,7 +371,7 @@ function Apostas() {
                     </div>
 
                     {/* Retornos (se aplicável) */}
-                    {(bet.potential_return || bet.actual_return > 0) && (
+                    {(bet.potential_return || bet.actual_return > 0 || bet.status === 'perdida') && (
                       <div className="grid grid-cols-2 gap-4 mb-4">
                         {bet.potential_return && (
                           <div className="bg-green-900/10 rounded-lg p-3 border border-green-500/20">
@@ -404,6 +404,17 @@ function Apostas() {
                                 </div>
                               </div>
                             )}
+                          </div>
+                        )}
+                        {bet.status === 'perdida' && bet.matched_amount > 0 && (
+                          <div className="bg-red-900/10 rounded-lg p-3 border border-red-500/20">
+                            <p className="text-[10px] text-red-400 uppercase mb-1">Você Perdeu</p>
+                            <p className="text-sm font-bold text-red-400">
+                              {formatCurrency(bet.matched_amount / 100)}
+                            </p>
+                            <p className="text-[9px] text-gray-400 mt-1">
+                              Valor casado perdido
+                            </p>
                           </div>
                         )}
                         {bet.actual_return > 0 && bet.status === 'perdida' && bet.remaining_amount > 0 && (

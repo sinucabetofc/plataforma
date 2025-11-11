@@ -504,11 +504,11 @@ function BetItem({ bet, isWinner, onCancel, canCancel = false, playerName = '' }
         };
       case 'perdida':
         const lossMessage = remainingAmount > 0
-          ? `💔 Perdeu R$ ${(matchedAmount / 100).toFixed(2)} + R$ ${(remainingAmount / 100).toFixed(2)} de reembolso`
-          : `💔 Infelizmente você perdeu R$ ${bet.amount.toFixed(2)} nesta aposta`;
+          ? `💔 Perdeu R$ ${(matchedAmount / 100).toFixed(2)} • Reembolso: R$ ${(remainingAmount / 100).toFixed(2)}`
+          : `💔 Infelizmente você perdeu R$ ${(matchedAmount / 100).toFixed(2)} nesta aposta`;
         
         return {
-          icon: '😢',
+          icon: '😭',
           label: 'PERDEU',
           borderColor: 'border-red-500',
           bgColor: 'bg-red-900/20',
@@ -575,7 +575,11 @@ function BetItem({ bet, isWinner, onCancel, canCancel = false, playerName = '' }
               <span className={`text-2xl font-bold ${
                 bet.status === 'ganha' ? 'text-verde-neon' : 'text-red-400'
               }`}>
-                {bet.status === 'ganha' ? '+' : '-'} R$ {bet.amount.toFixed(2)}
+                {bet.status === 'ganha' ? '+' : '-'} R$ {
+                  bet.status === 'ganha' 
+                    ? bet.amount.toFixed(2)
+                    : (matchedAmount / 100).toFixed(2)
+                }
               </span>
             </p>
             
@@ -588,7 +592,7 @@ function BetItem({ bet, isWinner, onCancel, canCancel = false, playerName = '' }
                       ? bet.actual_return / 100 
                       : (matchedAmount / 100) * 2 + (remainingAmount / 100)
                   )}
-                </p>
+              </p>
                 
                 {/* Se foi parcial, mostrar breakdown */}
                 {matchPercentage < 100 && matchPercentage > 0 && remainingAmount > 0 && (
@@ -643,7 +647,13 @@ function BetItem({ bet, isWinner, onCancel, canCancel = false, playerName = '' }
           </span>
           )}
         </div>
-        <span className="text-sm font-bold text-white">R$ {bet.amount.toFixed(2)}</span>
+        <span className={`text-sm font-bold ${bet.status === 'perdida' ? 'text-red-400' : 'text-white'}`}>
+          {bet.status === 'perdida' ? '-' : ''} R$ {
+            bet.status === 'perdida' 
+              ? (matchedAmount / 100).toFixed(2)
+              : bet.amount.toFixed(2)
+          }
+        </span>
       </div>
       <div className="px-3 pb-2">
         <p className={`text-[10px] ${config.messageColor} flex items-center gap-1`}>
