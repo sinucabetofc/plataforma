@@ -16,37 +16,40 @@ BEGIN
   -- Encontrar pares de transações de ganho criadas no mesmo timestamp
   -- para a mesma aposta (indicando trigger duplicado)
   FOR duplicate_transaction IN
+    WITH grouped_transactions AS (
+      SELECT 
+        t1.id as transaction_id,
+        t1.wallet_id,
+        t1.amount,
+        t1.bet_id,
+        t1.created_at,
+        w.user_id,
+        -- Contar quantas transações existem para a mesma aposta no mesmo segundo
+        COUNT(*) OVER (
+          PARTITION BY t1.bet_id, t1.wallet_id 
+          ORDER BY t1.created_at
+          RANGE BETWEEN INTERVAL '1 second' PRECEDING AND INTERVAL '1 second' FOLLOWING
+        ) as duplicate_count,
+        -- Numerar as transações (1 = primeira, 2 = segunda/duplicata)
+        ROW_NUMBER() OVER (
+          PARTITION BY t1.bet_id, t1.wallet_id
+          ORDER BY t1.created_at DESC, t1.id DESC
+        ) as row_num
+      FROM transactions t1
+      JOIN wallet w ON w.id = t1.wallet_id
+      WHERE t1.type = 'ganho'
+        AND t1.created_at > NOW() - INTERVAL '24 hours'
+    )
     SELECT 
-      t1.id as transaction_id,
-      t1.wallet_id,
-      t1.amount,
-      t1.bet_id,
-      t1.created_at,
-      w.user_id,
-      b.id as bet_id_check
-    FROM transactions t1
-    JOIN wallet w ON w.id = t1.wallet_id
-    LEFT JOIN bets b ON b.id = t1.bet_id
-    WHERE t1.type = 'ganho'
-      AND t1.created_at > NOW() - INTERVAL '24 hours'
-      -- Verificar se existe outra transação no mesmo segundo
-      AND EXISTS (
-        SELECT 1 FROM transactions t2
-        WHERE t2.wallet_id = t1.wallet_id
-          AND t2.type = 'ganho'
-          AND t2.id != t1.id
-          AND t2.bet_id = t1.bet_id
-          AND ABS(EXTRACT(EPOCH FROM (t2.created_at - t1.created_at))) < 1
-      )
-      -- Pegar apenas a segunda transação (maior ID = mais recente)
-      AND t1.id = (
-        SELECT MAX(t3.id) 
-        FROM transactions t3
-        WHERE t3.wallet_id = t1.wallet_id
-          AND t3.bet_id = t1.bet_id
-          AND t3.type = 'ganho'
-          AND ABS(EXTRACT(EPOCH FROM (t3.created_at - t1.created_at))) < 1
-      )
+      transaction_id,
+      wallet_id,
+      amount,
+      bet_id,
+      created_at,
+      user_id
+    FROM grouped_transactions
+    WHERE duplicate_count > 1  -- Existem duplicatas
+      AND row_num = 1           -- Pegar a mais recente (a duplicata)
   LOOP
     duplicate_count := duplicate_count + 1;
     
