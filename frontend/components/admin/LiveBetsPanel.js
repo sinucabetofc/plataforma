@@ -14,17 +14,23 @@ import { TrendingUp, Users, DollarSign } from 'lucide-react';
 export default function LiveBetsPanel({ matchId, match }) {
   const [bets, setBets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
-    const fetchBets = async () => {
+    const fetchBets = async (showLoader = false) => {
       if (!match?.series || match.series.length === 0) {
         setBets([]);
         setLoading(false);
+        setIsInitialLoad(false);
         return;
       }
 
       try {
-        setLoading(true);
+        // Só mostra loader no carregamento inicial
+        if (showLoader) {
+          setLoading(true);
+        }
+        
         // Buscar apostas de todas as séries
         const promises = match.series.map(serie => 
           get(`/bets/serie/${serie.id}`)
@@ -52,19 +58,44 @@ export default function LiveBetsPanel({ matchId, match }) {
         console.error('Erro ao buscar apostas:', error);
         setBets([]);
       } finally {
-        setLoading(false);
+        if (showLoader) {
+          setLoading(false);
+        }
+        setIsInitialLoad(false);
       }
     };
 
-    fetchBets();
+    // Carregamento inicial (com loader)
+    fetchBets(true);
     
-    // Atualizar a cada 5 segundos
-    const interval = setInterval(fetchBets, 5000);
+    // Atualizar a cada 5 segundos (SEM loader)
+    const interval = setInterval(() => fetchBets(false), 5000);
     return () => clearInterval(interval);
   }, [match]);
 
   const totalBets = bets.length;
   const totalAmount = bets.reduce((sum, bet) => sum + (bet.amount || 0), 0);
+  const totalMatched = bets.reduce((sum, bet) => sum + (bet.matched_amount || 0), 0);
+
+  // Helper para status badge
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'pendente':
+        return { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-500/40', icon: '⏳', label: 'Pendente' };
+      case 'parcialmente_aceita':
+        return { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-500/40', icon: '🔄', label: 'Parcial' };
+      case 'aceita':
+        return { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500/40', icon: '🤝', label: 'Casada' };
+      case 'ganha':
+        return { bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-500/40', icon: '🎉', label: 'Ganhou' };
+      case 'perdida':
+        return { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/40', icon: '😢', label: 'Perdeu' };
+      case 'cancelada':
+        return { bg: 'bg-gray-500/20', text: 'text-gray-400', border: 'border-gray-500/40', icon: '🚫', label: 'Cancelada' };
+      default:
+        return { bg: 'bg-gray-500/20', text: 'text-gray-400', border: 'border-gray-500/40', icon: '❓', label: status };
+    }
+  };
 
   if (loading) {
     return (
@@ -85,30 +116,47 @@ export default function LiveBetsPanel({ matchId, match }) {
   return (
     <div className="card">
       <div className="card-header">
-        <h3 className="card-title flex items-center gap-2">
-          <TrendingUp size={20} />
-          Apostas Ao Vivo
-        </h3>
+        <div className="flex items-center justify-between w-full">
+          <h3 className="card-title flex items-center gap-2">
+            <TrendingUp size={20} />
+            Apostas Ao Vivo
+          </h3>
+          {/* Indicador de atualização ao vivo */}
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse-subtle"></div>
+            <span className="text-xs text-gray-500">Atualiza a cada 5s</span>
+          </div>
+        </div>
       </div>
 
       <div className="card-body">
         {/* Estatísticas */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="bg-gradient-to-br from-blue-500/20 to-blue-500/5 border border-blue-500/30 rounded-xl p-4 shadow-lg">
             <div className="flex items-center gap-2 mb-2">
               <Users size={18} className="text-blue-400" />
-              <span className="text-sm text-gray-400">Total de Apostas</span>
+              <span className="text-xs text-gray-400 font-medium">Total de Apostas</span>
             </div>
-            <p className="text-2xl font-bold text-blue-400">{totalBets}</p>
+            <p className="text-3xl font-bold text-blue-400">{totalBets}</p>
           </div>
 
-          <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+          <div className="bg-gradient-to-br from-green-500/20 to-green-500/5 border border-green-500/30 rounded-xl p-4 shadow-lg">
             <div className="flex items-center gap-2 mb-2">
               <DollarSign size={18} className="text-green-400" />
-              <span className="text-sm text-gray-400">Volume Total</span>
+              <span className="text-xs text-gray-400 font-medium">Volume Total</span>
             </div>
-            <p className="text-2xl font-bold text-green-400">
+            <p className="text-3xl font-bold text-green-400">
               R$ {(totalAmount / 100).toFixed(2)}
+            </p>
+          </div>
+
+          <div className="bg-gradient-to-br from-orange-500/20 to-orange-500/5 border border-orange-500/30 rounded-xl p-4 shadow-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp size={18} className="text-orange-400" />
+              <span className="text-xs text-gray-400 font-medium">Casado</span>
+            </div>
+            <p className="text-3xl font-bold text-orange-400">
+              R$ {(totalMatched / 100).toFixed(2)}
             </p>
           </div>
         </div>
@@ -123,41 +171,92 @@ export default function LiveBetsPanel({ matchId, match }) {
             </div>
           </div>
         ) : (
-          <div className="space-y-2 max-h-96 overflow-y-auto">
-            {bets.map((bet) => (
-              <div
-                key={bet.id}
-                className="bg-[#1a1a1a] border border-gray-800 rounded-lg p-3 hover:border-verde-neon/30 transition-colors"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="font-semibold text-white">
-                        {bet.user?.name || bet.user?.email || 'Usuário'}
+          <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+            {bets.map((bet) => {
+              const statusBadge = getStatusBadge(bet.status);
+              const matchPercentage = bet.match_percentage || 
+                (bet.amount > 0 && bet.matched_amount > 0 
+                  ? Math.round((bet.matched_amount / bet.amount) * 100) 
+                  : 0);
+
+              return (
+                <div
+                  key={bet.id}
+                  className={`bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border-2 ${statusBadge.border} rounded-xl p-4 hover:shadow-lg hover:shadow-${statusBadge.text.split('-')[1]}-500/10 transition-all duration-300`}
+                >
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      {/* Nome do usuário */}
+                      <div className="flex items-center gap-2 flex-wrap mb-2">
+                        <p className="font-bold text-white text-base">
+                          {bet.user?.name || bet.user?.email || 'Usuário'}
+                        </p>
+                        <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs font-semibold rounded-full border border-blue-500/30">
+                          Série {bet.serie_number || '?'}
+                        </span>
+                      </div>
+                      
+                      {/* Jogador escolhido */}
+                      <p className="text-sm text-gray-400">
+                        Apostou em: <span className="text-verde-accent font-semibold">{bet.chosen_player?.name || 'Jogador'}</span>
                       </p>
-                      <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs rounded-full">
-                        Série {bet.serie_number || '?'}
-                      </span>
                     </div>
-                    <p className="text-sm text-gray-400">
-                      Apostou em: <span className="text-verde-accent font-medium">{bet.chosen_player?.name || 'Jogador'}</span>
-                    </p>
+                    
+                    {/* Valor */}
+                    <div className="text-right ml-3">
+                      <p className="font-bold text-verde-neon text-xl">
+                        R$ {(bet.amount / 100).toFixed(2)}
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-verde-neon text-lg">
-                      R$ {(bet.amount / 100).toFixed(2)}
-                    </p>
-                    <p className="text-xs text-gray-500 uppercase">
-                      {bet.status === 'pendente' ? 'Aguardando' : 
-                       bet.status === 'aceita' ? 'Casada' : 
-                       bet.status === 'ganha' ? 'Ganhou' : 
-                       bet.status === 'perdida' ? 'Perdeu' : 
-                       bet.status === 'cancelada' ? 'Cancelada' : bet.status}
-                    </p>
+
+                  {/* Matching Info (para parcialmente aceita) */}
+                  {bet.status === 'parcialmente_aceita' && matchPercentage > 0 && (
+                    <div className="mb-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs text-gray-500">Matching</span>
+                        <span className="text-xs font-semibold text-orange-400">{matchPercentage}%</span>
+                      </div>
+                      <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+                        <div 
+                          className="bg-gradient-to-r from-orange-500 to-orange-400 h-full transition-all duration-500"
+                          style={{ width: `${matchPercentage}%` }}
+                        />
+                      </div>
+                      <div className="flex justify-between mt-1">
+                        <span className="text-xs text-gray-500">
+                          Casado: R$ {((bet.matched_amount || 0) / 100).toFixed(2)}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          Pendente: R$ {((bet.remaining_amount || 0) / 100).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Status Badge */}
+                  <div className="flex items-center justify-between">
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 ${statusBadge.bg} ${statusBadge.text} border ${statusBadge.border} rounded-lg text-xs font-semibold`}>
+                      <span>{statusBadge.icon}</span>
+                      <span>{statusBadge.label}</span>
+                    </span>
+
+                    {/* Info adicional */}
+                    {bet.status === 'aceita' && (
+                      <span className="text-xs text-gray-500">
+                        100% casada
+                      </span>
+                    )}
+                    {bet.status === 'ganha' && bet.actual_return && (
+                      <span className="text-xs text-green-400 font-semibold">
+                        + R$ {(bet.actual_return / 100).toFixed(2)}
+                      </span>
+                    )}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
