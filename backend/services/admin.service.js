@@ -17,6 +17,9 @@ class AdminService {
    */
   async getDashboardStats() {
     try {
+      console.error('🚀 [DASHBOARD] ========== INICIANDO getDashboardStats ==========');
+      console.error('🚀 [DASHBOARD] Timestamp:', new Date().toISOString());
+      
       // Função auxiliar para obter data no timezone do Brasil
       // Retorna data em UTC que representa o início do dia no Brasil
       const getBrazilDate = (daysAgo = 0) => {
@@ -360,7 +363,9 @@ class AdminService {
         }
       };
     } catch (error) {
-      console.error('Erro ao buscar estatísticas do dashboard:', error);
+      console.error('❌❌❌ [DASHBOARD] ERRO FATAL ao buscar estatísticas:', error);
+      console.error('❌❌❌ [DASHBOARD] Stack:', error.stack);
+      console.error('❌❌❌ [DASHBOARD] Message:', error.message);
       throw {
         code: 'DATABASE_ERROR',
         message: 'Erro ao buscar estatísticas',
