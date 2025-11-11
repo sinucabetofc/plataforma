@@ -154,9 +154,9 @@ BEGIN
     
     -- Se há diferença, corrigir
     IF diff != 0 THEN
-      RAISE NOTICE 'Corrigindo aposta % - Diferença: R$ %', 
+      RAISE NOTICE 'Corrigindo aposta - ID: %, Diferença: R$ %', 
         bet_record.id, 
-        diff::DECIMAL / 100;
+        (diff::DECIMAL / 100);
       
       -- Atualizar actual_return
       UPDATE bets
@@ -221,7 +221,7 @@ BEGIN
     RAISE NOTICE '';
     RAISE NOTICE '📊 EXEMPLO:';
     RAISE NOTICE '   Aposta total: R$ 20,00';
-    RAISE NOTICE '   Valor casado: R$ 10,00 (50%)';
+    RAISE NOTICE '   Valor casado: R$ 10,00 (50%%)';  -- Escapar % duplicando
     RAISE NOTICE '   Ganho correto: R$ 20,00 (10 x 2)';
     RAISE NOTICE '========================================';
     RAISE NOTICE '';
