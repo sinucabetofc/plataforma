@@ -371,7 +371,7 @@ function Apostas() {
                     </div>
 
                     {/* Retornos (se aplicável) */}
-                    {(bet.potential_return || bet.payout_amount > 0) && (
+                    {(bet.potential_return || bet.actual_return > 0) && (
                       <div className="grid grid-cols-2 gap-4 mb-4">
                         {bet.potential_return && (
                           <div className="bg-green-900/10 rounded-lg p-3 border border-green-500/20">
@@ -381,11 +381,39 @@ function Apostas() {
                             </p>
                           </div>
                         )}
-                        {bet.payout_amount > 0 && (
+                        {bet.actual_return > 0 && bet.status === 'ganha' && (
                           <div className="bg-green-900/10 rounded-lg p-3 border border-green-500/20">
                             <p className="text-[10px] text-green-400 uppercase mb-1">Você Ganhou</p>
                             <p className="text-sm font-bold text-green-400">
-                              {formatCurrency(bet.payout_amount)}
+                              {formatCurrency(bet.actual_return)}
+                            </p>
+                            {/* Breakdown para apostas parciais */}
+                            {bet.matched_amount && bet.remaining_amount > 0 && bet.matched_amount < bet.amount && (
+                              <div className="mt-2 pt-2 border-t border-green-500/20 text-[9px] text-gray-400 space-y-0.5">
+                                <div className="flex justify-between">
+                                  <span>Ganho:</span>
+                                  <span className="text-green-400 font-semibold">
+                                    {formatCurrency((bet.matched_amount / 100) * 2)}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span>Reembolso:</span>
+                                  <span className="text-green-400 font-semibold">
+                                    {formatCurrency(bet.remaining_amount / 100)}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {bet.actual_return > 0 && bet.status === 'perdida' && bet.remaining_amount > 0 && (
+                          <div className="bg-orange-900/10 rounded-lg p-3 border border-orange-500/20">
+                            <p className="text-[10px] text-orange-400 uppercase mb-1">Reembolso</p>
+                            <p className="text-sm font-bold text-orange-400">
+                              {formatCurrency(bet.actual_return)}
+                            </p>
+                            <p className="text-[9px] text-gray-400 mt-1">
+                              Valor não casado devolvido
                             </p>
                           </div>
                         )}

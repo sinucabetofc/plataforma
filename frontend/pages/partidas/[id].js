@@ -486,22 +486,34 @@ function BetItem({ bet, isWinner, onCancel, canCancel = false, playerName = '' }
           message: '🤝 Aposta casada com sucesso! Aguarde o resultado da série'
         };
       case 'ganha':
+        const totalWin = bet.actual_return 
+          ? bet.actual_return / 100 
+          : (matchedAmount / 100) * 2 + (remainingAmount / 100);
+        
+        const winMessage = matchPercentage < 100 && matchPercentage > 0
+          ? `🎉 Parabéns! Ganhou R$ ${((matchedAmount / 100) * 2).toFixed(2)} + R$ ${(remainingAmount / 100).toFixed(2)} de reembolso = ${formatCurrency(totalWin)}`
+          : `🎉 Parabéns! Você ganhou ${formatCurrency(totalWin)} apostando R$ ${bet.amount.toFixed(2)}!`;
+        
         return {
           icon: '🎉',
           label: 'GANHOU',
           borderColor: 'border-verde-neon',
           bgColor: 'bg-verde-neon/10',
           messageColor: 'text-verde-neon',
-          message: `🎉 Parabéns! Você ganhou ${formatCurrency(bet.amount * 2)} apostando R$ ${bet.amount.toFixed(2)}!`
+          message: winMessage
         };
       case 'perdida':
+        const lossMessage = remainingAmount > 0
+          ? `💔 Perdeu R$ ${(matchedAmount / 100).toFixed(2)} + R$ ${(remainingAmount / 100).toFixed(2)} de reembolso`
+          : `💔 Infelizmente você perdeu R$ ${bet.amount.toFixed(2)} nesta aposta`;
+        
         return {
           icon: '😢',
           label: 'PERDEU',
           borderColor: 'border-red-500',
           bgColor: 'bg-red-900/20',
           messageColor: 'text-red-400',
-          message: `💔 Infelizmente você perdeu R$ ${bet.amount.toFixed(2)} nesta aposta`
+          message: lossMessage
         };
       case 'cancelada':
         return {
@@ -566,10 +578,46 @@ function BetItem({ bet, isWinner, onCancel, canCancel = false, playerName = '' }
                 {bet.status === 'ganha' ? '+' : '-'} R$ {bet.amount.toFixed(2)}
               </span>
             </p>
+            
+            {/* Detalhes para aposta ganha */}
             {bet.status === 'ganha' && (
-              <p className="text-center text-xs text-verde-accent mt-1">
-                Ganho: {formatCurrency(bet.amount * 2)}
-              </p>
+              <div className="mt-2">
+                <p className="text-center text-xs text-verde-accent font-semibold">
+                  Ganho: {formatCurrency(
+                    bet.actual_return 
+                      ? bet.actual_return / 100 
+                      : (matchedAmount / 100) * 2 + (remainingAmount / 100)
+                  )}
+                </p>
+                
+                {/* Se foi parcial, mostrar breakdown */}
+                {matchPercentage < 100 && matchPercentage > 0 && remainingAmount > 0 && (
+                  <div className="mt-2 pt-2 border-t border-verde-neon/20">
+                    <div className="flex justify-between text-[10px] text-gray-400">
+                      <span>💰 Ganho (R$ {(matchedAmount / 100).toFixed(2)} × 2):</span>
+                      <span className="text-verde-accent font-semibold">R$ {((matchedAmount / 100) * 2).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+                      <span>💵 Reembolso (não casado):</span>
+                      <span className="text-verde-accent font-semibold">R$ {(remainingAmount / 100).toFixed(2)}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Detalhes para aposta perdida com reembolso */}
+            {bet.status === 'perdida' && remainingAmount > 0 && (
+              <div className="mt-2 pt-2 border-t border-red-500/20">
+                <div className="flex justify-between text-[10px] text-gray-400">
+                  <span>💔 Perdeu (casado):</span>
+                  <span className="text-red-400 font-semibold">R$ {(matchedAmount / 100).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+                  <span>💵 Reembolso (não casado):</span>
+                  <span className="text-verde-accent font-semibold">R$ {(remainingAmount / 100).toFixed(2)}</span>
+                </div>
+              </div>
             )}
           </div>
 
