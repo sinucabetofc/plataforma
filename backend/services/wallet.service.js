@@ -547,11 +547,11 @@ class WalletService {
           wallet_id: wallet.id, // ✅ Adicionar wallet_id
           user_id: userId,
           type: 'saque',
-          amount: netAmountInCents, // ✅ Em centavos
+          amount: -totalAmountToDebit, // ✅ Valor TOTAL debitado (negativo para débito)
           balance_before: oldBalance, // ✅ Saldo antes (em centavos)
           balance_after: newBalance, // ✅ Saldo depois (em centavos)
           fee: feeInCents, // ✅ Em centavos
-          net_amount: netAmountInCents, // ✅ Em centavos
+          net_amount: netAmountInCents, // ✅ Em centavos (valor líquido a receber)
           status: 'pending',
           description: description || 'Solicitação de saque via Pix',
           metadata: {
