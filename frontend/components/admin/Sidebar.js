@@ -14,7 +14,9 @@ import {
   Trophy, 
   Target, 
   DollarSign, 
+  CreditCard,
   FileText,
+  AlertTriangle,
   X 
 } from 'lucide-react';
 import useAdminStore from '../../store/adminStore';
@@ -54,6 +56,11 @@ const menuItems = [
     name: 'Saques',
     href: '/admin/withdrawals',
     icon: DollarSign,
+  },
+  {
+    name: 'Depósitos',
+    href: '/admin/deposits',
+    icon: CreditCard,
   },
   {
     name: 'Transações',

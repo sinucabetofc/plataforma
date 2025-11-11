@@ -43,6 +43,9 @@ const influencersPanelRoutes = require('./routes/influencers-panel.routes');
 const influencerWithdrawalsRoutes = require('./routes/influencer-withdrawals.routes');
 const adminWithdrawalsRoutes = require('./routes/admin-withdrawals.routes');
 
+// Depósitos (admin)
+const depositsRoutes = require('./routes/deposits.routes');
+
 // Rotas de upload
 const uploadRoutes = require('./routes/upload.routes');
 
@@ -172,6 +175,9 @@ app.use('/api/admin/influencers', influencersRoutes);
 
 // Rotas de saques (admin)
 app.use('/api/admin/withdrawals', adminWithdrawalsRoutes);
+
+// Rotas de depósitos (admin)
+app.use('/api/admin/deposits', depositsRoutes);
 
 // Rotas admin (requerem autenticação + role='admin')
 app.use('/api/admin', adminRoutes);

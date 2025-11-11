@@ -17,6 +17,20 @@ class AdminService {
    */
   async getDashboardStats() {
     try {
+      // Função auxiliar para obter data no timezone do Brasil
+      // Retorna data em UTC que representa o início do dia no Brasil
+      const getBrazilDate = (daysAgo = 0) => {
+        const now = new Date();
+        // Ajustar para timezone do Brasil (UTC-3)
+        const brazilNow = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+        // Obter início do dia (00:00:00) no Brasil
+        const year = brazilNow.getUTCFullYear();
+        const month = brazilNow.getUTCMonth();
+        const day = brazilNow.getUTCDate() - daysAgo;
+        // Retornar em UTC mas representando 00:00 no Brasil (03:00 UTC)
+        return new Date(Date.UTC(year, month, day, 3, 0, 0, 0));
+      };
+
       // 1. Total de usuários (ativos e inativos)
       const { count: totalUsers, error: usersError } = await supabase
         .from('users')
@@ -26,6 +40,12 @@ class AdminService {
         .from('users')
         .select('*', { count: 'exact', head: true })
         .eq('is_active', true);
+
+      // Usuários cadastrados hoje
+      const { count: usersToday } = await supabase
+        .from('users')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', today.toISOString());
 
       // 2. Total de jogos/partidas por status
       const { data: matchesStats, error: matchesError } = await supabase
@@ -47,10 +67,12 @@ class AdminService {
       });
 
       // 3. Total apostado (hoje, mês e total)
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const today = getBrazilDate(0); // Início do dia de hoje no Brasil
       
-      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      // Início do mês no Brasil
+      const now = new Date();
+      const brazilNow = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+      const startOfMonth = new Date(Date.UTC(brazilNow.getUTCFullYear(), brazilNow.getUTCMonth(), 1, 3, 0, 0, 0));
 
       const { data: betsToday } = await supabase
         .from('bets')
@@ -71,11 +93,11 @@ class AdminService {
       const totalBetsMonth = (betsMonth?.reduce((sum, bet) => sum + parseFloat(bet.amount), 0) || 0) / 100;
       const totalBetsAll = (betsTotal?.reduce((sum, bet) => sum + parseFloat(bet.amount), 0) || 0) / 100;
 
-      // 4. Saques pendentes
+      // 4. Saques pendentes (APENAS de apostadores - tabela transactions)
       const { data: pendingWithdrawals } = await supabase
         .from('transactions')
         .select('amount')
-        .eq('type', 'withdraw')
+        .eq('type', 'saque') // Tipo correto do ENUM
         .eq('status', 'pending');
 
       // Valores em centavos, converter para reais
@@ -86,30 +108,167 @@ class AdminService {
 
       const pendingWithdrawalsCount = pendingWithdrawals?.length || 0;
 
-      // 5. Lucro da plataforma (8% dos saques aprovados)
-      const { data: completedWithdrawals } = await supabase
+      // 5. Lucro da plataforma (8% dos saques aprovados de APOSTADORES)
+      console.log('\n' + '='.repeat(80));
+      console.log('💵 [DASHBOARD - LUCRO] Calculando lucro da plataforma...');
+      console.log('💵 [DASHBOARD - LUCRO] Hora UTC agora:', new Date().toISOString());
+      console.log('💵 [DASHBOARD - LUCRO] Data "hoje" Brasil (UTC):', today.toISOString());
+      console.log('='.repeat(80));
+      
+      // 5.1 Saques aprovados HOJE (APENAS apostadores - tabela transactions)
+      const { data: completedWithdrawalsToday, error: withdrawalsTodayError } = await supabase
         .from('transactions')
-        .select('amount')
-        .eq('type', 'withdraw')
-        .eq('status', 'completed');
+        .select('id, amount, created_at, status')
+        .eq('type', 'saque')
+        .eq('status', 'completed')
+        .gte('created_at', today.toISOString());
 
-      // Valores em centavos, converter para reais
-      const totalWithdrawn = (completedWithdrawals?.reduce(
+      console.log('💵 [DASHBOARD - LUCRO] ✅ Saques HOJE encontrados:', completedWithdrawalsToday?.length || 0);
+      
+      if (completedWithdrawalsToday && completedWithdrawalsToday.length > 0) {
+        console.log('💵 [DASHBOARD - LUCRO] Detalhes dos saques:');
+        completedWithdrawalsToday.forEach((w, i) => {
+          console.log(`   ${i + 1}. R$ ${(parseFloat(w.amount) / 100).toFixed(2)} - ${w.created_at} (ID: ${w.id.substring(0, 8)}...)`);
+        });
+      } else {
+        console.log('💵 [DASHBOARD - LUCRO] ⚠️  NENHUM saque encontrado!');
+      }
+      
+      if (withdrawalsTodayError) {
+        console.error('❌ [DASHBOARD - LUCRO] Erro ao buscar saques:', withdrawalsTodayError);
+      }
+
+      const totalWithdrawnToday = (completedWithdrawalsToday?.reduce(
         (sum, w) => sum + parseFloat(w.amount), 
         0
       ) || 0) / 100;
 
-      const platformProfit = totalWithdrawn * 0.08;
+      const platformProfitToday = totalWithdrawnToday * 0.08;
+      
+      console.log('💵 [DASHBOARD - LUCRO] Total sacado HOJE: R$', totalWithdrawnToday.toFixed(2));
+      console.log('💵 [DASHBOARD - LUCRO] 💰 Lucro HOJE (8%): R$', platformProfitToday.toFixed(2));
 
-      // 6. Novos usuários (últimos 7 dias, por dia)
+      // 5.2 Saques aprovados na SEMANA (últimos 7 dias - APENAS apostadores)
+      const weekAgo = getBrazilDate(7);
+      console.log('💵 [DASHBOARD] Data semana atrás:', weekAgo.toISOString());
+
+      const { data: completedWithdrawalsWeek } = await supabase
+        .from('transactions')
+        .select('amount, created_at')
+        .eq('type', 'saque') // Tipo correto do ENUM
+        .eq('status', 'completed')
+        .gte('created_at', weekAgo.toISOString());
+
+      console.log('💵 [DASHBOARD] Saques SEMANA encontrados:', completedWithdrawalsWeek?.length || 0);
+
+      const totalWithdrawnWeek = (completedWithdrawalsWeek?.reduce(
+        (sum, w) => sum + parseFloat(w.amount), 
+        0
+      ) || 0) / 100;
+
+      const platformProfitWeek = totalWithdrawnWeek * 0.08;
+      
+      console.log('💵 [DASHBOARD] Total sacado SEMANA:', totalWithdrawnWeek, 'reais');
+      console.log('💵 [DASHBOARD] Lucro SEMANA (8%):', platformProfitWeek, 'reais');
+
+      // 5.3 Saques aprovados no MÊS (APENAS apostadores)
+      console.log('💵 [DASHBOARD] Data início do mês:', startOfMonth.toISOString());
+      
+      const { data: completedWithdrawalsMonth } = await supabase
+        .from('transactions')
+        .select('amount, created_at')
+        .eq('type', 'saque') // Tipo correto do ENUM
+        .eq('status', 'completed')
+        .gte('created_at', startOfMonth.toISOString());
+
+      console.log('💵 [DASHBOARD] Saques MÊS encontrados:', completedWithdrawalsMonth?.length || 0);
+
+      const totalWithdrawnMonth = (completedWithdrawalsMonth?.reduce(
+        (sum, w) => sum + parseFloat(w.amount), 
+        0
+      ) || 0) / 100;
+
+      const platformProfitMonth = totalWithdrawnMonth * 0.08;
+      
+      console.log('💵 [DASHBOARD] Total sacado MÊS:', totalWithdrawnMonth, 'reais');
+      console.log('💵 [DASHBOARD] Lucro MÊS (8%):', platformProfitMonth, 'reais');
+
+      // 5.4 Saques aprovados TOTAL (APENAS apostadores)
+      // Usar coluna total_withdrawn das carteiras para maior eficiência
+      const { data: walletsWithdrawn } = await supabase
+        .from('wallet')
+        .select('total_withdrawn');
+
+      const totalWithdrawnTotal = (walletsWithdrawn?.reduce(
+        (sum, w) => sum + parseFloat(w.total_withdrawn || 0), 
+        0
+      ) || 0) / 100;
+
+      const platformProfitTotal = totalWithdrawnTotal * 0.08;
+      
+      console.log('\n💵 [DASHBOARD - LUCRO] Total sacado GERAL: R$', totalWithdrawnTotal.toFixed(2));
+      console.log('💵 [DASHBOARD - LUCRO] Lucro TOTAL (8%): R$', platformProfitTotal.toFixed(2));
+      console.log('='.repeat(80));
+      console.log('💵 [DASHBOARD - LUCRO] 📊 RESUMO FINAL DOS LUCROS:');
+      console.log('   💰 Hoje: R$', platformProfitToday.toFixed(2));
+      console.log('   💰 Semana: R$', platformProfitWeek.toFixed(2));
+      console.log('   💰 Mês: R$', platformProfitMonth.toFixed(2));
+      console.log('   💰 Total: R$', platformProfitTotal.toFixed(2));
+      console.log('='.repeat(80) + '\n');
+
+      // 6. Depósitos hoje
+      const { data: depositsToday } = await supabase
+        .from('transactions')
+        .select('amount')
+        .eq('type', 'deposit')
+        .eq('status', 'completed')
+        .gte('created_at', today.toISOString());
+
+      const totalDepositsToday = (depositsToday?.reduce(
+        (sum, d) => sum + parseFloat(d.amount), 
+        0
+      ) || 0) / 100;
+
+      // 7. Saldo total das carteiras (apenas saldo real, não fake)
+      const { data: wallets } = await supabase
+        .from('wallet')
+        .select('balance, fake_balance');
+
+      // Saldo real = balance - fake_balance (pois balance inclui fake)
+      const totalRealBalance = (wallets?.reduce(
+        (sum, w) => {
+          const balance = parseFloat(w.balance || 0);
+          const fakeBalance = parseFloat(w.fake_balance || 0);
+          return sum + (balance - fakeBalance);
+        }, 
+        0
+      ) || 0) / 100;
+
+      const totalFakeBalance = (wallets?.reduce(
+        (sum, w) => sum + parseFloat(w.fake_balance || 0), 
+        0
+      ) || 0) / 100;
+
+      const totalBalance = totalRealBalance + totalFakeBalance; // Saldo total (real + fake)
+
+      // 8. Total de apostas emparceiradas (matched)
+      const { data: matchedBets } = await supabase
+        .from('bets')
+        .select('amount')
+        .eq('status', 'matched');
+
+      const totalMatchedBets = (matchedBets?.reduce(
+        (sum, bet) => sum + parseFloat(bet.amount), 
+        0
+      ) || 0) / 100;
+
+      const matchedBetsCount = matchedBets?.length || 0;
+
+      // 9. Novos usuários (últimos 7 dias, por dia)
       const last7Days = [];
       for (let i = 6; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        date.setHours(0, 0, 0, 0);
-        
-        const nextDate = new Date(date);
-        nextDate.setDate(nextDate.getDate() + 1);
+        const date = getBrazilDate(i);
+        const nextDate = getBrazilDate(i - 1);
 
         const { count } = await supabase
           .from('users')
@@ -123,15 +282,11 @@ class AdminService {
         });
       }
 
-      // 7. Apostas por dia (últimos 7 dias)
+      // 10. Apostas por dia (últimos 7 dias)
       const betsLast7Days = [];
       for (let i = 6; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        date.setHours(0, 0, 0, 0);
-        
-        const nextDate = new Date(date);
-        nextDate.setDate(nextDate.getDate() + 1);
+        const date = getBrazilDate(i);
+        const nextDate = getBrazilDate(i - 1);
 
         const { data: dayBets } = await supabase
           .from('bets')
@@ -153,13 +308,27 @@ class AdminService {
         users: {
           total: totalUsers || 0,
           active: activeUsers || 0,
-          inactive: (totalUsers || 0) - (activeUsers || 0)
+          inactive: (totalUsers || 0) - (activeUsers || 0),
+          today: usersToday || 0
         },
-        matches: matchesByStatus,
+        matches: {
+          ...matchesByStatus,
+          scheduled: matchesByStatus.open
+        },
         bets: {
           today: totalBetsToday,
           month: totalBetsMonth,
-          total: totalBetsAll
+          total: totalBetsAll,
+          matched_count: matchedBetsCount
+        },
+        deposits: {
+          today: totalDepositsToday
+        },
+        wallets: {
+          real_balance: totalRealBalance,
+          fake_balance: totalFakeBalance,
+          total_balance: totalBalance,
+          matched_bets_total: totalMatchedBets
         },
         withdrawals: {
           pending: {
@@ -167,11 +336,25 @@ class AdminService {
             total: totalPendingWithdrawals
           },
           completed: {
-            total: totalWithdrawn
+            total: totalWithdrawnTotal,
+            today: totalWithdrawnToday,
+            week: totalWithdrawnWeek,
+            month: totalWithdrawnMonth
           }
         },
         platform: {
-          profit: platformProfit,
+          profit: {
+            today: platformProfitToday,
+            week: platformProfitWeek,
+            month: platformProfitMonth,
+            total: platformProfitTotal
+          },
+          withdrawals: {
+            today: totalWithdrawnToday,
+            week: totalWithdrawnWeek,
+            month: totalWithdrawnMonth,
+            total: totalWithdrawnTotal
+          },
           profitPercentage: 8
         },
         charts: {
@@ -519,35 +702,112 @@ class AdminService {
    */
   async approveWithdrawal(withdrawalId) {
     try {
-      // Atualizar status para completed
-      const { data, error } = await supabase
+      console.log('='.repeat(80));
+      console.log('💰 [APPROVE_WITHDRAWAL] Iniciando aprovação de saque');
+      console.log('💰 [APPROVE_WITHDRAWAL] ID do saque:', withdrawalId);
+      console.log('='.repeat(80));
+
+      // 1. Buscar dados do saque
+      console.log('📋 [APPROVE_WITHDRAWAL] Passo 1: Buscando dados do saque...');
+      const { data: withdrawal, error: fetchError } = await supabase
         .from('transactions')
-        .update({ 
-          status: 'completed',
-          updated_at: new Date().toISOString()
-        })
+        .select('*')
         .eq('id', withdrawalId)
-        .eq('type', 'withdraw')
+        .eq('type', 'saque')
         .eq('status', 'pending')
-        .select()
         .single();
 
-      if (error) {
-        throw error;
+      if (fetchError) {
+        console.error('❌ [APPROVE_WITHDRAWAL] Erro ao buscar saque:', fetchError);
+        throw fetchError;
       }
 
-      if (!data) {
+      if (!withdrawal) {
+        console.error('❌ [APPROVE_WITHDRAWAL] Saque não encontrado!');
         throw {
           code: 'NOT_FOUND',
           message: 'Saque não encontrado ou já processado'
         };
       }
 
+      console.log('✅ [APPROVE_WITHDRAWAL] Saque encontrado:');
+      console.log('   - User ID:', withdrawal.user_id);
+      console.log('   - Valor:', parseFloat(withdrawal.amount) / 100, 'reais');
+      console.log('   - Status atual:', withdrawal.status);
+      console.log('   - Data criação:', withdrawal.created_at);
+
+      // 2. Atualizar status para completed
+      console.log('📝 [APPROVE_WITHDRAWAL] Passo 2: Atualizando status para completed...');
+      const { data, error } = await supabase
+        .from('transactions')
+        .update({ 
+          status: 'completed',
+          processed_at: new Date().toISOString()
+        })
+        .eq('id', withdrawalId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ [APPROVE_WITHDRAWAL] Erro ao atualizar transação:', error);
+        throw error;
+      }
+
+      console.log('✅ [APPROVE_WITHDRAWAL] Status atualizado para completed');
+      console.log('   - Processado em:', data.processed_at);
+
+      // 3. Atualizar total_withdrawn na carteira
+      console.log('💳 [APPROVE_WITHDRAWAL] Passo 3: Atualizando total_withdrawn da carteira...');
+      const { data: wallet, error: walletFetchError } = await supabase
+        .from('wallet')
+        .select('total_withdrawn')
+        .eq('user_id', withdrawal.user_id)
+        .single();
+
+      if (walletFetchError) {
+        console.error('❌ [APPROVE_WITHDRAWAL] Erro ao buscar carteira:', walletFetchError);
+      } else if (!wallet) {
+        console.error('❌ [APPROVE_WITHDRAWAL] Carteira não encontrada!');
+      } else {
+        const currentTotalWithdrawn = parseFloat(wallet.total_withdrawn || 0);
+        const withdrawalAmount = parseFloat(withdrawal.amount);
+        const newTotalWithdrawn = currentTotalWithdrawn + withdrawalAmount;
+        
+        console.log('💰 [APPROVE_WITHDRAWAL] Valores:');
+        console.log('   - total_withdrawn anterior:', currentTotalWithdrawn / 100, 'reais');
+        console.log('   - Valor do saque:', withdrawalAmount / 100, 'reais');
+        console.log('   - total_withdrawn novo:', newTotalWithdrawn / 100, 'reais');
+
+        const { error: updateError } = await supabase
+          .from('wallet')
+          .update({
+            total_withdrawn: newTotalWithdrawn
+          })
+          .eq('user_id', withdrawal.user_id);
+
+        if (updateError) {
+          console.error('❌ [APPROVE_WITHDRAWAL] Erro ao atualizar total_withdrawn:', updateError);
+        } else {
+          console.log('✅ [APPROVE_WITHDRAWAL] total_withdrawn atualizado com sucesso!');
+          console.log('   - Novo total_withdrawn:', newTotalWithdrawn / 100, 'reais');
+          
+          // Calcular taxa de 8%
+          const fee = (withdrawalAmount / 100) * 0.08;
+          console.log('💵 [APPROVE_WITHDRAWAL] Taxa da plataforma (8%):', fee, 'reais');
+        }
+      }
+
+      console.log('='.repeat(80));
+      console.log('✅ [APPROVE_WITHDRAWAL] Saque aprovado com sucesso!');
+      console.log('='.repeat(80));
+
       return data;
     } catch (error) {
       if (error.code === 'NOT_FOUND') throw error;
       
-      console.error('Erro ao aprovar saque:', error);
+      console.error('='.repeat(80));
+      console.error('❌ [APPROVE_WITHDRAWAL] ERRO ao aprovar saque:', error);
+      console.error('='.repeat(80));
       throw {
         code: 'DATABASE_ERROR',
         message: 'Erro ao aprovar saque',
@@ -561,58 +821,335 @@ class AdminService {
    */
   async rejectWithdrawal(withdrawalId, reason) {
     try {
+      console.log('='.repeat(80));
+      console.log('❌ [REJECT_WITHDRAWAL] Iniciando rejeição de saque');
+      console.log('❌ [REJECT_WITHDRAWAL] ID do saque:', withdrawalId);
+      console.log('❌ [REJECT_WITHDRAWAL] Motivo:', reason);
+      console.log('='.repeat(80));
+
       // 1. Buscar dados do saque
+      console.log('📋 [REJECT_WITHDRAWAL] Passo 1: Buscando dados do saque...');
       const { data: withdrawal, error: fetchError } = await supabase
         .from('transactions')
         .select('*')
         .eq('id', withdrawalId)
-        .eq('type', 'withdraw')
+        .eq('type', 'saque')
         .eq('status', 'pending')
         .single();
 
-      if (fetchError || !withdrawal) {
+      if (fetchError) {
+        console.error('❌ [REJECT_WITHDRAWAL] Erro ao buscar saque:', fetchError);
+        throw fetchError;
+      }
+
+      if (!withdrawal) {
+        console.error('❌ [REJECT_WITHDRAWAL] Saque não encontrado!');
         throw {
           code: 'NOT_FOUND',
           message: 'Saque não encontrado ou já processado'
         };
       }
 
+      console.log('✅ [REJECT_WITHDRAWAL] Saque encontrado:');
+      console.log('   - User ID:', withdrawal.user_id);
+      console.log('   - Valor:', parseFloat(withdrawal.amount) / 100, 'reais');
+      console.log('   - Status atual:', withdrawal.status);
+
       // 2. Atualizar status para failed
+      console.log('📝 [REJECT_WITHDRAWAL] Passo 2: Atualizando status para failed...');
       const { data: updatedWithdrawal, error: updateError } = await supabase
         .from('transactions')
         .update({ 
           status: 'failed',
-          description: `Recusado: ${reason}`,
-          updated_at: new Date().toISOString()
+          description: `${withdrawal.description || 'Saque via Pix'} - Rejeitado: ${reason}`,
+          processed_at: new Date().toISOString()
         })
         .eq('id', withdrawalId)
         .select()
         .single();
 
       if (updateError) {
+        console.error('❌ [REJECT_WITHDRAWAL] Erro ao atualizar transação:', updateError);
         throw updateError;
       }
 
-      // 3. Devolver valor para saldo disponível do usuário
+      console.log('✅ [REJECT_WITHDRAWAL] Status atualizado para failed');
+
+      // 3. Buscar saldo atual do usuário
+      console.log('💳 [REJECT_WITHDRAWAL] Passo 3: Buscando saldo da carteira...');
+      const { data: wallet, error: walletFetchError } = await supabase
+        .from('wallet')
+        .select('balance')
+        .eq('user_id', withdrawal.user_id)
+        .single();
+
+      if (walletFetchError || !wallet) {
+        console.error('❌ [REJECT_WITHDRAWAL] Erro ao buscar carteira:', walletFetchError);
+        throw {
+          code: 'NOT_FOUND',
+          message: 'Carteira do usuário não encontrada'
+        };
+      }
+
+      // 4. Calcular novo saldo (devolver o valor do saque)
+      const currentBalance = parseFloat(wallet.balance);
+      const withdrawalAmount = parseFloat(withdrawal.amount);
+      const newBalance = currentBalance + withdrawalAmount;
+
+      console.log('💰 [REJECT_WITHDRAWAL] Devolvendo saldo:');
+      console.log('   - Saldo atual:', currentBalance / 100, 'reais');
+      console.log('   - Valor a devolver:', withdrawalAmount / 100, 'reais');
+      console.log('   - Novo saldo:', newBalance / 100, 'reais');
+
+      // 5. Atualizar saldo da carteira
+      console.log('💳 [REJECT_WITHDRAWAL] Passo 4: Atualizando saldo da carteira...');
       const { error: walletError } = await supabase
         .from('wallet')
         .update({
-          balance: supabase.raw(`balance + ${withdrawal.amount}`)
+          balance: newBalance
         })
         .eq('user_id', withdrawal.user_id);
 
       if (walletError) {
+        console.error('❌ [REJECT_WITHDRAWAL] Erro ao atualizar carteira:', walletError);
         throw walletError;
       }
+
+      console.log('✅ [REJECT_WITHDRAWAL] Saldo devolvido com sucesso!');
+      console.log('   - Novo saldo disponível:', newBalance / 100, 'reais');
+
+      console.log('='.repeat(80));
+      console.log('✅ [REJECT_WITHDRAWAL] Saque rejeitado com sucesso!');
+      console.log('='.repeat(80));
 
       return updatedWithdrawal;
     } catch (error) {
       if (error.code === 'NOT_FOUND') throw error;
       
-      console.error('Erro ao recusar saque:', error);
+      console.error('='.repeat(80));
+      console.error('❌ [REJECT_WITHDRAWAL] ERRO ao rejeitar saque:', error);
+      console.error('='.repeat(80));
       throw {
         code: 'DATABASE_ERROR',
         message: 'Erro ao recusar saque',
+        details: error.message
+      };
+    }
+  }
+
+  // ============================================================
+  // DEPÓSITOS (DEPOSITS)
+  // ============================================================
+
+  /**
+   * Lista depósitos com filtros
+   */
+  async getDeposits({ page = 1, limit = 20, status = null }) {
+    try {
+      const offset = (page - 1) * limit;
+
+      let query = supabase
+        .from('transactions')
+        .select(`
+          *,
+          user:users(id, name, email, cpf, phone)
+        `, { count: 'exact' })
+        .eq('type', 'deposit');
+
+      // Filtro por status
+      if (status) {
+        query = query.eq('status', status);
+      }
+
+      const { data, error, count } = await query
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (error) {
+        throw error;
+      }
+
+      return {
+        deposits: data,
+        pagination: {
+          page,
+          limit,
+          total: count,
+          totalPages: Math.ceil(count / limit)
+        }
+      };
+    } catch (error) {
+      console.error('Erro ao listar depósitos:', error);
+      throw {
+        code: 'DATABASE_ERROR',
+        message: 'Erro ao listar depósitos',
+        details: error.message
+      };
+    }
+  }
+
+  /**
+   * Busca detalhes de um depósito específico
+   */
+  async getDepositById(depositId) {
+    try {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select(`
+          *,
+          user:users(id, name, email, cpf, phone)
+        `)
+        .eq('id', depositId)
+        .eq('type', 'deposit')
+        .single();
+
+      if (error || !data) {
+        throw {
+          code: 'NOT_FOUND',
+          message: 'Depósito não encontrado'
+        };
+      }
+
+      return data;
+    } catch (error) {
+      if (error.code === 'NOT_FOUND') throw error;
+      
+      console.error('Erro ao buscar depósito:', error);
+      throw {
+        code: 'DATABASE_ERROR',
+        message: 'Erro ao buscar depósito',
+        details: error.message
+      };
+    }
+  }
+
+  /**
+   * Aprova um depósito manualmente (marca como completed)
+   */
+  async approveDeposit(depositId) {
+    try {
+      // 1. Buscar dados do depósito
+      const { data: deposit, error: fetchError } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('id', depositId)
+        .eq('type', 'deposit')
+        .eq('status', 'pending')
+        .single();
+
+      if (fetchError || !deposit) {
+        throw {
+          code: 'NOT_FOUND',
+          message: 'Depósito não encontrado ou já processado'
+        };
+      }
+
+      // 2. Buscar carteira do usuário
+      const { data: wallet, error: walletError } = await supabase
+        .from('wallet')
+        .select('balance, total_deposited')
+        .eq('user_id', deposit.user_id)
+        .single();
+
+      if (walletError || !wallet) {
+        throw {
+          code: 'NOT_FOUND',
+          message: 'Carteira do usuário não encontrada'
+        };
+      }
+
+      // 3. Calcular novos valores
+      const depositAmount = parseFloat(deposit.amount);
+      const newBalance = parseFloat(wallet.balance) + depositAmount;
+      const newTotalDeposited = parseFloat(wallet.total_deposited || 0) + depositAmount;
+
+      // 4. Atualizar carteira
+      const { error: updateWalletError } = await supabase
+        .from('wallet')
+        .update({
+          balance: newBalance,
+          total_deposited: newTotalDeposited
+        })
+        .eq('user_id', deposit.user_id);
+
+      if (updateWalletError) {
+        throw updateWalletError;
+      }
+
+      // 5. Atualizar status do depósito
+      const { data: updatedDeposit, error: updateDepositError } = await supabase
+        .from('transactions')
+        .update({
+          status: 'completed',
+          balance_after: newBalance,
+          processed_at: new Date().toISOString(),
+          metadata: {
+            ...deposit.metadata,
+            approved_manually: true,
+            approved_at: new Date().toISOString()
+          }
+        })
+        .eq('id', depositId)
+        .select()
+        .single();
+
+      if (updateDepositError) {
+        throw updateDepositError;
+      }
+
+      return updatedDeposit;
+    } catch (error) {
+      if (error.code === 'NOT_FOUND') throw error;
+      
+      console.error('Erro ao aprovar depósito:', error);
+      throw {
+        code: 'DATABASE_ERROR',
+        message: 'Erro ao aprovar depósito',
+        details: error.message
+      };
+    }
+  }
+
+  /**
+   * Rejeita um depósito (marca como failed)
+   */
+  async rejectDeposit(depositId, reason) {
+    try {
+      const { data, error } = await supabase
+        .from('transactions')
+        .update({
+          status: 'failed',
+          description: `Depósito rejeitado: ${reason}`,
+          metadata: {
+            rejected_at: new Date().toISOString(),
+            rejection_reason: reason
+          }
+        })
+        .eq('id', depositId)
+        .eq('type', 'deposit')
+        .eq('status', 'pending')
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data) {
+        throw {
+          code: 'NOT_FOUND',
+          message: 'Depósito não encontrado ou já processado'
+        };
+      }
+
+      return data;
+    } catch (error) {
+      if (error.code === 'NOT_FOUND') throw error;
+      
+      console.error('Erro ao rejeitar depósito:', error);
+      throw {
+        code: 'DATABASE_ERROR',
+        message: 'Erro ao rejeitar depósito',
         details: error.message
       };
     }
@@ -1056,4 +1593,5 @@ class AdminService {
 }
 
 module.exports = new AdminService();
+
 

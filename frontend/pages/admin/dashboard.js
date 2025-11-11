@@ -5,7 +5,7 @@
  */
 
 import { useEffect } from 'react';
-import { Users, Trophy, Target, DollarSign, TrendingUp, UserPlus, CreditCard, Wallet, Calendar, Coins, DollarSign as DollarSolid } from 'lucide-react';
+import { Users, Trophy, Target, DollarSign, TrendingUp, UserPlus, CreditCard, Calendar, Coins, DollarSign as DollarSolid } from 'lucide-react';
 import { useDashboardStats } from '../../hooks/admin/useDashboardStats';
 import useAdminStore from '../../store/adminStore';
 import CardInfo from '../../components/admin/CardInfo';
@@ -102,16 +102,16 @@ export default function Dashboard() {
         />
 
         <CardInfo
-          title="Saldo Total dos Jogadores"
-          value={stats?.wallets?.total_balance || 0}
+          title="Saldo Real Total"
+          value={stats?.wallets?.real_balance || 0}
           isCurrency
           icon={<Coins size={24} />}
-          trend={`Fake: ${formatCurrency(stats?.wallets?.fake_balance || 0)}`}
+          trend="Saldo disponível dos jogadores"
           className="border-yellow-500"
         />
 
         <CardInfo
-          title="Saldo Total Casado"
+          title="Saldo em Apostas"
           value={stats?.wallets?.matched_bets_total || 0}
           isCurrency
           icon={<DollarSolid size={24} />}
@@ -127,22 +127,19 @@ export default function Dashboard() {
           trend={`${stats?.withdrawals?.pending?.count || 0} solicitações`}
           className="border-status-warning"
         />
-
-        <CardInfo
-          title="Saldo Fake Total"
-          value={stats?.wallets?.fake_balance || 0}
-          isCurrency
-          icon={<Wallet size={24} />}
-          trend="Créditos manuais"
-          className="border-purple-500"
-        />
         
         <CardInfo
           title="Lucro Plataforma (8%)"
-          value={stats?.platform?.profit || 0}
+          value={stats?.platform?.profit?.month || 0}
           isCurrency
           icon={<TrendingUp size={24} />}
-          trend={`De ${formatCurrency(stats?.withdrawals?.completed?.total || 0)} em saques`}
+          trend={
+            <div className="text-xs space-y-0.5">
+              <div>Hoje: {formatCurrency(stats?.platform?.profit?.today || 0)}</div>
+              <div>Semana: {formatCurrency(stats?.platform?.profit?.week || 0)}</div>
+              <div>Mês: {formatCurrency(stats?.platform?.profit?.month || 0)}</div>
+            </div>
+          }
           className="border-admin-green"
         />
       </div>

@@ -159,4 +159,46 @@ router.delete('/matches/:matchId', authenticateToken, (req, res) => {
   adminController.deleteMatch(req, res);
 });
 
+/**
+ * ============================================================
+ * ROTAS DE DEPÓSITOS (ADMIN)
+ * ============================================================
+ */
+
+/**
+ * @route   GET /api/admin/deposits
+ * @desc    Lista todos os depósitos com filtros
+ * @access  Private (Admin only)
+ */
+router.get('/deposits', authenticateToken, (req, res) => {
+  adminController.getDeposits(req, res);
+});
+
+/**
+ * @route   GET /api/admin/deposits/:id
+ * @desc    Obtém detalhes de um depósito específico
+ * @access  Private (Admin only)
+ */
+router.get('/deposits/:id', authenticateToken, (req, res) => {
+  adminController.getDepositById(req, res);
+});
+
+/**
+ * @route   POST /api/admin/deposits/:id/approve
+ * @desc    Aprova um depósito manualmente
+ * @access  Private (Admin only)
+ */
+router.post('/deposits/:id/approve', authenticateToken, (req, res) => {
+  adminController.approveDeposit(req, res);
+});
+
+/**
+ * @route   POST /api/admin/deposits/:id/reject
+ * @desc    Rejeita um depósito
+ * @access  Private (Admin only)
+ */
+router.post('/deposits/:id/reject', authenticateToken, (req, res) => {
+  adminController.rejectDeposit(req, res);
+});
+
 module.exports = router;

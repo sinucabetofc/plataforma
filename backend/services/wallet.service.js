@@ -162,7 +162,7 @@ class WalletService {
         .insert({
           wallet_id: wallet.id,
           user_id: userId,
-          type: 'deposito',
+          type: 'deposit',
           amount: amountInCents, // ✅ Salvar em CENTAVOS
           balance_before: currentBalance,
           balance_after: currentBalance, // Não muda até webhook confirmar
@@ -324,7 +324,7 @@ class WalletService {
         .from('transactions')
         .select('id, user_id, amount, status, metadata')
         .eq('metadata->>correlationID', correlationID)
-        .eq('type', 'deposito')
+        .eq('type', 'deposit')
         .single();
 
       if (transactionError) {

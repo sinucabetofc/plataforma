@@ -121,8 +121,11 @@ class WalletController {
    */
   async wooviWebhook(req, res) {
     try {
-      console.log('📥 Webhook Woovi recebido:', JSON.stringify(req.body, null, 2));
-      console.log('📥 Headers:', JSON.stringify(req.headers, null, 2));
+      console.log('='.repeat(80));
+      console.log('📥 [WEBHOOK] Woovi webhook recebido em:', new Date().toISOString());
+      console.log('📥 [WEBHOOK] Body:', JSON.stringify(req.body, null, 2));
+      console.log('📥 [WEBHOOK] Headers:', JSON.stringify(req.headers, null, 2));
+      console.log('='.repeat(80));
 
       // Verificar se é webhook de teste
       if (req.body.evento === 'teste_webhook' || req.body.event === 'teste_webhook') {

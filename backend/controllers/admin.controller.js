@@ -8,6 +8,7 @@ const { supabase } = require('../config/supabase.config');
 const { successResponse, errorResponse, notFoundResponse } = require('../utils/response.util');
 const matchesService = require('../services/matches.service');
 const fakeStatsService = require('../services/fake-stats.service');
+const adminService = require('../services/admin.service');
 
 class AdminController {
   /**
@@ -1395,6 +1396,94 @@ class AdminController {
     } catch (error) {
       console.error('Erro ao buscar estatísticas fake:', error);
       return errorResponse(res, 500, 'Erro ao buscar estatísticas fake');
+    }
+  }
+
+  /**
+   * GET /api/admin/deposits
+   * Lista depósitos com filtros
+   */
+  async getDeposits(req, res) {
+    try {
+      const { page = 1, limit = 20, status = null } = req.query;
+
+      const result = await adminService.getDeposits({
+        page: parseInt(page),
+        limit: parseInt(limit),
+        status
+      });
+
+      return successResponse(res, 200, 'Depósitos obtidos com sucesso', result);
+    } catch (error) {
+      console.error('Erro ao buscar depósitos:', error);
+      return errorResponse(res, 500, 'Erro ao buscar depósitos');
+    }
+  }
+
+  /**
+   * GET /api/admin/deposits/:id
+   * Busca depósito por ID
+   */
+  async getDepositById(req, res) {
+    try {
+      const { id } = req.params;
+
+      const deposit = await adminService.getDepositById(id);
+
+      return successResponse(res, 200, 'Depósito obtido com sucesso', deposit);
+    } catch (error) {
+      console.error('Erro ao buscar depósito:', error);
+
+      if (error.code === 'NOT_FOUND') {
+        return notFoundResponse(res, error.message);
+      }
+
+      return errorResponse(res, 500, 'Erro ao buscar depósito');
+    }
+  }
+
+  /**
+   * POST /api/admin/deposits/:id/approve
+   * Aprova um depósito manualmente
+   */
+  async approveDeposit(req, res) {
+    try {
+      const { id } = req.params;
+
+      const deposit = await adminService.approveDeposit(id);
+
+      return successResponse(res, 200, 'Depósito aprovado com sucesso', deposit);
+    } catch (error) {
+      console.error('Erro ao aprovar depósito:', error);
+
+      if (error.code === 'NOT_FOUND') {
+        return notFoundResponse(res, error.message);
+      }
+
+      return errorResponse(res, 500, 'Erro ao aprovar depósito');
+    }
+  }
+
+  /**
+   * POST /api/admin/deposits/:id/reject
+   * Rejeita um depósito
+   */
+  async rejectDeposit(req, res) {
+    try {
+      const { id } = req.params;
+      const { reason = 'Depósito rejeitado pelo administrador' } = req.body;
+
+      const deposit = await adminService.rejectDeposit(id, reason);
+
+      return successResponse(res, 200, 'Depósito rejeitado com sucesso', deposit);
+    } catch (error) {
+      console.error('Erro ao rejeitar depósito:', error);
+
+      if (error.code === 'NOT_FOUND') {
+        return notFoundResponse(res, error.message);
+      }
+
+      return errorResponse(res, 500, 'Erro ao rejeitar depósito');
     }
   }
 }
