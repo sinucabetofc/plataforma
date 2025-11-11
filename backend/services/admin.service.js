@@ -254,14 +254,15 @@ class AdminService {
 
       const totalBalance = totalRealBalance + totalFakeBalance; // Saldo total (real + fake)
 
-      // 8. Total de apostas emparceiradas (matched)
+      // 8. Total de apostas emparceiradas (aceita + parcialmente_aceita)
       const { data: matchedBets } = await supabase
         .from('bets')
-        .select('amount')
-        .eq('status', 'matched');
+        .select('amount, matched_amount')
+        .in('status', ['matched', 'aceita', 'parcialmente_aceita']);
 
+      // Somar matched_amount (valor realmente casado) ao invés de amount total
       const totalMatchedBets = (matchedBets?.reduce(
-        (sum, bet) => sum + parseFloat(bet.amount), 
+        (sum, bet) => sum + parseFloat(bet.matched_amount || bet.amount || 0), 
         0
       ) || 0) / 100;
 

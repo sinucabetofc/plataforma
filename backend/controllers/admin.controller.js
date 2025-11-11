@@ -72,7 +72,7 @@ class AdminController {
       // 3. Estatísticas de Apostas
       const { data: betsData, error: betsError } = await supabase
         .from('bets')
-        .select('id, amount, created_at, status');
+        .select('id, amount, matched_amount, remaining_amount, created_at, status');
 
       if (betsError) {
         console.error('Erro ao buscar apostas:', betsError);
@@ -82,9 +82,16 @@ class AdminController {
       const totalBetsInCents = betsData?.reduce((sum, bet) => sum + parseFloat(bet.amount || 0), 0) || 0;
       const totalBets = totalBetsInCents / 100;
 
-      // Calcular total de apostas CASADAS (status = 'aceita')
-      const matchedBetsData = betsData?.filter(bet => bet.status === 'aceita') || [];
-      const totalMatchedBetsInCents = matchedBetsData.reduce((sum, bet) => sum + parseFloat(bet.amount || 0), 0) || 0;
+      // Calcular total de apostas CASADAS (aceita + parcialmente_aceita)
+      const matchedBetsData = betsData?.filter(bet => 
+        bet.status === 'aceita' || bet.status === 'parcialmente_aceita' || bet.status === 'matched'
+      ) || [];
+      
+      // Somar matched_amount (valor realmente casado) ao invés de amount total
+      const totalMatchedBetsInCents = matchedBetsData.reduce(
+        (sum, bet) => sum + parseFloat(bet.matched_amount || bet.amount || 0), 
+        0
+      ) || 0;
       const totalMatchedBets = totalMatchedBetsInCents / 100;
       
       // Apostas do mês
