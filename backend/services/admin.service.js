@@ -305,6 +305,13 @@ class AdminService {
       }
 
       return {
+        debug: {
+          timestamp: new Date().toISOString(),
+          today_date: today.toISOString(),
+          withdrawals_today_count: completedWithdrawalsToday?.length || 0,
+          withdrawals_today_total: totalWithdrawnToday,
+          profit_today: platformProfitToday
+        },
         users: {
           total: totalUsers || 0,
           active: activeUsers || 0,
