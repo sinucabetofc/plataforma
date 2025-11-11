@@ -34,6 +34,14 @@ class AdminService {
         return new Date(Date.UTC(year, month, day, 3, 0, 0, 0));
       };
 
+      // ✅ CORREÇÃO: Declarar today antes de usar
+      const today = getBrazilDate(0); // Início do dia de hoje no Brasil
+      
+      // Início do mês no Brasil
+      const now = new Date();
+      const brazilNow = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+      const startOfMonth = new Date(Date.UTC(brazilNow.getUTCFullYear(), brazilNow.getUTCMonth(), 1, 3, 0, 0, 0));
+
       // 1. Total de usuários (ativos e inativos)
       const { count: totalUsers, error: usersError } = await supabase
         .from('users')
@@ -70,13 +78,8 @@ class AdminService {
       });
 
       // 3. Total apostado (hoje, mês e total)
-      const today = getBrazilDate(0); // Início do dia de hoje no Brasil
+      // today e startOfMonth já foram declarados acima
       
-      // Início do mês no Brasil
-      const now = new Date();
-      const brazilNow = new Date(now.getTime() - 3 * 60 * 60 * 1000);
-      const startOfMonth = new Date(Date.UTC(brazilNow.getUTCFullYear(), brazilNow.getUTCMonth(), 1, 3, 0, 0, 0));
-
       const { data: betsToday } = await supabase
         .from('bets')
         .select('amount')
@@ -304,6 +307,32 @@ class AdminService {
         });
       }
 
+      // 11. Lucro por dia (últimos 7 dias)
+      const profitLast7Days = [];
+      for (let i = 6; i >= 0; i--) {
+        const date = getBrazilDate(i);
+        const nextDate = getBrazilDate(i - 1);
+
+        const { data: dayWithdrawals } = await supabase
+          .from('transactions')
+          .select('amount')
+          .eq('type', 'saque')
+          .eq('status', 'completed')
+          .gte('created_at', date.toISOString())
+          .lt('created_at', nextDate.toISOString());
+
+        // Valores em centavos, converter para reais
+        const totalWithdrawn = (dayWithdrawals?.reduce((sum, w) => sum + parseFloat(w.amount), 0) || 0) / 100;
+        const profit = totalWithdrawn * 0.08; // 8% de taxa
+
+        profitLast7Days.push({
+          date: date.toISOString().split('T')[0],
+          lucro: profit,
+          saques: totalWithdrawn,
+          count: dayWithdrawals?.length || 0
+        });
+      }
+
       return {
         debug: {
           timestamp: new Date().toISOString(),
@@ -366,7 +395,8 @@ class AdminService {
         },
         charts: {
           newUsersLast7Days: last7Days,
-          betsLast7Days: betsLast7Days
+          betsLast7Days: betsLast7Days,
+          profitLast7Days: profitLast7Days
         }
       };
     } catch (error) {

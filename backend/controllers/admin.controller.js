@@ -22,6 +22,27 @@ class AdminController {
         return errorResponse(res, 403, 'Acesso negado. Apenas administradores.');
       }
 
+      // Usar o service que tem a lógica correta e completa
+      const stats = await adminService.getDashboardStats();
+
+      return successResponse(res, 200, 'Estatísticas obtidas com sucesso', stats);
+    } catch (error) {
+      console.error('Erro ao buscar estatísticas:', error);
+      return errorResponse(res, 500, 'Erro ao buscar estatísticas do dashboard');
+    }
+  }
+
+  // ============================================================
+  // VERSÃO ANTIGA DO getDashboardStats (DEPRECATED - NÃO USAR)
+  // Mantido aqui apenas para referência, mas não é mais usado
+  // ============================================================
+  async getDashboardStats_OLD(req, res) {
+    try {
+      // Verificar se o usuário é admin
+      if (req.user.role !== 'admin') {
+        return errorResponse(res, 403, 'Acesso negado. Apenas administradores.');
+      }
+
       // 1. Estatísticas de Usuários
       const { data: usersData, error: usersError } = await supabase
         .from('users')
@@ -325,7 +346,7 @@ class AdminController {
           matched_bets_total: totalMatchedBets // Total de apostas casadas
         },
         platform: {
-          profit: platformProfit
+          profit: platformProfit  // ⚠️ PROBLEMA: Retorna só número, não objeto
         },
         charts: {
           betsLast7Days,
@@ -339,6 +360,7 @@ class AdminController {
       return errorResponse(res, 500, 'Erro ao buscar estatísticas do dashboard');
     }
   }
+  // FIM DA VERSÃO ANTIGA (DEPRECATED)
 
   /**
    * GET /api/admin/users

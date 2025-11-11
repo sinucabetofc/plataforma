@@ -82,3 +82,4 @@ No Render.com, vá para os logs do backend e verifique:
 **Criado em**: 08/11/2025  
 **Solução**: Use URL do backend (Render), não do frontend (Vercel)
 
+

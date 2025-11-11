@@ -180,3 +180,4 @@ WHERE b.status = 'cancelada';
 SELECT '✅ [MIGRATION 1014] Correção de duplo reembolso concluída!' as status;
 
 
+

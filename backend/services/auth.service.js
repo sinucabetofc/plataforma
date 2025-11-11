@@ -65,23 +65,37 @@ class AuthService {
       console.log('✅ [REGISTER] Usuário criado no Supabase Auth:', authData.user.id);
       console.log('⏳ [REGISTER] Aguardando trigger criar registro em public.users...');
 
-      // 3. Aguardar um pouco para o trigger executar
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // 4. Buscar usuário criado pelo trigger em public.users
+      // 3. Aguardar e tentar buscar o usuário (com retries para garantir que o trigger executou)
       let user;
-      const { data: newUser, error: fetchError } = await supabase
-        .from('users')
-        .select('id, name, email, phone, cpf, pix_key, pix_type, email_verified, role, is_active, created_at')
-        .eq('id', authData.user.id)
-        .single();
+      let retries = 5;
+      let delay = 300;
+      
+      for (let i = 0; i < retries; i++) {
+        await new Promise(resolve => setTimeout(resolve, delay));
+        
+        const { data: foundUser, error: fetchError } = await supabase
+          .from('users')
+          .select('id, name, email, phone, cpf, pix_key, pix_type, email_verified, role, is_active, created_at')
+          .eq('id', authData.user.id)
+          .single();
+        
+        if (foundUser && !fetchError) {
+          user = foundUser;
+          console.log(`✅ [REGISTER] Usuário encontrado na tentativa ${i + 1}:`, foundUser.email);
+          break;
+        }
+        
+        if (i < retries - 1) {
+          console.log(`⏳ [REGISTER] Tentativa ${i + 1}/${retries} - Aguardando mais ${delay}ms...`);
+        }
+      }
 
-      if (fetchError || !newUser) {
-        console.error('❌ [REGISTER] Erro: Trigger não criou usuário em public.users!');
-        console.error('❌ [REGISTER] Error:', fetchError);
+      // 4. Se ainda não encontrou após retries, criar manualmente (SEM criar wallet - trigger já criou)
+      if (!user) {
+        console.error('❌ [REGISTER] Trigger não criou usuário após múltiplas tentativas!');
         console.error('❌ [REGISTER] Tentando criar manualmente como fallback...');
         
-        // Fallback: Criar manualmente se trigger falhou
+        // Fallback: Criar apenas o usuário (wallet já foi criada pelo trigger)
         const { data: manualUser, error: insertError } = await supabase
           .from('users')
           .insert({
@@ -109,24 +123,7 @@ class AuthService {
         
         user = manualUser;
         console.log('✅ [REGISTER] Usuário criado manualmente em public.users');
-        
-        // Fallback: Criar carteira manualmente também
-        const { error: walletInsertError } = await supabase
-          .from('wallet')
-          .insert({
-            user_id: authData.user.id,
-            balance: 0,
-            blocked_balance: 0,
-            total_deposited: 0,
-            total_withdrawn: 0
-          });
-        
-        if (walletInsertError) {
-          console.error('⚠️ [REGISTER] Erro ao criar carteira manualmente:', walletInsertError);
-        }
-      } else {
-        user = newUser;
-        console.log('✅ [REGISTER] Usuário criado pelo trigger em public.users:', newUser.email);
+        console.log('ℹ️ [REGISTER] Wallet deve ter sido criada automaticamente pelo trigger');
       }
 
       // 5. Buscar dados da carteira (deve ter sido criada pelo trigger)
@@ -136,7 +133,27 @@ class AuthService {
         .eq('user_id', user.id)
         .single();
 
-      // 6. Retornar dados do usuário e sessão
+      // 6. Gerar token JWT manualmente (já que admin.createUser não cria sessão)
+      console.log('🔑 [REGISTER] Gerando token de acesso...');
+      const { data: sessionData, error: sessionError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (sessionError) {
+        console.error('⚠️ [REGISTER] Erro ao criar sessão:', sessionError);
+        // Se falhar ao criar sessão, ainda retorna os dados do usuário sem token
+      }
+
+      const token = sessionData?.session?.access_token || null;
+      
+      if (!token) {
+        console.warn('⚠️ [REGISTER] Token não foi gerado, mas usuário foi criado com sucesso');
+      } else {
+        console.log('✅ [REGISTER] Token gerado com sucesso');
+      }
+
+      // 7. Retornar dados do usuário e sessão
       console.log('🎉 [REGISTER] Registro completo com sucesso!');
       return {
         user: {
@@ -152,8 +169,8 @@ class AuthService {
           is_active: user.is_active,
           created_at: user.created_at
         },
-        session: authData.session,
-        token: authData.session?.access_token,
+        session: sessionData?.session || null,
+        token: token,
         wallet: wallet || {
           balance: 0,
           blocked_balance: 0,

@@ -31,3 +31,4 @@ echo "  2. Frontend atualizado em: https://sinuca-bet.vercel.app"
 echo "  3. Teste o fluxo completo de depósito"
 echo ""
 
+

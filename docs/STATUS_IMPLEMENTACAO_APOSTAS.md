@@ -279,3 +279,4 @@ Se o usuário reportar novamente que está recebendo o dobro ao cancelar, solici
 **Próxima revisão**: Após implementar matching automático
 
 
+

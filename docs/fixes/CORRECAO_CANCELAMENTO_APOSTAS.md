@@ -376,3 +376,4 @@ O que mudou foi apenas o **backend**, que agora:
 **Status:** ✅ Pronto para produção
 
 
+

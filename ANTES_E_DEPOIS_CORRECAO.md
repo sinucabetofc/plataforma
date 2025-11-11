@@ -404,3 +404,4 @@ Após executar a migration, verifique:
 **Impacto**: 🔥 CRÍTICO - Correção fundamental do sistema
 
 
+

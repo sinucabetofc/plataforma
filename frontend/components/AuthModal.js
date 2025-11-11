@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -86,6 +86,15 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }) {
   const [isLoading, setIsLoading] = useState(false);
   const [registerStep, setRegisterStep] = useState(1); // 1, 2 ou 3
   const [registerData, setRegisterData] = useState({}); // Dados acumulados do cadastro
+
+  // ✅ CORREÇÃO: Atualizar mode quando defaultMode mudar
+  useEffect(() => {
+    if (isOpen) {
+      setMode(defaultMode);
+      setRegisterStep(1);
+      setRegisterData({});
+    }
+  }, [defaultMode, isOpen]);
 
   const loginForm = useForm({
     resolver: zodResolver(loginSchema),
@@ -200,11 +209,22 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'login' }) {
         // Redireciona para home após cadastro
         router.push('/home');
       } else {
+        // Mostrar mensagem específica do backend
         toast.error(result.message || 'Erro ao criar conta');
       }
     } catch (error) {
-      console.error('Erro no cadastro:', error);
-      toast.error('Erro ao conectar com servidor');
+      console.error('❌ [REGISTER] Erro no cadastro:', error);
+      
+      // Melhor tratamento de erros
+      if (error.status === 409) {
+        toast.error(error.message || 'Email ou CPF já cadastrado');
+      } else if (error.status === 400) {
+        toast.error(error.message || 'Dados inválidos. Verifique os campos.');
+      } else if (error.status >= 500) {
+        toast.error('Erro no servidor. Tente novamente mais tarde.');
+      } else {
+        toast.error(error.message || 'Erro ao conectar com servidor');
+      }
     } finally {
       setIsLoading(false);
     }

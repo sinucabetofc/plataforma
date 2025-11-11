@@ -480,3 +480,4 @@ GROUP BY status;
 **Versão**: 2.0 (Pós-correção)
 
 
+

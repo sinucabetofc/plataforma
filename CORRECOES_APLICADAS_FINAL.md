@@ -420,3 +420,4 @@ tail -f backend.log | grep CANCEL
 **Aguardando**: ⏳ CONFIRMAÇÃO DO TESTE
 
 
+

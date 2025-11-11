@@ -122,3 +122,4 @@ SELECT 'Trigger de apostas corrigido com sucesso!' as status;
 -- =====================================================
 
 
+

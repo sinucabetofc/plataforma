@@ -200,3 +200,4 @@ Toda a integração está completa. Basta configurar e testar!
 **Criado em**: 08/11/2025  
 **Status**: ✅ PRONTO PARA USO
 
+

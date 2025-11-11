@@ -144,26 +144,29 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Gráficos */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Gráficos - Um embaixo do outro */}
+      <div className="grid grid-cols-1 gap-6">
         {/* Gráfico de Apostas */}
         <div className="admin-card">
           <h3 className="text-lg font-semibold mb-4 text-admin-text-primary">
-            Apostas (Últimos 7 dias)
+            💰 Volume de Apostas (Últimos 7 dias)
           </h3>
-          <ResponsiveContainer width="100%" height={250}>
+          <ResponsiveContainer width="100%" height={300}>
             <LineChart data={stats.charts.betsLast7Days}>
               <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
               <XAxis 
                 dataKey="date" 
                 stroke="#a0a0a0"
+                label={{ value: 'Data', position: 'insideBottom', offset: -5, fill: '#a0a0a0' }}
                 tickFormatter={(value) => {
-                  // Parse data local (formato YYYY-MM-DD)
                   const [year, month, day] = value.split('-').map(Number);
                   return `${day}/${month}`;
                 }}
               />
-              <YAxis stroke="#a0a0a0" />
+              <YAxis 
+                stroke="#a0a0a0"
+                label={{ value: 'Valor (R$)', angle: -90, position: 'insideLeft', fill: '#a0a0a0' }}
+              />
               <Tooltip
                 contentStyle={{
                   backgroundColor: '#1a1a1a',
@@ -172,41 +175,120 @@ export default function Dashboard() {
                 }}
                 labelStyle={{ color: '#fff' }}
                 labelFormatter={(value) => {
-                  // Formatar label do tooltip corretamente
                   const [year, month, day] = value.split('-').map(Number);
                   return `${day}/${month}/${year}`;
                 }}
-                formatter={(value) => formatCurrency(value)}
+                formatter={(value, name) => {
+                  if (name === 'total') return [formatCurrency(value), 'Apostado'];
+                  return [value, name];
+                }}
               />
               <Line 
                 type="monotone" 
                 dataKey="total" 
+                name="total"
                 stroke="#27e502" 
-                strokeWidth={2}
-                dot={{ fill: '#27e502', r: 4 }}
+                strokeWidth={3}
+                dot={{ fill: '#27e502', r: 5 }}
+                activeDot={{ r: 7 }}
               />
             </LineChart>
           </ResponsiveContainer>
         </div>
 
+        {/* Gráfico de Lucro da Plataforma */}
+        <div className="admin-card border-l-4 border-admin-green">
+          <h3 className="text-lg font-semibold mb-4 text-admin-text-primary flex items-center gap-2">
+            <TrendingUp size={20} className="text-admin-green" />
+            📊 Lucro da Plataforma (Últimos 7 dias)
+          </h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={stats.charts.profitLast7Days}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
+              <XAxis 
+                dataKey="date" 
+                stroke="#a0a0a0"
+                label={{ value: 'Data', position: 'insideBottom', offset: -5, fill: '#a0a0a0' }}
+                tickFormatter={(value) => {
+                  const [year, month, day] = value.split('-').map(Number);
+                  return `${day}/${month}`;
+                }}
+              />
+              <YAxis 
+                stroke="#a0a0a0"
+                label={{ value: 'Lucro (R$)', angle: -90, position: 'insideLeft', fill: '#a0a0a0' }}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: '#1a1a1a',
+                  border: '1px solid #27e502',
+                  borderRadius: '8px',
+                }}
+                labelStyle={{ color: '#fff' }}
+                labelFormatter={(value) => {
+                  const [year, month, day] = value.split('-').map(Number);
+                  return `Data: ${day}/${month}/${year}`;
+                }}
+                formatter={(value, name) => {
+                  if (name === 'lucro') return [formatCurrency(value), 'Lucro (8%)'];
+                  if (name === 'saques') return [formatCurrency(value), 'Total Sacado'];
+                  return [value, name];
+                }}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="lucro" 
+                name="lucro"
+                stroke="#27e502" 
+                strokeWidth={3}
+                dot={{ fill: '#27e502', r: 5 }}
+                activeDot={{ r: 7 }}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="saques" 
+                name="saques"
+                stroke="#fbbf24" 
+                strokeWidth={2}
+                dot={{ fill: '#fbbf24', r: 4 }}
+                activeDot={{ r: 6 }}
+                strokeDasharray="5 5"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+          <div className="mt-4 flex items-center justify-center gap-6 text-sm text-admin-text-muted">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-0.5 bg-admin-green"></div>
+              <span>Lucro (8%)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-0.5 bg-yellow-500" style={{ borderTop: '2px dashed' }}></div>
+              <span>Total Sacado</span>
+            </div>
+          </div>
+        </div>
+
         {/* Gráfico de Novos Usuários */}
         <div className="admin-card">
           <h3 className="text-lg font-semibold mb-4 text-admin-text-primary">
-            Novos Usuários (Últimos 7 dias)
+            👥 Novos Cadastros (Últimos 7 dias)
           </h3>
-          <ResponsiveContainer width="100%" height={250}>
+          <ResponsiveContainer width="100%" height={300}>
             <LineChart data={stats.charts.newUsersLast7Days}>
               <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
               <XAxis 
                 dataKey="date" 
                 stroke="#a0a0a0"
+                label={{ value: 'Data', position: 'insideBottom', offset: -5, fill: '#a0a0a0' }}
                 tickFormatter={(value) => {
-                  // Parse data local (formato YYYY-MM-DD)
                   const [year, month, day] = value.split('-').map(Number);
                   return `${day}/${month}`;
                 }}
               />
-              <YAxis stroke="#a0a0a0" />
+              <YAxis 
+                stroke="#a0a0a0"
+                label={{ value: 'Usuários', angle: -90, position: 'insideLeft', fill: '#a0a0a0' }}
+              />
               <Tooltip
                 contentStyle={{
                   backgroundColor: '#1a1a1a',
@@ -215,17 +297,22 @@ export default function Dashboard() {
                 }}
                 labelStyle={{ color: '#fff' }}
                 labelFormatter={(value) => {
-                  // Formatar label do tooltip corretamente
                   const [year, month, day] = value.split('-').map(Number);
-                  return `${day}/${month}/${year}`;
+                  return `Data: ${day}/${month}/${year}`;
+                }}
+                formatter={(value, name) => {
+                  if (name === 'count') return [value, 'Novos Usuários'];
+                  return [value, name];
                 }}
               />
               <Line 
                 type="monotone" 
                 dataKey="count" 
+                name="count"
                 stroke="#27e502" 
-                strokeWidth={2}
-                dot={{ fill: '#27e502', r: 4 }}
+                strokeWidth={3}
+                dot={{ fill: '#27e502', r: 5 }}
+                activeDot={{ r: 7 }}
               />
             </LineChart>
           </ResponsiveContainer>
