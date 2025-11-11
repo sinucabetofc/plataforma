@@ -84,7 +84,7 @@ class AdminController {
 
       // Calcular total de apostas CASADAS (aceita + parcialmente_aceita)
       const matchedBetsData = betsData?.filter(bet => 
-        bet.status === 'aceita' || bet.status === 'parcialmente_aceita' || bet.status === 'matched'
+        bet.status === 'aceita' || bet.status === 'parcialmente_aceita'
       ) || [];
       
       // Somar matched_amount (valor realmente casado) ao invés de amount total

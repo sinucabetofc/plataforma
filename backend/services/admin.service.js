@@ -258,7 +258,7 @@ class AdminService {
       const { data: matchedBets } = await supabase
         .from('bets')
         .select('amount, matched_amount')
-        .in('status', ['matched', 'aceita', 'parcialmente_aceita']);
+        .in('status', ['aceita', 'parcialmente_aceita']);
 
       // Somar matched_amount (valor realmente casado) ao invés de amount total
       const totalMatchedBets = (matchedBets?.reduce(
