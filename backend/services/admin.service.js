@@ -109,11 +109,11 @@ class AdminService {
       const pendingWithdrawalsCount = pendingWithdrawals?.length || 0;
 
       // 5. Lucro da plataforma (8% dos saques aprovados de APOSTADORES)
-      console.log('\n' + '='.repeat(80));
-      console.log('💵 [DASHBOARD - LUCRO] Calculando lucro da plataforma...');
-      console.log('💵 [DASHBOARD - LUCRO] Hora UTC agora:', new Date().toISOString());
-      console.log('💵 [DASHBOARD - LUCRO] Data "hoje" Brasil (UTC):', today.toISOString());
-      console.log('='.repeat(80));
+      console.error('\n' + '='.repeat(80));
+      console.error('💵 [DASHBOARD - LUCRO] Calculando lucro da plataforma...');
+      console.error('💵 [DASHBOARD - LUCRO] Hora UTC agora:', new Date().toISOString());
+      console.error('💵 [DASHBOARD - LUCRO] Data "hoje" Brasil (UTC):', today.toISOString());
+      console.error('='.repeat(80));
       
       // 5.1 Saques aprovados HOJE (APENAS apostadores - tabela transactions)
       const { data: completedWithdrawalsToday, error: withdrawalsTodayError } = await supabase
@@ -123,15 +123,15 @@ class AdminService {
         .eq('status', 'completed')
         .gte('created_at', today.toISOString());
 
-      console.log('💵 [DASHBOARD - LUCRO] ✅ Saques HOJE encontrados:', completedWithdrawalsToday?.length || 0);
+      console.error('💵 [DASHBOARD - LUCRO] ✅ Saques HOJE encontrados:', completedWithdrawalsToday?.length || 0);
       
       if (completedWithdrawalsToday && completedWithdrawalsToday.length > 0) {
-        console.log('💵 [DASHBOARD - LUCRO] Detalhes dos saques:');
+        console.error('💵 [DASHBOARD - LUCRO] Detalhes dos saques:');
         completedWithdrawalsToday.forEach((w, i) => {
-          console.log(`   ${i + 1}. R$ ${(parseFloat(w.amount) / 100).toFixed(2)} - ${w.created_at} (ID: ${w.id.substring(0, 8)}...)`);
+          console.error(`   ${i + 1}. R$ ${(parseFloat(w.amount) / 100).toFixed(2)} - ${w.created_at} (ID: ${w.id.substring(0, 8)}...)`);
         });
       } else {
-        console.log('💵 [DASHBOARD - LUCRO] ⚠️  NENHUM saque encontrado!');
+        console.error('💵 [DASHBOARD - LUCRO] ⚠️  NENHUM saque encontrado!');
       }
       
       if (withdrawalsTodayError) {
@@ -145,12 +145,11 @@ class AdminService {
 
       const platformProfitToday = totalWithdrawnToday * 0.08;
       
-      console.log('💵 [DASHBOARD - LUCRO] Total sacado HOJE: R$', totalWithdrawnToday.toFixed(2));
-      console.log('💵 [DASHBOARD - LUCRO] 💰 Lucro HOJE (8%): R$', platformProfitToday.toFixed(2));
+      console.error('💵 [DASHBOARD - LUCRO] Total sacado HOJE: R$', totalWithdrawnToday.toFixed(2));
+      console.error('💵 [DASHBOARD - LUCRO] 💰 Lucro HOJE (8%): R$', platformProfitToday.toFixed(2));
 
       // 5.2 Saques aprovados na SEMANA (últimos 7 dias - APENAS apostadores)
       const weekAgo = getBrazilDate(7);
-      console.log('💵 [DASHBOARD] Data semana atrás:', weekAgo.toISOString());
 
       const { data: completedWithdrawalsWeek } = await supabase
         .from('transactions')
@@ -159,7 +158,7 @@ class AdminService {
         .eq('status', 'completed')
         .gte('created_at', weekAgo.toISOString());
 
-      console.log('💵 [DASHBOARD] Saques SEMANA encontrados:', completedWithdrawalsWeek?.length || 0);
+      console.error('💵 [DASHBOARD - LUCRO] Saques SEMANA encontrados:', completedWithdrawalsWeek?.length || 0);
 
       const totalWithdrawnWeek = (completedWithdrawalsWeek?.reduce(
         (sum, w) => sum + parseFloat(w.amount), 
@@ -168,12 +167,10 @@ class AdminService {
 
       const platformProfitWeek = totalWithdrawnWeek * 0.08;
       
-      console.log('💵 [DASHBOARD] Total sacado SEMANA:', totalWithdrawnWeek, 'reais');
-      console.log('💵 [DASHBOARD] Lucro SEMANA (8%):', platformProfitWeek, 'reais');
+      console.error('💵 [DASHBOARD - LUCRO] Total sacado SEMANA: R$', totalWithdrawnWeek.toFixed(2));
+      console.error('💵 [DASHBOARD - LUCRO] Lucro SEMANA (8%): R$', platformProfitWeek.toFixed(2));
 
       // 5.3 Saques aprovados no MÊS (APENAS apostadores)
-      console.log('💵 [DASHBOARD] Data início do mês:', startOfMonth.toISOString());
-      
       const { data: completedWithdrawalsMonth } = await supabase
         .from('transactions')
         .select('amount, created_at')
@@ -181,7 +178,7 @@ class AdminService {
         .eq('status', 'completed')
         .gte('created_at', startOfMonth.toISOString());
 
-      console.log('💵 [DASHBOARD] Saques MÊS encontrados:', completedWithdrawalsMonth?.length || 0);
+      console.error('💵 [DASHBOARD - LUCRO] Saques MÊS encontrados:', completedWithdrawalsMonth?.length || 0);
 
       const totalWithdrawnMonth = (completedWithdrawalsMonth?.reduce(
         (sum, w) => sum + parseFloat(w.amount), 
@@ -190,8 +187,8 @@ class AdminService {
 
       const platformProfitMonth = totalWithdrawnMonth * 0.08;
       
-      console.log('💵 [DASHBOARD] Total sacado MÊS:', totalWithdrawnMonth, 'reais');
-      console.log('💵 [DASHBOARD] Lucro MÊS (8%):', platformProfitMonth, 'reais');
+      console.error('💵 [DASHBOARD - LUCRO] Total sacado MÊS: R$', totalWithdrawnMonth.toFixed(2));
+      console.error('💵 [DASHBOARD - LUCRO] Lucro MÊS (8%): R$', platformProfitMonth.toFixed(2));
 
       // 5.4 Saques aprovados TOTAL (APENAS apostadores)
       // Usar coluna total_withdrawn das carteiras para maior eficiência
@@ -206,15 +203,15 @@ class AdminService {
 
       const platformProfitTotal = totalWithdrawnTotal * 0.08;
       
-      console.log('\n💵 [DASHBOARD - LUCRO] Total sacado GERAL: R$', totalWithdrawnTotal.toFixed(2));
-      console.log('💵 [DASHBOARD - LUCRO] Lucro TOTAL (8%): R$', platformProfitTotal.toFixed(2));
-      console.log('='.repeat(80));
-      console.log('💵 [DASHBOARD - LUCRO] 📊 RESUMO FINAL DOS LUCROS:');
-      console.log('   💰 Hoje: R$', platformProfitToday.toFixed(2));
-      console.log('   💰 Semana: R$', platformProfitWeek.toFixed(2));
-      console.log('   💰 Mês: R$', platformProfitMonth.toFixed(2));
-      console.log('   💰 Total: R$', platformProfitTotal.toFixed(2));
-      console.log('='.repeat(80) + '\n');
+      console.error('\n💵 [DASHBOARD - LUCRO] Total sacado GERAL: R$', totalWithdrawnTotal.toFixed(2));
+      console.error('💵 [DASHBOARD - LUCRO] Lucro TOTAL (8%): R$', platformProfitTotal.toFixed(2));
+      console.error('='.repeat(80));
+      console.error('💵 [DASHBOARD - LUCRO] 📊 RESUMO FINAL DOS LUCROS:');
+      console.error('   💰 Hoje: R$', platformProfitToday.toFixed(2));
+      console.error('   💰 Semana: R$', platformProfitWeek.toFixed(2));
+      console.error('   💰 Mês: R$', platformProfitMonth.toFixed(2));
+      console.error('   💰 Total: R$', platformProfitTotal.toFixed(2));
+      console.error('='.repeat(80) + '\n');
 
       // 6. Depósitos hoje
       const { data: depositsToday } = await supabase
