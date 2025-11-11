@@ -99,108 +99,144 @@ export default function LiveBetsPanel({ matchId, match }) {
 
   if (loading) {
     return (
-      <div className="card">
-        <div className="card-header">
-          <h3 className="card-title flex items-center gap-2">
-            <TrendingUp size={20} />
-            Apostas Ao Vivo
-          </h3>
+      <div className="bg-[#0a0a0a] rounded-xl border border-gray-800 shadow-2xl overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-gray-900 to-gray-800 border-b border-gray-700 px-6 py-5">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-gradient-to-br from-verde-neon/20 to-verde-accent/10 rounded-lg">
+              <TrendingUp size={22} className="text-verde-neon" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-white">Apostas Ao Vivo</h3>
+              <p className="text-xs text-gray-500 mt-0.5">Monitoramento em tempo real</p>
+            </div>
+          </div>
         </div>
-        <div className="card-body">
-          <Loader />
+        <div className="p-6">
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-700 border-t-verde-neon mx-auto mb-4"></div>
+              <p className="text-sm text-gray-400 font-medium">Carregando apostas...</p>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="card">
-      <div className="card-header">
+    <div className="bg-[#0a0a0a] rounded-xl border border-gray-800 shadow-2xl overflow-hidden">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-gray-900 to-gray-800 border-b border-gray-700 px-6 py-5">
         <div className="flex items-center justify-between w-full">
-          <h3 className="card-title flex items-center gap-2">
-            <TrendingUp size={20} />
-            Apostas Ao Vivo
-          </h3>
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-gradient-to-br from-verde-neon/20 to-verde-accent/10 rounded-lg">
+              <TrendingUp size={22} className="text-verde-neon" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-white">Apostas Ao Vivo</h3>
+              <p className="text-xs text-gray-500 mt-0.5">Monitoramento em tempo real</p>
+            </div>
+          </div>
           {/* Indicador de atualização ao vivo */}
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse-subtle"></div>
-            <span className="text-xs text-gray-500">Atualiza a cada 5s</span>
+          <div className="flex items-center gap-2 bg-gray-800/50 px-3 py-2 rounded-lg border border-gray-700">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse-subtle shadow-lg shadow-green-500/50"></div>
+            <span className="text-xs text-gray-400 font-medium">Atualiza a cada 5s</span>
           </div>
         </div>
       </div>
 
-      <div className="card-body">
+      <div className="p-6">
         {/* Estatísticas */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
           {/* Card 1: Total de Apostas */}
-          <div className="bg-gradient-to-br from-blue-500/20 to-blue-500/5 border border-blue-500/30 rounded-xl p-5 shadow-lg hover:shadow-xl hover:from-blue-500/25 transition-all">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-blue-500/20 rounded-lg">
-                  <Users size={20} className="text-blue-400" />
+          <div className="group relative bg-gradient-to-br from-blue-600/15 via-blue-500/10 to-transparent border-2 border-blue-500/30 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:border-blue-500/50 transition-all duration-300 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-3 bg-blue-500/20 rounded-xl shadow-lg">
+                  <Users size={22} className="text-blue-400" />
                 </div>
-                <span className="text-sm text-gray-300 font-medium">Total de Apostas</span>
+                <span className="text-sm text-gray-300 font-semibold tracking-wide">Total de Apostas</span>
               </div>
+              <p className="text-5xl font-black text-blue-400 tracking-tight">{totalBets}</p>
             </div>
-            <p className="text-4xl font-bold text-blue-400">{totalBets}</p>
           </div>
 
           {/* Card 2: Volume Total */}
-          <div className="bg-gradient-to-br from-green-500/20 to-green-500/5 border border-green-500/30 rounded-xl p-5 shadow-lg hover:shadow-xl hover:from-green-500/25 transition-all">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-green-500/20 rounded-lg">
-                  <DollarSign size={20} className="text-green-400" />
+          <div className="group relative bg-gradient-to-br from-green-600/15 via-green-500/10 to-transparent border-2 border-green-500/30 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:border-green-500/50 transition-all duration-300 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-3 bg-green-500/20 rounded-xl shadow-lg">
+                  <DollarSign size={22} className="text-green-400" />
                 </div>
-                <span className="text-sm text-gray-300 font-medium">Volume Total</span>
+                <span className="text-sm text-gray-300 font-semibold tracking-wide">Volume Total</span>
               </div>
+              <p className="text-5xl font-black text-green-400 tracking-tight">
+                R$ {(totalAmount / 100).toFixed(2)}
+              </p>
             </div>
-            <p className="text-4xl font-bold text-green-400">
-              R$ {(totalAmount / 100).toFixed(2)}
-            </p>
           </div>
 
           {/* Card 3: Total Casado */}
-          <div className="bg-gradient-to-br from-orange-500/20 to-orange-500/5 border border-orange-500/30 rounded-xl p-5 shadow-lg hover:shadow-xl hover:from-orange-500/25 transition-all">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-orange-500/20 rounded-lg">
-                  <TrendingUp size={20} className="text-orange-400" />
+          <div className="group relative bg-gradient-to-br from-orange-600/15 via-orange-500/10 to-transparent border-2 border-orange-500/30 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:border-orange-500/50 transition-all duration-300 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-3 bg-orange-500/20 rounded-xl shadow-lg">
+                  <TrendingUp size={22} className="text-orange-400" />
                 </div>
-                <span className="text-sm text-gray-300 font-medium">Total Casado</span>
+                <span className="text-sm text-gray-300 font-semibold tracking-wide">Total Casado</span>
               </div>
+              <p className="text-5xl font-black text-orange-400 tracking-tight">
+                R$ {(totalMatched / 100).toFixed(2)}
+              </p>
             </div>
-            <p className="text-4xl font-bold text-orange-400">
-              R$ {(totalMatched / 100).toFixed(2)}
-            </p>
           </div>
         </div>
 
-        {/* Separador */}
-        <div className="border-t border-gray-800 mb-6"></div>
+        {/* Separador com gradiente */}
+        <div className="relative mb-8">
+          <div className="absolute inset-0 flex items-center" aria-hidden="true">
+            <div className="w-full border-t border-gray-800"></div>
+          </div>
+          <div className="relative flex justify-center">
+            <span className="bg-[#0a0a0a] px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              Histórico de Apostas
+            </span>
+          </div>
+        </div>
 
         {/* Título da Lista */}
-        <div className="flex items-center justify-between mb-4">
-          <h4 className="text-lg font-bold text-white flex items-center gap-2">
-            <span>📋</span>
-            <span>Apostas Recentes</span>
-          </h4>
-          <span className="text-xs text-gray-500 bg-gray-800 px-3 py-1 rounded-full">
-            {bets.length} {bets.length === 1 ? 'aposta' : 'apostas'}
-          </span>
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gray-800 rounded-lg">
+              <span className="text-xl">📋</span>
+            </div>
+            <h4 className="text-lg font-bold text-white">Apostas Recentes</h4>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500 font-medium">Total:</span>
+            <span className="text-sm font-bold text-white bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-700">
+              {bets.length}
+            </span>
+          </div>
         </div>
 
         {/* Lista de Apostas */}
         {bets.length === 0 ? (
-          <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border-2 border-dashed border-gray-700 rounded-xl p-12">
-            <div className="text-center text-gray-500">
-              <Users size={56} className="mx-auto mb-4 opacity-30" />
-              <p className="text-lg font-semibold text-gray-400">Nenhuma aposta ainda</p>
-              <p className="text-sm text-gray-600 mt-2">As apostas aparecerão aqui em tempo real</p>
+          <div className="bg-gradient-to-br from-gray-900/30 to-transparent border-2 border-dashed border-gray-800 rounded-2xl p-16">
+            <div className="text-center">
+              <div className="inline-flex p-6 bg-gray-800/50 rounded-full mb-5">
+                <Users size={64} className="text-gray-600" />
+              </div>
+              <p className="text-xl font-bold text-gray-300 mb-2">Nenhuma aposta ainda</p>
+              <p className="text-sm text-gray-500">As apostas aparecerão aqui automaticamente a cada 5 segundos</p>
             </div>
           </div>
         ) : (
-          <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+          <div className="space-y-4 max-h-[550px] overflow-y-auto pr-3 custom-scrollbar">
             {bets.map((bet) => {
               const statusBadge = getStatusBadge(bet.status);
               const matchPercentage = bet.match_percentage || 
@@ -211,89 +247,100 @@ export default function LiveBetsPanel({ matchId, match }) {
               return (
                 <div
                   key={bet.id}
-                  className={`bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border-2 ${statusBadge.border} rounded-xl p-4 hover:shadow-lg transition-all duration-200`}
+                  className={`group relative bg-gradient-to-br from-gray-900/50 to-gray-950/30 border-2 ${statusBadge.border} rounded-2xl p-5 hover:shadow-2xl hover:border-opacity-60 transition-all duration-300 overflow-hidden`}
                 >
-                  {/* Header - Alinhado */}
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex-1 min-w-0">
-                      {/* Nome do usuário + Série alinhados */}
-                      <div className="flex items-center gap-2 mb-2">
-                        <p className="font-bold text-white text-base truncate">
-                          {bet.user?.name || bet.user?.email || 'Usuário'}
-                        </p>
-                        <span className="px-2.5 py-0.5 bg-blue-500/20 text-blue-400 text-xs font-semibold rounded-full border border-blue-500/30 whitespace-nowrap">
-                          Série {bet.serie_number || '?'}
-                        </span>
+                  {/* Background hover effect */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                  
+                  {/* Content */}
+                  <div className="relative z-10">
+                    {/* Header - Alinhado */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex-1 min-w-0 mr-4">
+                        {/* Nome do usuário + Série */}
+                        <div className="flex items-center gap-2.5 mb-2.5">
+                          <p className="font-bold text-white text-lg truncate">
+                            {bet.user?.name || bet.user?.email || 'Usuário'}
+                          </p>
+                          <span className="px-3 py-1 bg-blue-600/20 text-blue-400 text-xs font-bold rounded-lg border border-blue-500/40 whitespace-nowrap shadow-sm">
+                            Série {bet.serie_number || '?'}
+                          </span>
+                        </div>
+                        
+                        {/* Jogador escolhido */}
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-500 font-medium">Apostou em:</span>
+                          <span className="text-sm text-verde-accent font-bold truncate">
+                            {bet.chosen_player?.name || 'Jogador'}
+                          </span>
+                        </div>
                       </div>
                       
-                      {/* Jogador escolhido */}
-                      <p className="text-sm text-gray-400 truncate">
-                        Apostou em: <span className="text-verde-accent font-semibold">{bet.chosen_player?.name || 'Jogador'}</span>
-                      </p>
-                    </div>
-                    
-                    {/* Valor - Alinhado à direita */}
-                    <div className="text-right ml-4 flex-shrink-0">
-                      <p className="font-bold text-verde-neon text-xl whitespace-nowrap">
-                        R$ {(bet.amount / 100).toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Matching Info (para parcialmente aceita) */}
-                  {bet.status === 'parcialmente_aceita' && matchPercentage > 0 && (
-                    <div className="mb-3 bg-orange-500/5 border border-orange-500/20 rounded-lg p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs text-gray-400 font-medium">Progresso de Matching</span>
-                        <span className="text-sm font-bold text-orange-400">{matchPercentage}%</span>
-                      </div>
-                      <div className="w-full bg-gray-800 rounded-full h-2.5 overflow-hidden shadow-inner">
-                        <div 
-                          className="bg-gradient-to-r from-orange-500 to-orange-400 h-full transition-all duration-500 shadow-lg"
-                          style={{ width: `${matchPercentage}%` }}
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-3 mt-2.5">
-                        <div className="text-left">
-                          <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-0.5">Casado</p>
-                          <p className="text-sm font-semibold text-orange-400">
-                            R$ {((bet.matched_amount || 0) / 100).toFixed(2)}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-0.5">Pendente</p>
-                          <p className="text-sm font-semibold text-gray-400">
-                            R$ {((bet.remaining_amount || 0) / 100).toFixed(2)}
+                      {/* Valor - Destacado */}
+                      <div className="text-right flex-shrink-0">
+                        <div className="bg-verde-neon/10 border border-verde-neon/30 rounded-xl px-4 py-2.5 shadow-lg">
+                          <p className="font-black text-verde-neon text-2xl whitespace-nowrap tracking-tight">
+                            R$ {(bet.amount / 100).toFixed(2)}
                           </p>
                         </div>
                       </div>
                     </div>
-                  )}
 
-                  {/* Status Badge - Alinhado */}
-                  <div className="flex items-center justify-between">
-                    <span className={`inline-flex items-center gap-2 px-4 py-2 ${statusBadge.bg} ${statusBadge.text} border ${statusBadge.border} rounded-lg text-xs font-bold uppercase tracking-wide`}>
-                      <span className="text-base">{statusBadge.icon}</span>
-                      <span>{statusBadge.label}</span>
-                    </span>
+                    {/* Matching Info (para parcialmente aceita) */}
+                    {bet.status === 'parcialmente_aceita' && matchPercentage > 0 && (
+                      <div className="mb-4 bg-gradient-to-br from-orange-600/10 to-orange-500/5 border-2 border-orange-500/30 rounded-xl p-4 shadow-md">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Progresso de Matching</span>
+                          <span className="text-lg font-black text-orange-400">{matchPercentage}%</span>
+                        </div>
+                        <div className="w-full bg-gray-900 rounded-full h-3 overflow-hidden shadow-inner border border-gray-800">
+                          <div 
+                            className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-400 h-full transition-all duration-700 shadow-lg shadow-orange-500/30"
+                            style={{ width: `${matchPercentage}%` }}
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 mt-3">
+                          <div className="bg-gray-900/50 rounded-lg p-2.5 border border-gray-800">
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">✅ Casado</p>
+                            <p className="text-base font-bold text-orange-400">
+                              R$ {((bet.matched_amount || 0) / 100).toFixed(2)}
+                            </p>
+                          </div>
+                          <div className="bg-gray-900/50 rounded-lg p-2.5 border border-gray-800">
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">⏳ Pendente</p>
+                            <p className="text-base font-bold text-gray-400">
+                              R$ {((bet.remaining_amount || 0) / 100).toFixed(2)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
-                    {/* Info adicional - Alinhada */}
-                    <div className="text-right flex-shrink-0">
-                      {bet.status === 'aceita' && (
-                        <span className="text-xs text-blue-400 font-semibold bg-blue-500/10 px-2 py-1 rounded">
-                          100% casada
-                        </span>
-                      )}
-                      {bet.status === 'ganha' && bet.actual_return && (
-                        <span className="text-sm text-green-400 font-bold bg-green-500/10 px-2 py-1 rounded">
-                          + R$ {(bet.actual_return / 100).toFixed(2)}
-                        </span>
-                      )}
-                      {bet.status === 'pendente' && (
-                        <span className="text-xs text-yellow-400 font-semibold bg-yellow-500/10 px-2 py-1 rounded">
-                          Aguardando match
-                        </span>
-                      )}
+                    {/* Status Badge - Profissional */}
+                    <div className="flex items-center justify-between">
+                      <span className={`inline-flex items-center gap-2.5 px-5 py-2.5 ${statusBadge.bg} ${statusBadge.text} border-2 ${statusBadge.border} rounded-xl text-sm font-black uppercase tracking-wider shadow-lg`}>
+                        <span className="text-lg">{statusBadge.icon}</span>
+                        <span>{statusBadge.label}</span>
+                      </span>
+
+                      {/* Info adicional - Destacada */}
+                      <div className="text-right flex-shrink-0">
+                        {bet.status === 'aceita' && (
+                          <div className="bg-blue-600/20 border border-blue-500/40 px-3 py-1.5 rounded-lg">
+                            <span className="text-xs text-blue-400 font-bold">✓ 100% casada</span>
+                          </div>
+                        )}
+                        {bet.status === 'ganha' && bet.actual_return && (
+                          <div className="bg-green-600/20 border border-green-500/40 px-3 py-1.5 rounded-lg">
+                            <span className="text-sm text-green-400 font-black">+ R$ {(bet.actual_return / 100).toFixed(2)}</span>
+                          </div>
+                        )}
+                        {bet.status === 'pendente' && (
+                          <div className="bg-yellow-600/20 border border-yellow-500/40 px-3 py-1.5 rounded-lg">
+                            <span className="text-xs text-yellow-400 font-bold">⏰ Aguardando</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
