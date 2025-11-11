@@ -52,9 +52,16 @@ router.get('/recent', listBetsLimiter, betsController.getRecentBets);
 /**
  * GET /api/bets/serie/:serieId
  * Lista apostas de uma série específica
- * Retorna: apostas agrupadas por jogador, estatísticas, etc
+ * Retorna: apostas agrupadas por jogador, estatísticas com matching, etc
  */
 router.get('/serie/:serieId', listBetsLimiter, betsController.getSerieBets);
+
+/**
+ * GET /api/bets/:id/matches
+ * Lista todos os matches (pareamentos) de uma aposta específica
+ * Retorna: lista de apostas opostas que foram casadas
+ */
+router.get('/:id/matches', listBetsLimiter, betsController.getBetMatches);
 
 // ============================================================
 // Rotas Protegidas (Requerem Autenticação)
@@ -90,6 +97,7 @@ router.delete('/:id', authenticateToken, betsController.cancelBet);
 // ============================================================
 
 module.exports = router;
+
 
 
 

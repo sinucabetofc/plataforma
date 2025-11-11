@@ -87,6 +87,12 @@ function Apostas() {
           icon: CheckCircle,
           text: 'Casada',
         };
+      case 'parcialmente_aceita':
+        return {
+          color: 'bg-orange-500/20 text-orange-400 border-orange-400/50',
+          icon: TrendingUp,
+          text: 'Parcial',
+        };
       case 'ganha':
         return {
           color: 'bg-green-500/20 text-green-400 border-green-400/50',

@@ -450,6 +450,12 @@ function BetItem({ bet, isWinner, onCancel, canCancel = false, playerName = '' }
     }).format(value || 0);
   };
 
+  // Calcular matching fracionado
+  const matchedAmount = bet.matched_amount || 0;
+  const remainingAmount = bet.remaining_amount || 0;
+  const matchPercentage = bet.match_percentage || 
+    (bet.amount > 0 && matchedAmount > 0 ? Math.round((matchedAmount / (bet.amount * 100)) * 100) : 0);
+
   const getStatusConfig = (status) => {
     switch (status) {
       case 'pendente':
@@ -460,6 +466,15 @@ function BetItem({ bet, isWinner, onCancel, canCancel = false, playerName = '' }
           bgColor: 'bg-yellow-900/10',
           messageColor: 'text-yellow-400',
           message: '⏰ Aguardando emparceiramento com aposta oposta'
+        };
+      case 'parcialmente_aceita':
+        return {
+          icon: '🔄',
+          label: 'PARCIAL',
+          borderColor: 'border-orange-500',
+          bgColor: 'bg-orange-900/20',
+          messageColor: 'text-orange-400',
+          message: `🔄 Aposta parcialmente casada (${matchPercentage}%)`
         };
       case 'aceita':
         return {
@@ -587,14 +602,29 @@ function BetItem({ bet, isWinner, onCancel, canCancel = false, playerName = '' }
           <span>{config.message}</span>
         </p>
         
-        {/* Botão Cancelar Aposta - só aparece para apostas pendentes */}
-        {canCancel && bet.status === 'pendente' && (
+        {/* Barra de Progresso para Parcialmente Aceita */}
+        {(bet.status === 'parcialmente_aceita' || matchPercentage > 0) && matchPercentage < 100 && (
+          <div className="mt-2">
+            <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+              <div 
+                className="bg-gradient-to-r from-orange-500 to-orange-400 h-full transition-all duration-500"
+                style={{ width: `${matchPercentage}%` }}
+              />
+            </div>
+            <p className="text-[9px] text-gray-400 mt-1">
+              R$ {(matchedAmount / 100).toFixed(2)} casado de R$ {bet.amount.toFixed(2)} ({matchPercentage}%)
+            </p>
+          </div>
+        )}
+        
+        {/* Botão Cancelar - mostra valor reembolsável */}
+        {canCancel && (bet.status === 'pendente' || bet.status === 'parcialmente_aceita') && remainingAmount > 0 && (
           <button
             onClick={handleCancelClick}
             disabled={cancelling}
             className="mt-2 w-full py-2 px-3 bg-red-600/20 hover:bg-red-600/30 border border-red-600/50 text-red-400 text-xs font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {cancelling ? '⏳ Cancelando...' : '🚫 Cancelar Aposta'}
+            {cancelling ? '⏳ Cancelando...' : `🚫 Cancelar (Reembolso: R$ ${(remainingAmount / 100).toFixed(2)})`}
           </button>
         )}
 
@@ -604,7 +634,11 @@ function BetItem({ bet, isWinner, onCancel, canCancel = false, playerName = '' }
           onClose={() => setShowCancelModal(false)}
           onConfirm={handleConfirmCancel}
           title="Cancelar Aposta"
-          message={`Tem certeza que deseja cancelar esta aposta de ${formatCurrency(bet.amount)}? O valor será reembolsado para sua carteira.`}
+          message={
+            remainingAmount > 0 && remainingAmount < bet.amount * 100
+              ? `Cancelar aposta parcialmente casada?\n\nValor total: ${formatCurrency(bet.amount)}\nValor casado: ${formatCurrency(matchedAmount / 100)} (mantido)\nReembolso: ${formatCurrency(remainingAmount / 100)}`
+              : `Tem certeza que deseja cancelar esta aposta de ${formatCurrency(bet.amount)}? O valor será reembolsado para sua carteira.`
+          }
           confirmText="Sim, Cancelar"
           cancelText="Não, Manter"
           variant="danger"
@@ -856,6 +890,9 @@ function SerieCard({ serie, match, currentUserId }) {
                             id: bet.id,
                             label: `Sua Aposta #${index + 1}`, 
                             amount: bet.amount / 100,
+                            matched_amount: bet.matched_amount || 0,
+                            remaining_amount: bet.remaining_amount || 0,
+                            match_percentage: bet.match_percentage || 0,
                             status: bet.status 
                           }} 
                           isWinner={bet.status === 'ganha'}
@@ -903,6 +940,9 @@ function SerieCard({ serie, match, currentUserId }) {
                             id: bet.id,
                             label: `Aposta #${index + 1}`, 
                                   amount: bet.amount / 100,
+                                  matched_amount: bet.matched_amount || 0,
+                                  remaining_amount: bet.remaining_amount || 0,
+                                  match_percentage: bet.match_percentage || 0,
                                   status: bet.status,
                                   isMyBet: bet.user_id === currentUserId
                           }} 
@@ -952,6 +992,9 @@ function SerieCard({ serie, match, currentUserId }) {
                             id: bet.id,
                             label: `Aposta #${index + 1}`, 
                                   amount: bet.amount / 100,
+                                  matched_amount: bet.matched_amount || 0,
+                                  remaining_amount: bet.remaining_amount || 0,
+                                  match_percentage: bet.match_percentage || 0,
                                   status: bet.status,
                                   isMyBet: bet.user_id === currentUserId
                           }} 

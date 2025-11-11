@@ -191,18 +191,46 @@ class BetsController {
   }
 
   /**
+   * GET /api/bets/:id/matches
+   * Busca os matches de uma aposta específica
+   */
+  async getBetMatches(req, res) {
+    try {
+      const { id } = req.params;
+
+      const result = await betsService.getBetMatches(id);
+
+      return successResponse(res, 200, 'Matches da aposta obtidos com sucesso', result);
+    } catch (error) {
+      console.error('Erro no controller getBetMatches:', error);
+
+      if (error.code === 'DATABASE_ERROR') {
+        return errorResponse(res, 500, error.message, { details: error.details });
+      }
+
+      return errorResponse(res, 500, 'Erro ao buscar matches da aposta');
+    }
+  }
+
+  /**
    * GET /api/bets/health
    * Verifica saúde do serviço de apostas
    */
   async health(req, res) {
     return successResponse(res, 200, 'Serviço de apostas está funcionando', {
       timestamp: new Date().toISOString(),
-      service: 'bets'
+      service: 'bets',
+      features: {
+        fractional_matching: true,
+        fifo: true,
+        partial_cancellation: true
+      }
     });
   }
 }
 
 module.exports = new BetsController();
+
 
 
 

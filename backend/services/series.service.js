@@ -872,6 +872,196 @@ class SeriesService {
       };
     }
   }
+
+  /**
+   * Resolve apostas de uma série quando ela é encerrada
+   * Processa ganhos baseado em matched_amount (matching fracionado)
+   * 
+   * @param {string} serieId - ID da série
+   * @param {string} winnerPlayerId - ID do jogador vencedor
+   * @returns {Promise<Object>} Resultado do processamento
+   */
+  async resolveSerieWinners(serieId, winnerPlayerId) {
+    try {
+      console.log('========================================');
+      console.log('🏆 [RESOLVE] PROCESSANDO GANHOS');
+      console.log('========================================');
+      console.log(`Série ID: ${serieId}`);
+      console.log(`Vencedor: ${winnerPlayerId}`);
+
+      // 1. Buscar todas as apostas da série (aceitas e parcialmente aceitas)
+      const { data: bets, error: betsError } = await supabase
+        .from('bets')
+        .select(`
+          *,
+          user:users(id, name),
+          chosen_player:players!bets_chosen_player_id_fkey(id, name)
+        `)
+        .eq('serie_id', serieId)
+        .in('status', ['aceita', 'parcialmente_aceita'])
+        .gt('matched_amount', 0); // Só apostas com valor casado
+
+      if (betsError) {
+        throw {
+          code: 'DATABASE_ERROR',
+          message: 'Erro ao buscar apostas',
+          details: betsError.message
+        };
+      }
+
+      console.log(`\n📊 Total de apostas a resolver: ${bets?.length || 0}`);
+
+      if (!bets || bets.length === 0) {
+        console.log('⚠️  Nenhuma aposta para resolver');
+        console.log('========================================\n');
+        return {
+          success: true,
+          processed: 0,
+          winners: 0,
+          losers: 0
+        };
+      }
+
+      // 2. Processar cada aposta
+      const results = {
+        winners: [],
+        losers: [],
+        errors: []
+      };
+
+      for (const bet of bets) {
+        try {
+          const isWinner = bet.chosen_player_id === winnerPlayerId;
+
+          console.log(`\n🎯 Processando aposta ${bet.id.substring(0, 8)}...`);
+          console.log(`   Usuário: ${bet.user.name}`);
+          console.log(`   Jogador: ${bet.chosen_player.name}`);
+          console.log(`   Valor casado: R$ ${bet.matched_amount / 100}`);
+          console.log(`   Resultado: ${isWinner ? '✅ GANHOU' : '❌ PERDEU'}`);
+
+          if (isWinner) {
+            // GANHOU: Retorno = matched_amount * 2
+            const winAmount = bet.matched_amount * 2;
+            
+            console.log(`   💰 Vai receber: R$ ${winAmount / 100}`);
+
+            // Creditar saldo
+            const { data: wallet } = await supabase
+              .from('wallet')
+              .select('id, balance')
+              .eq('user_id', bet.user_id)
+              .single();
+
+            if (!wallet) {
+              console.error(`   ❌ Wallet não encontrada para usuário ${bet.user_id}`);
+              results.errors.push({ bet_id: bet.id, error: 'Wallet not found' });
+              continue;
+            }
+
+            await supabase
+              .from('wallet')
+              .update({
+                balance: wallet.balance + winAmount
+              })
+              .eq('user_id', bet.user_id);
+
+            // Criar transação de ganho
+            await supabase
+              .from('transactions')
+              .insert({
+                wallet_id: wallet.id,
+                user_id: bet.user_id,
+                bet_id: bet.id,
+                type: 'ganho',
+                amount: winAmount,
+                balance_before: wallet.balance,
+                balance_after: wallet.balance + winAmount,
+                fee: 0,
+                net_amount: winAmount,
+                description: `Ganho de aposta - Série ${bet.serie_id}`,
+                status: 'completed',
+                metadata: {
+                  serie_id: serieId,
+                  matched_amount: bet.matched_amount,
+                  win_multiplier: 2,
+                  chosen_player_id: bet.chosen_player_id,
+                  winner_player_id: winnerPlayerId
+                }
+              });
+
+            // Atualizar aposta
+            await supabase
+              .from('bets')
+              .update({
+                status: 'ganha',
+                actual_return: winAmount,
+                resolved_at: new Date().toISOString()
+              })
+              .eq('id', bet.id);
+
+            console.log(`   ✅ Ganho creditado: R$ ${winAmount / 100}`);
+            results.winners.push({ bet_id: bet.id, amount: winAmount });
+
+          } else {
+            // PERDEU: Não recebe nada
+            console.log(`   ❌ Perdeu R$ ${bet.matched_amount / 100}`);
+
+            // Atualizar aposta
+            await supabase
+              .from('bets')
+              .update({
+                status: 'perdida',
+                actual_return: 0,
+                resolved_at: new Date().toISOString()
+              })
+              .eq('id', bet.id);
+
+            console.log(`   ✅ Aposta marcada como perdida`);
+            results.losers.push({ bet_id: bet.id });
+          }
+
+        } catch (error) {
+          console.error(`   ❌ Erro ao processar aposta ${bet.id}:`, error);
+          results.errors.push({ bet_id: bet.id, error: error.message });
+        }
+      }
+
+      console.log('\n========================================');
+      console.log('🎉 [RESOLVE] PROCESSAMENTO CONCLUÍDO');
+      console.log('========================================');
+      console.log(`✅ Apostas ganhadoras: ${results.winners.length}`);
+      console.log(`❌ Apostas perdedoras: ${results.losers.length}`);
+      console.log(`⚠️  Erros: ${results.errors.length}`);
+      
+      if (results.winners.length > 0) {
+        const totalPaid = results.winners.reduce((sum, w) => sum + w.amount, 0);
+        console.log(`💰 Total pago: R$ ${totalPaid / 100}`);
+      }
+      
+      console.log('========================================\n');
+
+      return {
+        success: true,
+        processed: bets.length,
+        winners: results.winners.length,
+        losers: results.losers.length,
+        errors: results.errors.length,
+        details: results
+      };
+
+    } catch (error) {
+      if (error.code) {
+        throw error;
+      }
+
+      console.error('Erro ao resolver apostas:', error);
+      throw {
+        code: 'INTERNAL_ERROR',
+        message: 'Erro ao resolver apostas',
+        details: error.message
+      };
+    }
+  }
 }
 
 module.exports = new SeriesService();
