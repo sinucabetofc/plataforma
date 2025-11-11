@@ -8,7 +8,7 @@
 DO $$
 DECLARE
   duplicate_transaction RECORD;
-  duplicate_count INTEGER := 0;
+  duplicates_found INTEGER := 0;
   total_reversed INTEGER := 0;
 BEGIN
   RAISE NOTICE '🔍 Procurando pagamentos duplicados...';
@@ -51,7 +51,7 @@ BEGIN
     WHERE duplicate_count > 1  -- Existem duplicatas
       AND row_num = 1           -- Pegar a mais recente (a duplicata)
   LOOP
-    duplicate_count := duplicate_count + 1;
+    duplicates_found := duplicates_found + 1;
     
     RAISE NOTICE '🔄 Encontrada duplicata: Transação %, Valor: R$ %, Aposta: %',
       duplicate_transaction.transaction_id,
@@ -78,10 +78,10 @@ BEGIN
   END LOOP;
   
   -- Resumo
-  IF duplicate_count > 0 THEN
+  IF duplicates_found > 0 THEN
     RAISE NOTICE '═══════════════════════════════════════';
     RAISE NOTICE '📊 RESUMO DA CORREÇÃO:';
-    RAISE NOTICE '   - Duplicatas encontradas: %', duplicate_count;
+    RAISE NOTICE '   - Duplicatas encontradas: %', duplicates_found;
     RAISE NOTICE '   - Total revertido: R$ %', total_reversed::DECIMAL / 100;
     RAISE NOTICE '═══════════════════════════════════════';
   ELSE
