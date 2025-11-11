@@ -480,9 +480,15 @@ class WalletService {
       }
 
       // 3. Calcular taxa de 8% (VALORES EM CENTAVOS)
-      const amountInCents = Math.round(amount * 100); // R$ 50 = 5000 centavos
+      // LÓGICA CORRETA:
+      // - Usuário solicita R$ 100
+      // - Taxa 8% = R$ 8 (deduzida do valor)
+      // - Usuário recebe = R$ 92
+      // - Debita da carteira = R$ 100
+      const amountInCents = Math.round(amount * 100); // R$ 100 = 10000 centavos
       const feeInCents = Math.round(amountInCents * 0.08); // 8% do valor
-      const totalAmountInCents = amountInCents + feeInCents;
+      const netAmountInCents = amountInCents - feeInCents; // Valor que o usuário recebe
+      const totalAmountToDebit = amountInCents; // Valor a debitar da carteira = valor solicitado
 
       // Identificar se o saque é de saldo fake ou real
       const totalDeposited = parseFloat(wallet.total_deposited) || 0;
@@ -492,28 +498,28 @@ class WalletService {
       const fakeBalance = Math.max(0, currentBalance - realBalance); // Saldo fake
       
       // Se o valor do saque é maior que o saldo real, parte ou tudo é fake
-      const isFakeBalance = totalAmountInCents > realBalance;
-      const netAmountInCents = amountInCents;
+      const isFakeBalance = totalAmountToDebit > realBalance;
 
       // 4. Verificar saldo disponível
       // ✅ Saldo já reflete apostas debitadas, não precisa subtrair blocked_balance
       const availableBalance = parseFloat(wallet.balance); // Já em centavos
       
-      if (availableBalance < totalAmountInCents) {
+      if (availableBalance < totalAmountToDebit) {
         throw {
           code: 'INSUFFICIENT_BALANCE',
           message: 'Saldo insuficiente para realizar o saque',
           details: {
             available: availableBalance / 100, // Converter para reais na mensagem
-            required: totalAmountInCents / 100,
-            amount: amount,
-            fee: feeInCents / 100
+            required: totalAmountToDebit / 100,
+            requested: amount,
+            fee: feeInCents / 100,
+            net_amount: netAmountInCents / 100
           }
         };
       }
 
-      // 5. Atualizar saldo da carteira (descontar total) - VALORES EM CENTAVOS
-      const newBalance = parseFloat(wallet.balance) - totalAmountInCents;
+      // 5. Atualizar saldo da carteira (descontar valor solicitado) - VALORES EM CENTAVOS
+      const newBalance = parseFloat(wallet.balance) - totalAmountToDebit;
       const newTotalWithdrawn = parseFloat(wallet.total_withdrawn) + netAmountInCents;
 
       const { error: updateWalletError } = await supabase
@@ -550,7 +556,7 @@ class WalletService {
           description: description || 'Solicitação de saque via Pix',
           metadata: {
             pix_key: pixKey,
-            total_debited: totalAmountInCents, // ✅ Em centavos
+            total_debited: totalAmountToDebit, // ✅ Em centavos
             awaiting_admin_confirmation: true,
             requested_at: new Date().toISOString()
           }
@@ -605,11 +611,11 @@ class WalletService {
       return {
         transaction_id: withdrawTransaction.id,
         status: 'pending',
-        amount_requested: netAmountInCents / 100, // Converter para reais
-        fee: feeInCents / 100, // Converter para reais
-        total_debited: totalAmountInCents / 100, // Converter para reais
-        net_to_receive: netAmountInCents / 100, // Converter para reais
-        new_balance: newBalance / 100, // Converter para reais
+        amount_requested: amount, // Valor solicitado (já em reais)
+        fee: feeInCents / 100, // Taxa em reais
+        total_debited: totalAmountToDebit / 100, // Total debitado em reais
+        net_to_receive: netAmountInCents / 100, // Valor líquido a receber em reais
+        new_balance: newBalance / 100, // Novo saldo em reais
         pix_key: pixKey,
         created_at: withdrawTransaction.created_at,
         message: 'Solicitação de saque criada com sucesso. Aguardando confirmação do administrador.',
