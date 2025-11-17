@@ -245,7 +245,7 @@ function Wallet() {
                 <br />
                 • Valor mínimo: R$ 10,00
                 <br />
-                • Processamento em até 24 horas úteis
+                • Processamento instantâneo via PIX
                 <br />• O saque será enviado para sua chave Pix cadastrada
               </p>
             </div>

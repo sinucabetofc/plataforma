@@ -51,7 +51,7 @@ export default function ComoFuncionaPage() {
         name: 'Como faço para sacar meus ganhos?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Para sacar, acesse sua carteira e clique em "Sacar". Digite o valor desejado e confirme. Há uma taxa de 8% sobre o valor do saque. O saque é processado em até 24 horas úteis.',
+          text: 'Para sacar, acesse sua carteira e clique em "Sacar". Digite o valor desejado e confirme. Há uma taxa de 8% sobre o valor do saque. O saque é processado instantaneamente via PIX.',
         },
       },
       {
