@@ -70,8 +70,11 @@ app.set('trust proxy', 1);
 // Middlewares Globais
 // ============================================================
 
-// Segurança
-app.use(helmet());
+// Segurança - Configurar Helmet para não interferir com CORS
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginEmbedderPolicy: false,
+}));
 
 // CORS - Permitir múltiplas origens
 const corsOptions = {
