@@ -25,6 +25,8 @@ export default function TransactionCard({ transaction }) {
     created_at,
     description,
     metadata,
+    balance_before,
+    balance_after,
   } = transaction;
 
   // Formatação de valores
@@ -334,12 +336,19 @@ export default function TransactionCard({ transaction }) {
         </div>
       </div>
 
-        {/* Taxa (se houver) */}
-        {fee > 0 && (
-          <div className="mt-3 pt-3 border-t border-cinza-borda">
-            <p className="text-xs text-yellow-500">
-              💰 Taxa: {formatCurrency(fee)}
-            </p>
+        {/* Taxa e Saldo (se houver) */}
+        {(fee > 0 || balance_after !== null) && (
+          <div className="mt-3 pt-3 border-t border-cinza-borda space-y-1">
+            {fee > 0 && (
+              <p className="text-xs text-yellow-500">
+                💰 Taxa: {formatCurrency(fee)}
+              </p>
+            )}
+            {balance_after !== null && (
+              <p className="text-xs text-texto-secundario">
+                💵 Saldo após: <span className="font-semibold text-verde-neon">{formatCurrency(balance_after)}</span>
+              </p>
+            )}
           </div>
         )}
       </div>
