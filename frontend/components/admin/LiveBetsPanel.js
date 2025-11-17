@@ -28,7 +28,7 @@ export default function LiveBetsPanel({ matchId, match }) {
       try {
         // Só mostra loader no carregamento inicial
         if (showLoader) {
-          setLoading(true);
+        setLoading(true);
         }
         
         // Buscar apostas de todas as séries
@@ -59,7 +59,7 @@ export default function LiveBetsPanel({ matchId, match }) {
         setBets([]);
       } finally {
         if (showLoader) {
-          setLoading(false);
+        setLoading(false);
         }
         setIsInitialLoad(false);
       }
@@ -236,8 +236,8 @@ export default function LiveBetsPanel({ matchId, match }) {
                   : 0);
 
               return (
-                <div
-                  key={bet.id}
+              <div
+                key={bet.id}
                   className={`group relative bg-gradient-to-br from-gray-900/50 to-gray-950/30 border-2 ${statusBadge.border} rounded-2xl p-5 hover:shadow-2xl hover:border-opacity-60 transition-all duration-300 overflow-hidden`}
                 >
                   {/* Background hover effect */}
@@ -251,11 +251,11 @@ export default function LiveBetsPanel({ matchId, match }) {
                         {/* Nome do usuário + Série */}
                         <div className="flex items-center gap-2.5 mb-2.5">
                           <p className="font-bold text-white text-lg truncate">
-                            {bet.user?.name || bet.user?.email || 'Usuário'}
-                          </p>
+                        {bet.user?.name || bet.user?.email || 'Usuário'}
+                      </p>
                           <span className="px-3 py-1 bg-blue-600/20 text-blue-400 text-xs font-bold rounded-lg border border-blue-500/40 whitespace-nowrap shadow-sm">
-                            Série {bet.serie_number || '?'}
-                          </span>
+                        Série {bet.serie_number || '?'}
+                      </span>
                         </div>
                         
                         {/* Jogador escolhido */}
@@ -295,13 +295,13 @@ export default function LiveBetsPanel({ matchId, match }) {
                             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">✅ Casado</p>
                             <p className="text-base font-bold text-orange-400">
                               R$ {((bet.matched_amount || 0) / 100).toFixed(2)}
-                            </p>
-                          </div>
+                    </p>
+                  </div>
                           <div className="bg-gray-900/50 rounded-lg p-2.5 border border-gray-800">
                             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">⏳ Pendente</p>
                             <p className="text-base font-bold text-gray-400">
                               R$ {((bet.remaining_amount || 0) / 100).toFixed(2)}
-                            </p>
+                    </p>
                           </div>
                         </div>
                       </div>

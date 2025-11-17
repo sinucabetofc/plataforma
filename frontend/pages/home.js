@@ -2,13 +2,13 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
-import Head from 'next/head';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import api from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 import Loader, { FullPageLoader } from '../components/Loader';
 import MatchCard from '../components/partidas/MatchCard';
+import SEO, { getOrganizationSchema, getWebSiteSchema } from '../components/SEO';
 import { Trophy, Zap, TrendingUp, Clock, Users, Target, Calendar, CheckCircle, Play } from 'lucide-react';
 
 /**
@@ -166,15 +166,20 @@ export default function Home() {
     return priorityA - priorityB;
   });
 
+  // Structured Data
+  const structuredData = [
+    getOrganizationSchema(),
+    getWebSiteSchema(),
+  ];
+
   return (
     <>
-      <Head>
-        <title>SinucaBet - Início</title>
-        <meta
-          name="description"
-          content="Acompanhe partidas ao vivo, resultados e suas apostas no SinucaBet!"
-        />
-      </Head>
+      <SEO
+        title="Início"
+        description="Acompanhe partidas de sinuca ao vivo, faça suas apostas e ganhe prêmios. SinucaBet - A melhor plataforma de apostas em sinuca do Brasil. Sistema P2P transparente e seguro."
+        keywords="apostas sinuca, sinuca apostas, apostas online sinuca, partidas sinuca ao vivo, sinuca bet, apostar sinuca, plataforma apostas sinuca"
+        structuredData={structuredData}
+      />
 
       <div className="mx-auto max-w-7xl space-y-8">
         {/* Header com Título */}

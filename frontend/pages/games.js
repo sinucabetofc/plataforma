@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
-import Head from 'next/head';
 import { useQuery } from '@tanstack/react-query';
 import { getGames } from '../utils/api';
+import SEO from '../components/SEO';
 import Loader, { FullPageLoader } from '../components/Loader';
 import GameCard from '../components/GameCard';
 import FeaturedGame from '../components/FeaturedGame';
@@ -64,13 +64,11 @@ export default function Home() {
 
   return (
     <>
-      <Head>
-        <title>SinucaBet - Jogos Disponíveis</title>
-        <meta
-          name="description"
-          content="Aposte em partidas de sinuca ao vivo. Confira os jogos disponíveis e faça suas apostas agora!"
-        />
-      </Head>
+      <SEO
+        title="Jogos Disponíveis"
+        description="Aposte em partidas de sinuca ao vivo. Confira os jogos disponíveis, acompanhe partidas em andamento e faça suas apostas agora na SinucaBet!"
+        keywords="jogos sinuca, apostas sinuca, sinuca ao vivo, partidas sinuca, apostar sinuca, sinuca bet, jogos disponíveis"
+      />
 
       <div className="mx-auto max-w-7xl">
         {/* Header */}

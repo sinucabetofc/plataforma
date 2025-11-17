@@ -854,9 +854,9 @@ class BetsService {
 
     } catch (error) {
       console.error('❌ [MATCHING] Erro no processo de matching:', error);
-      return { 
-        matched: false, 
-        status: 'pendente',
+        return { 
+          matched: false, 
+          status: 'pendente',
         matches: [],
         message: 'Erro no matching, aposta ficará pendente' 
       };
@@ -1007,12 +1007,12 @@ class BetsService {
           .single();
 
         const { error: updateNewError } = await supabase
-          .from('bets')
-          .update({
+        .from('bets')
+        .update({ 
             matched_amount: (currentNew?.matched_amount || 0) + matchAmount,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', newBet.id);
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', newBet.id);
 
         if (updateNewError) {
           console.error('❌ [PROCESS] Erro ao atualizar nova aposta:', updateNewError);
@@ -1027,17 +1027,17 @@ class BetsService {
           .single();
 
         const { error: updateOppError } = await supabase
-          .from('bets')
-          .update({
+        .from('bets')
+        .update({ 
             matched_amount: (currentOpp?.matched_amount || 0) + matchAmount,
-            updated_at: new Date().toISOString()
-          })
+          updated_at: new Date().toISOString()
+        })
           .eq('id', oppositeBet.id);
 
         if (updateOppError) {
           console.error('❌ [PROCESS] Erro ao atualizar aposta oposta:', updateOppError);
           throw updateOppError;
-        }
+      }
 
         console.log(`   ✅ Match salvo: R$ ${matchAmount / 100}`);
       }

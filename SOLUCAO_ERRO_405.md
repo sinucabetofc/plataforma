@@ -83,3 +83,4 @@ No Render.com, vá para os logs do backend e verifique:
 **Solução**: Use URL do backend (Render), não do frontend (Vercel)
 
 
+

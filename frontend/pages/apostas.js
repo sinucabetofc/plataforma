@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import Head from 'next/head';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { getUserBets } from '../utils/api';
 import { withAuth } from '../contexts/AuthContext';
+import SEO from '../components/SEO';
 import { FullPageLoader } from '../components/Loader';
 import { 
   TrendingUp, 
@@ -177,13 +177,12 @@ function Apostas() {
 
   return (
     <>
-      <Head>
-        <title>Minhas Apostas - SinucaBet</title>
-        <meta
-          name="description"
-          content="Histórico completo das suas apostas no SinucaBet"
-        />
-      </Head>
+      <SEO
+        title="Minhas Apostas"
+        description="Histórico completo das suas apostas no SinucaBet"
+        noindex={true}
+        nofollow={true}
+      />
 
       <div className="mx-auto max-w-7xl">
         {/* Header */}

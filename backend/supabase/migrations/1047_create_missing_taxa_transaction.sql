@@ -51,3 +51,4 @@ WHERE t.id = '0c2b4684-42e1-4ae6-8a9e-5e6c8639da36'  -- ID do saque aprovado
 -- FIM DA MIGRATION
 -- =====================================================
 
+

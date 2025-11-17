@@ -452,3 +452,4 @@ console.error('💵 [DASHBOARD - LUCRO] 💰 Lucro HOJE (8%): R$', profit);
 
 🎱 **SinucaBet - Dashboard Admin Funcionando Perfeitamente**
 
+

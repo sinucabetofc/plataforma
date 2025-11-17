@@ -60,3 +60,4 @@ WHERE proname = 'validate_bet_on_insert';
 
 
 
+

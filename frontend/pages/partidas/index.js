@@ -8,9 +8,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Head from 'next/head';
 import { useRouter } from 'next/router';
 import api from '../../utils/api';
+import SEO, { getBreadcrumbSchema } from '../../components/SEO';
 import MatchList from '../../components/partidas/MatchList';
 import MatchFilters from '../../components/partidas/MatchFilters';
 
@@ -101,12 +101,20 @@ export default function PartidasPage() {
     setFilters(newFilters);
   };
 
+  // SEO e Structured Data
+  const breadcrumbSchema = getBreadcrumbSchema([
+    { name: 'Início', url: 'https://sinucabet.com.br/home' },
+    { name: 'Partidas', url: 'https://sinucabet.com.br/partidas' },
+  ]);
+
   return (
     <>
-      <Head>
-        <title>Partidas - SinucaBet</title>
-        <meta name="description" content="Veja todas as partidas de sinuca disponíveis para apostar no SinucaBet" />
-      </Head>
+      <SEO
+        title="Partidas de Sinuca"
+        description="Veja todas as partidas de sinuca disponíveis para apostar. Partidas ao vivo, agendadas e resultados. Faça suas apostas na SinucaBet - A melhor plataforma de apostas em sinuca do Brasil."
+        keywords="partidas sinuca, apostas sinuca, sinuca ao vivo, jogos sinuca, apostar sinuca, sinuca bet, partidas disponíveis"
+        structuredData={breadcrumbSchema}
+      />
 
       <div className="min-h-screen bg-[#171717] py-8">
         <div className="container mx-auto px-4">

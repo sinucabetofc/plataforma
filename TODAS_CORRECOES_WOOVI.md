@@ -247,3 +247,4 @@ const url = apiUrl.includes('/api')
 **Status:** ✅ **INTEGRAÇÃO COMPLETA E TESTADA**
 
 
+

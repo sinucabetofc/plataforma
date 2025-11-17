@@ -281,3 +281,4 @@ Após deploy:
 **Status**: ✅ Schema completamente compatível
 
 
+

@@ -8,7 +8,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Head from 'next/head';
 import { useRouter } from 'next/router';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
@@ -22,6 +21,7 @@ import {
   formatMatchStatus,
   formatPercent 
 } from '../../utils/formatters';
+import SEO, { getEventSchema, getBreadcrumbSchema } from '../../components/SEO';
 import AuthModal from '../../components/AuthModal';
 import DepositModal from '../../components/DepositModal';
 import ConfirmModal from '../../components/ConfirmModal';
@@ -167,11 +167,30 @@ export default function PartidaDetalhesPage() {
   // Apostas só serão permitidas se status = 'liberada'
   const currentSerie = match?.series?.find(s => s.status === 'liberada' || s.status === 'em_andamento');
 
+  // SEO e Structured Data
+  const matchTitle = `${match.player1?.name || 'Jogador 1'} vs ${match.player2?.name || 'Jogador 2'}`;
+  const matchDescription = `Partida de sinuca entre ${match.player1?.name || 'Jogador 1'} e ${match.player2?.name || 'Jogador 2'}. Acompanhe ao vivo e faça suas apostas na SinucaBet!`;
+  const matchUrl = typeof window !== 'undefined' ? window.location.href : '';
+  
+  const eventSchema = getEventSchema(match);
+  const breadcrumbSchema = getBreadcrumbSchema([
+    { name: 'Início', url: 'https://sinucabet.com.br/home' },
+    { name: 'Partidas', url: 'https://sinucabet.com.br/partidas' },
+    { name: matchTitle, url: matchUrl },
+  ]);
+
+  const structuredData = [eventSchema, breadcrumbSchema].filter(Boolean);
+
   return (
     <>
-      <Head>
-        <title>{match.player1.name} vs {match.player2.name} - SinucaBet</title>
-      </Head>
+      <SEO
+        title={matchTitle}
+        description={matchDescription}
+        keywords={`${match.player1?.name}, ${match.player2?.name}, sinuca, apostas sinuca, partida sinuca, sinuca ao vivo, ${matchTitle}`}
+        url={matchUrl}
+        type="website"
+        structuredData={structuredData}
+      />
 
       <div className="min-h-screen bg-[#171717] py-6">
         <div className="max-w-5xl mx-auto px-4">

@@ -646,7 +646,7 @@ class WalletService {
     try {
       const { data: transactions, error } = await supabase
         .from('transactions')
-        .select('id, user_id, type, amount, fee, net_amount, balance_before, balance_after, status, description, metadata, created_at, processed_at')
+        .select('id, user_id, type, amount, fee, net_amount, status, description, metadata, created_at, processed_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
@@ -666,8 +666,6 @@ class WalletService {
         amount: parseFloat(transaction.amount) / 100, // Centavos → Reais
         fee: parseFloat(transaction.fee || 0) / 100, // Centavos → Reais
         net_amount: parseFloat(transaction.net_amount || transaction.amount) / 100, // Centavos → Reais
-        balance_before: transaction.balance_before ? parseFloat(transaction.balance_before) / 100 : null, // Centavos → Reais
-        balance_after: transaction.balance_after ? parseFloat(transaction.balance_after) / 100 : null, // Centavos → Reais
         status: transaction.status,
         description: transaction.description,
         metadata: transaction.metadata,
@@ -698,7 +696,7 @@ class WalletService {
     try {
       const { data: transaction, error } = await supabase
         .from('transactions')
-        .select('id, user_id, type, amount, fee, net_amount, balance_before, balance_after, status, description, metadata, created_at, processed_at')
+        .select('id, user_id, type, amount, fee, net_amount, status, description, metadata, created_at, processed_at')
         .eq('id', transactionId)
         .eq('user_id', userId)
         .single();
@@ -717,8 +715,6 @@ class WalletService {
         amount: parseFloat(transaction.amount) / 100, // Centavos → Reais
         fee: parseFloat(transaction.fee || 0) / 100, // Centavos → Reais
         net_amount: parseFloat(transaction.net_amount || transaction.amount) / 100, // Centavos → Reais
-        balance_before: transaction.balance_before ? parseFloat(transaction.balance_before) / 100 : null, // Centavos → Reais
-        balance_after: transaction.balance_after ? parseFloat(transaction.balance_after) / 100 : null, // Centavos → Reais
         status: transaction.status,
         description: transaction.description,
         metadata: transaction.metadata,
