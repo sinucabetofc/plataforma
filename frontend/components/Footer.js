@@ -26,6 +26,18 @@ export default function Footer() {
           {/* Links */}
           <div className="flex flex-col items-center gap-4 md:flex-row md:gap-8">
             <Link
+              href="/sobre"
+              className="text-base text-texto-normal transition-colors hover:text-verde-accent md:text-lg"
+            >
+              Sobre
+            </Link>
+            <Link
+              href="/como-funciona"
+              className="text-base text-texto-normal transition-colors hover:text-verde-accent md:text-lg"
+            >
+              Como Funciona
+            </Link>
+            <Link
               href="/terms"
               className="text-base text-texto-normal transition-colors hover:text-verde-accent md:text-lg"
             >

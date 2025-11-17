@@ -196,6 +196,31 @@ export default function Header({ onOpenAuthModal }) {
               </Link>
             </>
           )}
+
+          {/* Links de Informação (Sempre visíveis) */}
+          <Link href="/como-funciona">
+            <div
+              className={`flex items-center gap-2 rounded-lg px-4 py-2 font-semibold transition-all ${
+                isActivePage('/como-funciona')
+                  ? 'bg-verde-neon/20 text-verde-neon border-2 border-verde-neon'
+                  : 'text-texto-secundario hover:bg-[#1a1a1a] hover:text-verde-neon'
+              }`}
+            >
+              <span>Como Funciona</span>
+            </div>
+          </Link>
+
+          <Link href="/sobre">
+            <div
+              className={`flex items-center gap-2 rounded-lg px-4 py-2 font-semibold transition-all ${
+                isActivePage('/sobre')
+                  ? 'bg-verde-neon/20 text-verde-neon border-2 border-verde-neon'
+                  : 'text-texto-secundario hover:bg-[#1a1a1a] hover:text-verde-neon'
+              }`}
+            >
+              <span>Sobre</span>
+            </div>
+          </Link>
         </nav>
 
         {/* Área Direita */}
