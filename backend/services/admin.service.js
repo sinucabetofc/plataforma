@@ -272,20 +272,33 @@ class AdminService {
         0
       ) || 0) / 100;
 
-      // 7. Saldo total das carteiras (apenas saldo real, não fake)
+      // 7. Saldo total das carteiras (usando balance_after da tabela transactions)
+      // Pegar o último balance_after de cada wallet_id na tabela transactions
+      const { data: allTransactions } = await supabase
+        .from('transactions')
+        .select('wallet_id, balance_after, created_at')
+        .order('created_at', { ascending: false });
+
+      // Agrupar por wallet_id e pegar apenas o último balance_after de cada wallet
+      const walletBalances = {};
+      if (allTransactions) {
+        allTransactions.forEach(t => {
+          if (t.wallet_id && !walletBalances[t.wallet_id]) {
+            walletBalances[t.wallet_id] = parseFloat(t.balance_after || 0);
+          }
+        });
+      }
+
+      // Somar todos os saldos reais (balance_after da última transação de cada wallet)
+      const totalRealBalance = Object.values(walletBalances).reduce(
+        (sum, balance) => sum + balance,
+        0
+      ) / 100;
+
+      // Para fake_balance, ainda usar a tabela wallet (se existir)
       const { data: wallets } = await supabase
         .from('wallet')
-        .select('balance, fake_balance');
-
-      // Saldo real = balance - fake_balance (pois balance inclui fake)
-      const totalRealBalance = (wallets?.reduce(
-        (sum, w) => {
-          const balance = parseFloat(w.balance || 0);
-          const fakeBalance = parseFloat(w.fake_balance || 0);
-          return sum + (balance - fakeBalance);
-        }, 
-        0
-      ) || 0) / 100;
+        .select('fake_balance');
 
       const totalFakeBalance = (wallets?.reduce(
         (sum, w) => sum + parseFloat(w.fake_balance || 0), 
