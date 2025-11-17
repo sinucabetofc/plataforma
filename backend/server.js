@@ -88,12 +88,29 @@ const corsOptions = {
       'http://127.0.0.1:3002', // Admin panel
       'https://plataforma-hazel.vercel.app', // Frontend na Vercel
       'https://sinuca-bet.vercel.app', // Frontend na Vercel (novo domínio)
+      'https://sinucabet.com.br', // Domínio de produção
+      'https://www.sinucabet.com.br', // Domínio de produção (com www)
       process.env.FRONTEND_URL, // URL configurável via env
     ].filter(Boolean); // Remove valores undefined/null
     
+    // Se FRONTEND_URL estiver configurado, aceitar também versões com/sem www
+    if (process.env.FRONTEND_URL) {
+      const frontendUrl = process.env.FRONTEND_URL;
+      // Adicionar versão com www se não tiver
+      if (frontendUrl.startsWith('https://') && !frontendUrl.includes('www.')) {
+        allowedOrigins.push(frontendUrl.replace('https://', 'https://www.'));
+      }
+      // Adicionar versão sem www se tiver
+      if (frontendUrl.includes('www.')) {
+        allowedOrigins.push(frontendUrl.replace('https://www.', 'https://'));
+      }
+    }
+    
+    // Verificar se a origem está na lista ou se é desenvolvimento
     if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
       callback(null, true);
     } else {
+      console.warn(`⚠️  CORS bloqueado: ${origin}`);
       callback(new Error('Não permitido pelo CORS'));
     }
   },
