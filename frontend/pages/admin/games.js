@@ -59,6 +59,7 @@ export default function Games() {
         const gameType = game_rules?.game_type;
         if (gameType === 'LISA') return 'Bolas Lisas';
         if (gameType === 'NUMERADA') return 'Bolas Numeradas';
+        if (gameType === 'BOLINHO') return 'Bolinho';
         return '-';
       },
     },

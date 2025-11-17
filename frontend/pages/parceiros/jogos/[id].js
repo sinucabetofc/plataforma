@@ -216,7 +216,10 @@ export default function ParceirosGameDetails() {
               )}
               {match.game_rules?.game_type && (
                 <div className="text-admin-text-secondary">
-                  {match.game_rules.game_type === 'LISA' ? 'Bolas Lisas' : 'Bolas Numeradas'}
+                  {match.game_rules.game_type === 'LISA' ? 'Bolas Lisas' : 
+                   match.game_rules.game_type === 'NUMERADA' ? 'Bolas Numeradas' :
+                   match.game_rules.game_type === 'BOLINHO' ? 'Bolinho' :
+                   match.game_rules.game_type}
                 </div>
               )}
             </div>

@@ -242,10 +242,13 @@ export default function PartidaDetalhesPage() {
                         ? 'bg-purple-500/20 text-purple-300 border-purple-500' 
                         : match.game_rules.game_type === 'LISA'
                         ? 'bg-blue-500/20 text-blue-300 border-blue-500'
+                        : match.game_rules.game_type === 'BOLINHO'
+                        ? 'bg-green-500/20 text-green-300 border-green-500'
                         : 'bg-orange-500/20 text-orange-300 border-orange-500'
                     }`}>
                       {match.game_rules.game_type === 'NUMERADA' ? 'JOGO DE BOLA NUMERADA' : 
                        match.game_rules.game_type === 'LISA' ? 'JOGO DE BOLAS LISAS' : 
+                       match.game_rules.game_type === 'BOLINHO' ? 'BOLINHO' :
                        match.game_rules.game_type}
                     </div>
                   )}

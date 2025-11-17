@@ -155,7 +155,10 @@ export default function ParceirosJogos() {
                     {match.player2?.nickname || match.player2?.name || 'Jogador 2'}
                   </td>
                   <td className="text-admin-text-secondary">
-                    {match.game_rules?.game_type === 'LISA' ? 'Bolas Lisas' : 'Bolas Numeradas'}
+                    {match.game_rules?.game_type === 'LISA' ? 'Bolas Lisas' : 
+                     match.game_rules?.game_type === 'NUMERADA' ? 'Bolas Numeradas' :
+                     match.game_rules?.game_type === 'BOLINHO' ? 'Bolinho' :
+                     match.game_rules?.game_type || '-'}
                   </td>
                   <td className="text-admin-text-secondary text-center">
                     {match.total_series || 3}
@@ -221,7 +224,10 @@ export default function ParceirosJogos() {
                   <div>
                     <p className="text-xs text-admin-text-muted mb-1">Tipo de Jogo</p>
                     <p className="text-admin-text-secondary">
-                      {match.game_rules?.game_type === 'LISA' ? 'Bolas Lisas' : 'Bolas Numeradas'}
+                      {match.game_rules?.game_type === 'LISA' ? 'Bolas Lisas' : 
+                       match.game_rules?.game_type === 'NUMERADA' ? 'Bolas Numeradas' :
+                       match.game_rules?.game_type === 'BOLINHO' ? 'Bolinho' :
+                       match.game_rules?.game_type || '-'}
                     </p>
                   </div>
                   <div>

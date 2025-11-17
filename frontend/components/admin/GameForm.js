@@ -14,6 +14,7 @@ import toast from 'react-hot-toast';
 const GAME_TYPES = [
   { value: 'LISA', label: 'Bolas Lisas' },
   { value: 'NUMERADA', label: 'Bolas Numeradas' },
+  { value: 'BOLINHO', label: 'Bolinho' },
 ];
 
 export default function GameForm({ onSubmit, onCancel, initialData = null, isLoading = false }) {
