@@ -39,6 +39,22 @@ function MyApp({ Component, pageProps }) {
     setIsMounted(true);
   }, []);
 
+  // Google Analytics - Rastrear mudanças de página
+  useEffect(() => {
+    const handleRouteChange = (url) => {
+      if (typeof window !== 'undefined' && window.gtag) {
+        window.gtag('config', 'G-HKDJ908R07', {
+          page_path: url,
+        });
+      }
+    };
+
+    router.events.on('routeChangeComplete', handleRouteChange);
+    return () => {
+      router.events.off('routeChangeComplete', handleRouteChange);
+    };
+  }, [router.events]);
+
   // Verificar se é página admin ou parceiros
   const isAdminPage = router.pathname.startsWith('/admin');
   const isParceirosPage = router.pathname.startsWith('/parceiros');

@@ -4,6 +4,8 @@ import { Html, Head, Main, NextScript } from 'next/document';
  * Custom Document - Configuração do HTML base
  */
 export default function Document() {
+  const GA_MEASUREMENT_ID = 'G-HKDJ908R07';
+
   return (
     <Html lang="pt-BR">
       <Head>
@@ -21,6 +23,25 @@ export default function Document() {
         {/* DNS Prefetch para APIs externas */}
         <link rel="dns-prefetch" href="https://sinucabet-backend.onrender.com" />
         <link rel="dns-prefetch" href="https://atjxmyrkzcumieuayapr.supabase.co" />
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+        
+        {/* Google Analytics (gtag.js) */}
+        <script
+          async
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', '${GA_MEASUREMENT_ID}', {
+                page_path: window.location.pathname,
+              });
+            `,
+          }}
+        />
       </Head>
       <body>
         <Main />
